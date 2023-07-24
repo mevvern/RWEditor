@@ -1,0 +1,125 @@
+@font-face {
+    font-family: 'rodondo';
+    src: url('extras/rodondo.woff2') format('woff2'),
+         url('extras/rodondo.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+:root {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: rodondo;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    padding-top: 0px;
+}
+
+.editor {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+.editorScreen {
+    padding-left: 20px;
+}
+
+canvas {
+    outline: rgb(170, 0, 170) 4px solid;
+    border-radius: 2px;
+    cursor: pointer;
+
+}
+
+.buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+input[type="number"] {
+    width: 40px;
+}
+
+.saveWindow {
+    padding: 0 18px;
+    display: none;
+    overflow: hidden;
+    background-color: #f1f1f1;
+  }
+
+.buttons > button {
+    cursor: pointer;
+    font-size: 2rem;
+    border: 5px solid #666666;
+    outline: none;
+    background-color: rgb(206, 206, 206);
+}
+
+.buttons > button:hover {
+    border: 5px solid #d6ae28
+}
+
+button[selected="true"] {
+    border: 5px solid #b401cc
+}
+
+button[selected="false"] {
+    border: 5px solid #666666
+}
+
+.tools {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    padding-top: 5px;
+}
+
+.settings {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+.levelSettings {
+    height: 40vh;
+    align-items: top;
+}
+
+.editorSettings {
+    height: 40vh;
+    align-items: top;
+}
+
+.toolHeader {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.header {
+    font-size: 1.5rem;
+    color: black;
+}
+
+.subHeader {
+    font-size: 1rem;
+    color: gray;
+}
+
+.toolSet {
+    display: flex;
+    flex-direction: column;
+}

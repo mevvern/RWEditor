@@ -1,0 +1,16 @@
+level's name
+level size indicated as width*height (in tiles)
+?
+?
+level border type
+
+
+
+
+?
+
+levels main data starts here. every grid position gets one array in a comma-separated format like |0, 0, 0|. each array is separated by a | character like |0|0|0|0|0|0|
+a solid wall on layer 1 is |1|
+air on layer one is 0
+vertical pole on layer one is 1
+horizontal pole on layer one is 2

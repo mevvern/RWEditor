@@ -2,28 +2,30 @@
 let tilesPerRow = 72;
 let tilesPerColumn = 43;
 let baseTileSize = 20;                                  //base size of each tile in pixels
-let playSizeX = 48;                                     //width of the play area in tiles
-let playSizeY = 35;                                     //height of the play area in tiles
 let playStartX = 12;
 let playStartY = 3;
-let customScreenWidth = 60;
+let playEndX = 60
+let playEndY = 38
+let customScreenWidth = 75;
 let customScreenHeight = 40;
 const tileCount = 20;                                   //number of unique tiles for the atlas to store
 let tilesPerLayer = tilesPerRow * tilesPerColumn;
 const layerCount = 3;                                   //stores the number of layers to use
-let zoomLevel = 1;                                      //stores the zoom level of the editor
-let tileSize = baseTileSize;                            //the final tile size in pixels with zoom taken into account
-let panX = -240;                                           //stores the x position in pixels that the user has moved the display to
-let panY = -60;                                           //same, but for the y axis
+let zoomLevel = -4;                                      //stores the zoom level of the editor
+let tileSize = zoomLevel + baseTileSize;                            //the final tile size in pixels with zoom taken into account
+let panX = 25;                                           //stores the x position in pixels that the user has moved the display to
+let panY = 52;                                           //same, but for the y axis
 let tileChoice = 1;                                     //stores the current tile choice
 let toolChoice = 0;
 let layerChoice = 0;                                    //stores the current work layer
 let layerComponentChoice = 0;                           //stores which layer component to send a value to...
 let showGrid = true;                                    
-let selCornerX
-let selCornerY
-let selectionW
-let selectionH
+let slopeChoice = 2;
+let previewChoice = true;
+let selStartX;
+let selStartY;
+let selEndX;
+let selEndY;
 
 const screen = document.getElementById('editorCanvas');                         //the canvas element which forms the main display
 const tileButtons = document.querySelectorAll('.tileButton');                   //the tile choice buttons
@@ -39,20 +41,21 @@ const levelSizeForm = document.getElementById('levelSizeForm');
 const mainCtx = screen.getContext('2d');                            //canvas rendering context for the main display
 const atlasCanvas = new OffscreenCanvas(29 * tileCount * 2, 29);    //offScreenCanvas which stores the tiles that are bitmaps
 let levelArray                                                      //array that stores all the data of the level. each array contained within this one is one layer of the level data
-let visArray = new Array(layerCount).fill(1);                       //array that stores the layer visibility choices for each layer
+let visArray = new Array(layerCount).fill(1);                       //array that stores the layer visibility choice for each layer
+let selArray                                                        //array that stores the current selection. structured similar to the levels array but without layers, and only as many components as the source selection
 const atlasCtx = atlasCanvas.getContext('2d');                      //canvas rendering context for the atlas's canvas
 
-let mouseTileX = 0;                                              //stores the x value of the current grid cell that the mouse is over...
-let mouseTileY = 0;                                              //same but for the y value
-let prevMouseX = 0;                                          //stores the previous tileX that the mouse was over
-let prevMouseY = 0;                                          //same but for y
-let mouseTileChanged = false;                                        //true if the mouse tile changed since the last mousemove event, false if it didn't change
+let mouseTileX = 0;					//stores the x value of the current grid cell that the mouse is over...
+let mouseTileY = 0;					//same but for the y value
+let prevMouseX = 0;					//stores the previous tileX that the mouse was over
+let prevMouseY = 0;					//same but for y
+let mouseTileChanged = false;		//true if the mouse tile changed since the last mousemove event, false if it didn't change
 let mouseXInsideLevel = false;
 let mouseYInsideLevel = false;
 
 
 function initMainCanvas() {
-    screen.width = customScreenWidth * baseTileSize;
+	screen.width = customScreenWidth * baseTileSize;
     screen.height = customScreenHeight * baseTileSize;
 };
 
@@ -143,8 +146,6 @@ function handleLevelsizeChange(event) {
         case true:
             tilesPerRow = width * 72;
             tilesPerColumn = height * 43;
-            playSizeX = width * 72 - 24;
-            playSizeY = height * 43 - 8;
             initLevelArray();
             drawVisLevel();
         break 
@@ -161,32 +162,6 @@ function handleLevelsizeChange(event) {
     };
 };
 
-function handlePlaySizeChange(event) {
-    event.preventDefault();
-    const width = parseInt(document.getElementById('playTilesWide').value);
-    const height = parseInt(document.getElementById('playTilesTall').value);
-    const x = parseInt(document.getElementById('playStartX').value);
-    const y = parseInt(document.getElementById('playStartY').value);
-    const isXOOB = (width <= 0) || (width > (tilesPerRow - x));
-    const isYOOB = (height <= 0) || (height > (tilesPerColumn - y));
-    const areCoordsOOB = (x < 0) || (y < 0) || ((x + width) > tilesPerRow) || ((y + height) > tilesPerColumn);
-    console.log(`${isXOOB} ${isYOOB} ${areCoordsOOB}`)
-    switch (isXOOB || isYOOB || areCoordsOOB) {
-        case false:
-            playSizeX = width;
-            playSizeY = height;
-            playStartX = x;
-            playStartY = y;
-            drawVisLevel();
-        break
-        case true:
-            alert('this would make the play area out of bounds!!!! dont do that!!!!!');
-        break
-        default:
-        break
-    };
-};
-
 function drawLevelOutline() {
     mainCtx.strokeStyle = 'rgb(127, 127, 255'
     mainCtx.lineWidth = 2
@@ -194,9 +169,9 @@ function drawLevelOutline() {
 };
 
 function drawPlayAreaOutline() {
-    mainCtx.strokeStyle = 'rgb(255, 127, 127)'
+    mainCtx.strokeStyle = 'rgb(255, 127, 255)'
     mainCtx.lineWidth = 4
-    mainCtx.strokeRect(playStartX * tileSize + panX, playStartY * tileSize + panY, playSizeX * tileSize, playSizeY * tileSize)
+    mainCtx.strokeRect((playStartX * tileSize) + panX, (playStartY * tileSize) + panY, (playEndX - playStartX) * tileSize, (playEndY - playStartY) * tileSize)
 };
 
 function drawGrid() {
@@ -213,7 +188,7 @@ function drawGrid() {
 };
 
 function drawTri(x, y, s, color, facing) {              //draws a right triangle with both legs being length s 
-    mainCtx.beginPath();                                     //facing can be ul, dl, ur, dr (up-left, down-left, up-right, down-right)
+    mainCtx.beginPath();                                     //facing can be ul, dl, ur, dr, ct, cl, cb, cr (up-left, down-left, up-right, down-right, center-top, center-left, center-bottom, center-right)
     switch (facing) {
         case 'dl':
             mainCtx.moveTo(x, y);
@@ -234,6 +209,27 @@ function drawTri(x, y, s, color, facing) {              //draws a right triangle
             mainCtx.moveTo(x + s, y);
             mainCtx.lineTo(x, y);
             mainCtx.lineTo(x + s, y + s);
+        break
+        case 'cb':
+            mainCtx.moveTo(x + (s / 2), y + (0.8 * s))
+            mainCtx.lineTo(x + (s / 3), y + (0.4 * s))
+            mainCtx.lineTo(x + ((s / 3) * 2), y + (0.4 * s))
+        break
+        case 'ct':
+            mainCtx.moveTo(x + (s / 2), y + (0.2 * s))
+            mainCtx.lineTo(x + (s / 3), y + (0.6 * s))
+            mainCtx.lineTo(x + ((s / 3) * 2), y + (0.6 * s))
+        break
+        case 'cl':
+            mainCtx.moveTo(x + (0.2 * s), y + (s / 2))
+            mainCtx.lineTo(x + (0.6 * s), y + (s / 3))
+            mainCtx.lineTo(x + (0.6 * s), y + ((s / 3) * 2))
+        break
+        case 'cr':
+            mainCtx.moveTo(x + (0.8 * s), y + (s / 2))
+            mainCtx.lineTo(x + (0.4 * s), y + (s / 3))
+            mainCtx.lineTo(x + (0.4 * s), y + ((s / 3) * 2))
+        break
     };
     mainCtx.closePath();
     mainCtx.fillStyle = color;
@@ -308,35 +304,48 @@ function drawValue(value, tileX, tileY, mode) {                 //draws the chos
         case 12:
             drawFromAtlas(6, x, y);
         break
-        case 13:
-            drawFromAtlas(3, x, y);
+        case 13: 
+            drawFromAtlas(3 + atlasMod, x, y); 
         break
         case 14:
-            drawFromAtlas(5, x, y);
+            drawFromAtlas(5 + atlasMod, x, y);
         break
         case 15:
-            drawFromAtlas(8, x, y);
+            drawFromAtlas(8 + atlasMod, x, y);
         break
         case 16:
-            drawFromAtlas(4, x, y);
+            drawFromAtlas(4 + atlasMod, x, y);
         break
         case 17:
-            drawFromAtlas(7, x, y);
+            drawFromAtlas(7 + atlasMod, x, y);
         break
         case 18:
-            drawFromAtlas(1, x, y);
+            drawFromAtlas(1 + atlasMod, x, y);
         break
         case 19:
-            drawFromAtlas(2, x, y);
+            drawFromAtlas(2 + atlasMod, x, y);
         break
         case 20:
-            drawFromAtlas(0, x, y);
+            drawFromAtlas(0 + atlasMod, x, y);
         break
         case 21:
-            drawFromAtlas(10, x, y);
+            drawFromAtlas(10 + atlasMod, x, y);
         break
         case 22:
             drawRect(colorA, x, y, tileSize)
+        break
+        case 23:
+            drawTri(x, y, tileSize, 'gray', 'cr');
+        break
+        case 24:
+            drawTri(x, y, tileSize, 'gray', 'cl');
+        break
+        case 25:
+            drawTri(x, y, tileSize, 'gray', 'ct');
+        break
+        case 26:
+            drawTri(x, y, tileSize, 'gray', 'cb');
+        break
     };
 };
 
@@ -391,12 +400,44 @@ function addValue(x, y) {
                             case false:
                                 switch(tileChoice) {
                                 default:
-                                levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, tileChoice);
+                                    levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, tileChoice);
                                 break
-                                case 0:
-                                    levelArray[layerChoice].forEach((layerComponent) => {
-                                        layerComponent[x].splice(y, 1, 0);
-                                    })
+                                case 13:
+                                    const adjArray = [levelArray[0][3][x][y - 1], levelArray[0][3][x][y + 1], levelArray[0][3][x - 1][y], levelArray[0][3][x + 1][y]];
+                                    let totalAdj = 0;
+                                    let entranceDir;
+                                    adjArray.forEach((value) => {
+                                        if (value === undefined) {
+                                            value = 0
+                                        }
+                                        if (value != 0) {
+                                            totalAdj++
+                                        }
+                                    });
+                                    console.log(totalAdj)
+                                    if ((totalAdj === 1) && (levelArray[0][3][x][y] === 0)) {
+                                        adjArray.forEach((value, index) => {
+                                            if (value != 0) {
+                                                switch (index) {
+                                                    case 0:
+                                                        entranceDir = 25;
+                                                    break
+                                                    case 1:
+                                                        entranceDir = 26;
+                                                    break
+                                                    case 2:
+                                                        entranceDir = 24;
+                                                    break
+                                                    case 3:
+                                                        entranceDir = 23;
+                                                    break
+                                                };
+                                            }
+                                            else {}
+                                        });
+                                        console.log('aweh9utghaeruhgy9iuoer')
+                                        levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, entranceDir); 
+                                    }
                                 }
                         };
                 };
@@ -405,28 +446,103 @@ function addValue(x, y) {
         }
 };
 
-function boxFill() {
-    mainCtx.strokeStyle = 'red'
-    mainCtx.lineWidth = 1
-    selectionW = mouseTileX - startCornerX
-    selectionH = mouseTileY - startCornerY
-    if (selectionW >= 0) {
-        selectionW++
+function playEndEdit() {
+    if (mouseTileChanged) {
+        if (playStartY >= (mouseTileY - 1)) {
+            console.log('limiting height!')
+            playEndY = playStartY + 2
+        }
+        else {
+            playEndY = mouseTileY;
+        }
+        if (playStartX >= (mouseTileX - 1)) {
+            console.log('limiting height!')
+            playEndX = playStartX + 2
+        }
+        else {
+            playEndX = mouseTileX;
+        }
     }
-    if (selectionH >= 0) {
-        selectionH++
+    drawVisLevel()
+};
+
+
+function playStartEdit() {
+    if (mouseTileChanged) {
+        if (playEndY <= (mouseTileY + 1)) {
+            console.log('limiting height!')
+            playStartY = playEndY - 2
+        }
+        else {
+            playStartY = mouseTileY;
+        }
+        if (playEndX <= (mouseTileX + 1)) {
+            console.log('limiting width!')
+            playStartX = playEndX - 2
+        }
+        else {
+            playStartX = mouseTileX;
+        }
     }
-    mainCtx.strokeRect((startCornerX * tileSize) + panX - 0.5, (startCornerY * tileSize) + panY - 0.5, selectionW * tileSize, selectionH * tileSize)
-    console.log(`width ${selectionW} height ${selectionH}`)
+    drawVisLevel()
+}
+
+function ruler() {
+    if (mouseTileChanged) {
+        drawVisLevel()
+        selEndX = mouseTileX;
+        selEndY = mouseTileY;
+        drawLine(selStartX * tileSize + panX, selStartY * tileSize + panY, selEndX * tileSize + panX, selEndY * tileSize + panY, 'brown', 8)
+        let length = Math.round(Math.sqrt((selEndY - selStartY) ** 2 + (selEndX - selStartX) ** 2) * 10) / 10
+        mainCtx.fillStyle = 'orange'
+        mainCtx.font = '30px rodondo'
+        mainCtx.fillText(length, (mouseTileX + 1.5) * tileSize + panX, (mouseTileY) * tileSize + panY)
+    };
 };
 
-function bucketFill(event) {
-
-};
-
-function playEdit(event) {
-
-};
+function box() {
+    if (mouseTileChanged) {
+        drawVisLevel()
+        if (previewChoice) {
+            preview();
+        };
+        switch (toolChoice) {
+            case 1:
+                color = 'red';
+                width = 1;
+            break
+            case 4:
+                color = 'teal';
+                width = 3;
+            break
+            case 7:
+                color = 'red';
+                width = 5;
+            break
+        };
+        mainCtx.strokeStyle = color;
+        mainCtx.lineWidth = width;
+        const selX = selStartX;
+        const selY = selStartY;
+        selEndX = mouseTileX;
+        selEndY = mouseTileY;
+        if (selEndX <= selStartX) {
+            selStartX++;
+        };
+        if (selEndY <= selStartY) {
+            selStartY++;
+        };
+        if (selEndX > selStartX) {
+            selEndX++;
+        };
+        if (selEndY > selStartY) {
+            selEndY++;
+        };
+        mainCtx.strokeRect((selStartX * tileSize) + panX - 0.5, (selStartY * tileSize) + panY - 0.5, (selEndX - selStartX) * tileSize, (selEndY - selStartY) * tileSize);
+        selStartX = selX;
+        selStartY = selY;
+    }
+}
 
 function paint() {
     addValue(mouseTileX, mouseTileY)
@@ -436,6 +552,60 @@ function paint() {
     };
     drawVisValues(mouseTileX, mouseTileY);
 };
+
+function preview() {
+    if (mouseTileChanged && previewChoice) {
+        switch (tileChoice) {
+            default:
+                drawValue(tileChoice, mouseTileX, mouseTileY);
+            break
+            case 0:
+                drawValue(22, mouseTileX, mouseTileY)
+            break
+            case 13:
+                let x = mouseTileX;
+                let y = mouseTileY;
+                const adjArray = [levelArray[0][3][x][y - 1], levelArray[0][3][x][y + 1], levelArray[0][3][x - 1][y], levelArray[0][3][x + 1][y]];
+                let totalAdj = 0;
+                let entranceDir;
+                adjArray.forEach((value) => {
+                    if (value === undefined) {
+                        value = 0
+                    }
+                    if (value != 0) {
+                        totalAdj++
+                    }
+                });
+                if ((totalAdj === 1) && (levelArray[0][3][x][y] === 0)) {
+                    adjArray.forEach((value, index) => {
+                        if (value != 0) {
+                            switch (index) {
+                                case 0:
+                                    entranceDir = 25;
+                                break
+                                case 1:
+                                    entranceDir = 26;
+                                break
+                                case 2:
+                                    entranceDir = 24;
+                                break
+                                case 3:
+                                    entranceDir = 23;
+                                break
+                            };
+                        }
+                        else {}
+                    });
+                    drawValue(entranceDir, x, y) 
+                }
+                else {
+                    drawValue(entranceDir, x, y)
+                }
+            break
+        }
+        drawVisValues(prevMouseX, prevMouseY);
+    }
+}
 
 function pan(event) {
         panX += event.movementX;
@@ -544,20 +714,33 @@ tileButtons.forEach(button => {                         //get the tile choice an
             break
             case 'erase':
                 tileChoice = 0;
-                layerComponentChoice = 1;
-                tileName = 'air';
+                tileName = 'air (erases only the previously selected tile type)';
             break
             case 'slope':
                 switch(tileChoice) {
                     default:
-                        tileChoice = 2;
-                        tileName = 'slope';
+                        tileChoice = slopeChoice;
+                        tileName = 'bottom left slope';
                         layerComponentChoice = 1;
                     break
                     case 2:
-                    case 3:
-                    case 4:
+                        slopeChoice++;
                         tileChoice++;
+                        tileName = 'top left slope';
+                        layerComponentChoice = 1;
+                    break
+                    case 3:
+                        slopeChoice++;
+                        tileChoice++;
+                        tileName = 'top right slope';
+                        layerComponentChoice = 1;
+                    break
+                    case 4:
+                        slopeChoice = 2;
+                        tileChoice++;
+                        tileName = 'bottom right slope';
+                        layerComponentChoice = 1;
+                    break
                 };
             break
             case 'batFly':
@@ -635,14 +818,15 @@ tileButtons.forEach(button => {                         //get the tile choice an
                 tileName = 'room exit/entrance';
                 layerComponentChoice = 3;
         };
-        tileIndicator.innerText = `selected tile: ${tileName}`
+        tileIndicator.innerText = tileName;
         tileButtons.forEach(button => {
             button.setAttribute('selected', 'false');
         })
         button.setAttribute("selected", "true")
-        console.log(`changed tile choice to ${tileChoice}`);
     });
 });
+
+screen.addEventListener('mousemove', preview)
 
 toolButtons.forEach(button => {
     button.addEventListener('click', () => {
@@ -651,36 +835,40 @@ toolButtons.forEach(button => {
             case 'paint':
                 toolChoice = 0;
                 toolName = 'Paint';
+                previewChoice = true;
             break
             case 'boxFill':
                 toolChoice = 1;
                 toolName = 'Box fill';
-            break
-            case 'bucket':
-                toolChoice = 2;
-                toolName = 'bucket fill';
+                previewChoice = false;
             break
             case 'playEdit':
                 toolChoice = 3;
                 toolName = 'play area editor';
+                previewChoice = true;
             break
             case 'boxSelect':
                 toolChoice = 4;
                 toolName = 'box select';
+                previewChoice = false;
             break
             case 'cameras':
                 toolChoice = 5;
                 toolName = 'CAmera editor';
+                previewChoice = false;
             break
             case 'ruler':
                 toolChoice = 6;
                 toolName = 'ruler'
+                previewChoice = false;
             break
             case 'eraseAll':
                 toolChoice = 7;
-                toolName = 'erase all layers'
+                toolName = 'erase all';
+                previewChoice = false;
+            break
         };
-        toolIndicator.innerText = `selected tool: ${toolName}`;
+        toolIndicator.innerText = toolName;
         toolButtons.forEach(button => {
             button.setAttribute('selected', 'false');
         })
@@ -691,42 +879,57 @@ toolButtons.forEach(button => {
 screen.addEventListener('mousemove', getGridPos);   //calculates a bunch of values based on current mouse position to use elsewhere
 
 levelSizeForm.addEventListener('submit', handleLevelsizeChange)
-playAreaSizeForm.addEventListener('submit', handlePlaySizeChange)
-
-screen.addEventListener('mousemove', () => {         //draws the preview of the current tile at the mouse's position
-    if (mouseTileChanged) {
-        switch (tileChoice) {
-            default:
-                drawValue(tileChoice, mouseTileX, mouseTileY);
-            break
-            case 0:
-                drawValue(22, mouseTileX, mouseTileY)
-            break
-        }
-        drawVisValues(prevMouseX, prevMouseY);
-    };
-});
 
 screen.addEventListener('mouseleave', () => {
-    drawVisValues(mouseTileX, mouseTileY)
+    if (previewChoice) {
+        drawVisValues(mouseTileX, mouseTileY);
+    }
 })
 
-document.addEventListener('mouseup', () => {            //removes the mousemove event listener when the user is done doing the thing
+document.addEventListener('mouseup', (event) => {            //removes the mousemove event listener when the user is done doing the thing
     screen.removeEventListener('mousemove', paint);
     screen.removeEventListener('mousemove', pan);
-    screen.removeEventListener('mousemove', boxFill);
-    screen.removeEventListener('mousemove', playEdit);
-    switch (toolChoice) {
-        case 1:
-            
-            console.log(`width ${selectionW} height ${selectionH}`)
-        break
+    screen.removeEventListener('mousemove', box);
+    screen.removeEventListener('mousemove', ruler);
+    screen.removeEventListener('mousemove', playEndEdit);
+    screen.removeEventListener('mousemove', playStartEdit);
+    if (event.button === 0) {
+        if (selEndX <= selStartX) {
+            selStartX++;
+        };
+        if (selEndY <= selStartY) {
+            selStartY++;
+        };
+        switch (toolChoice) {
+            case 1:
+                for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
+                    for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
+                        addValue(x, y);
+                    };
+                };
+            break
+            case 7:
+                levelArray[layerChoice].forEach(layerComponent => {
+                    for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
+                        for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
+                            layerComponent[x].splice(y, 1, 0);
+                        };
+                    };
+                })
+            break
+            case 4:
+                for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
+                    for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
+                        addValue(x, y);
+                    };
+                };
+        }
     }
-    selectionW = 0;
-    selectionH = 0;
     selCornerX = 0;
     selCornerY = 0;
-    drawVisLevel()
+    selectionW = 0;
+    selectionH = 0;
+    drawVisLevel();
 });
 
 screen.addEventListener('wheel', zoom);                 //this is the event listener handling zoom
@@ -746,15 +949,15 @@ editorSettings.forEach(button => {
             case 'showGrid':
                 switch (showGrid) {
                     case false:
-                        showGrid = true
-                        button.innerText = 'hide grid'
-                        console.log('turned grid on')
+                        showGrid = true;
+                        button.innerText = 'hide grid';
+                        console.log('turned grid on');
                     break
                     case true:
-                        showGrid = false
-                        button.innerText = 'show grid'
-                        console.log('turned grid off')
-                }
+                        showGrid = false;
+                        button.innerText = 'show grid';
+                        console.log('turned grid off');
+                };
         
             };
         drawVisLevel();
@@ -763,26 +966,37 @@ editorSettings.forEach(button => {
 
 screen.addEventListener('mousedown', (event) => {       //adds a mousemove event listener when the user clicks on the main canvas for the specified mouse button
     event.preventDefault();
-    startCornerX = mouseTileX
-    startCornerY = mouseTileY
-    switch (event.buttons) {
-        case 1:
+    selStartX = mouseTileX;
+    selStartY = mouseTileY;
+    switch (event.button) {
+        case 0:
             switch (toolChoice) {
                 case 0:
                     paint();
                     screen.addEventListener('mousemove', paint);
                 break
                 case 1:
-                    screen.addEventListener('mousemove', boxFill);
-                break
-                case 2:
-                    bucketFill(event);
+                case 4:
+                case 7:
+                    screen.addEventListener('mousemove', box);
                 break
                 case 3:
-                    screen.addEventListener('mousemove', playEdit)
-            }
+                    if (mouseTileX === playStartX && mouseTileY === playStartY) {
+                        console.log('fuck');
+                        screen.addEventListener('mousemove', playStartEdit);
+                    }
+                    else {
+                        if ((mouseTileX + 1) === playEndX && (mouseTileY + 1) === playEndY) {
+                            console.log('shit');
+                            screen.addEventListener('mousemove', playEndEdit);
+                        };
+                    };
+                break
+                case 6:
+                    screen.addEventListener('mousemove', ruler);
+            };
         break
-        case 4:
+        case 1:
             screen.addEventListener('mousemove', pan);
         break
     };

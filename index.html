@@ -16,20 +16,20 @@
                     <div class="toolHeader">   
                         <p class="header">tiles</p>
                         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-                        <p class="subHeader" id="tileSelection">Selected Tile: wall</p>
+                        <p class="subHeader" id="tileSelection">wall</p>
                     </div>
                     <div class="buttons">
                         <button class="tileButton" selected="false" id="wall" title="Wall"><img src="geoTiles/wallIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="erase" title="Air (erase)"><img src="geoTiles/airIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="slope" title="Slope. Press again to change the slope's facing "><img src="geoTiles/slopeIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="erase" title="Air"><img src="geoTiles/airIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="batFly" title="cool scug :0">😻</button>
                         <button class="tileButton" selected="false" id="hPole" title="Horizontal pole"><img src="geoTiles/hPoleIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="vPole" title="Vertical pole"><img src="geoTiles/vPoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="crossPole" title="Crossed pole"><img src="geoTiles/crossPoleIcon.png" draggable="false"></button>
                     </div>
                     <div class="buttons">
-                        <button class="tileButton" selected="false" id="crossPole" title="Crossed pole"><img src="geoTiles/crossPoleIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="semisolidFloor" title="Semisolid platform"><img src="geoTiles/semisolidIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="hive" title="Batfly hive"><img src="geoTiles/hiveIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="batFly" title="cool scug :0">😻</button>
                         <button class="tileButton" selected="false" id="entrance" title="Shortcut entrance"><img src="geoTiles/entranceIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="path" title="Shortcut path"><img src="geoTiles/pathIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="roomExit" title="Room exit/entrance"><img src="geoTiles/roomExitIcon.png" draggable="false"></button>
@@ -48,19 +48,18 @@
                     <div class="toolHeader">   
                         <p class="header">tools</p>
                         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-                        <p class="subHeader" id="toolSelection">Selected tool: paint</p>
+                        <p class="subHeader" id="toolSelection">paint</p>
                     </div>
                     <div class="buttons">
-                        <button class="toolButton" selected="false" id="paint" title="Paint">🖌</button>
+                        <button class="toolButton" selected="true" id="paint" title="Paint">🖌</button>
                         <button class="toolButton" selected="false" id="boxFill" title="Box fill">📦</button>
-                        <button class="toolButton" selected="false" id="bucket" title="Bucket fill">🥧</button>
+                        <button class="toolButton" selected="false" id="eraseAll" title="Box erase all layer components for the current layer">💀</button>
                         <button class="toolButton" selected="false" id="boxSelect" title="Select a box to copy and paste. Pastes to the selected layer.">🎁</button>
+                        <button class="toolButton" selected="false" id="ruler" title="Ruler">📏</button>
                         <button class="toolButton" selected="false" id="cameras" title="Create and position cameras">📷</button>
                     </div>
                     <div class="buttons">
                         <button class="toolButton" selected="false" id="playEdit" title="Edit the play area">✏</button>
-                        <button class="toolButton" selected="false" id="ruler" title="Ruler">📏</button>
-                        <button class="toolButton" selected="false" id="eraseAll" title="Box erase all">💀</button>
                     </div>
                 </div>
                 <hr>
@@ -110,17 +109,6 @@
                     <label for="screensWide">Height of the level in screens:</label>
                     <input type="number" id="screensTall" name="screensTall" title="Enter the height of the level in screens" required><br><br>
                     <input type="submit" id="levelSizeSubmit" value="Change level size (will empty the entire level!)">
-                </form>
-                <br><br>
-                <form id="playAreaSizeForm" action="" method="GET" onsubmit="return false">
-                    <label for="playTilesWide">Width of the play area in tiles:</label>
-                    <input type="number" id="playTilesWide" name="playTilesWide" title="Enter the width of the play area in tiles" required><br><br>
-                    <label for="playTilesWide">Height of the play area in tiles:</label>
-                    <input type="number" id="playTilesTall" name="playTilesTall" title="Enter the height of the play area in tiles" required><br><br>
-                    <label for="playTilesWide">Position of the top left corner of the play area:</label>
-                    <input type="number" id="playStartX" name="playStartX" title="Enter the X coordinate of the top left corner of the play area">&nbsp;,&nbsp;
-                    <input type="number" id="playStartY" name="playStartY" title="Enter the Y coordinate of the top left corner of the play area"><br><br>
-                    <input type="submit" id="playSizeSubmit" value="Change play area size">
                 </form>
             </div>
         </div>

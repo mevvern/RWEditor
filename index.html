@@ -4,7 +4,8 @@
         <meta charset="utf-8">
         <title>RWEditor</title>
         <link href="style.css" rel="stylesheet">
-        <script src="script.js" defer></script>
+        <script src="scripts/main.js" defer></script>
+        <script src="scripts/shortcuts.js" defer></script>
     </head>
     <body>
         <div class="editor">
@@ -19,28 +20,23 @@
                         <p class="subHeader" id="tileSelection">wall</p>
                     </div>
                     <div class="buttons">
-                        <button class="tileButton" selected="false" id="wall" title="Wall"><img src="geoTiles/wallIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="erase" title="Air (erase)"><img src="geoTiles/airIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="slope" title="Slope. Press again to change the slope's facing "><img src="geoTiles/slopeIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="hPole" title="Horizontal pole"><img src="geoTiles/hPoleIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="vPole" title="Vertical pole"><img src="geoTiles/vPoleIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="crossPole" title="Crossed pole"><img src="geoTiles/crossPoleIcon.png" draggable="false"></button>
-                    </div>
-                    <div class="buttons">
-                        <button class="tileButton" selected="false" id="semisolidFloor" title="Semisolid platform"><img src="geoTiles/semisolidIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="hive" title="Batfly hive"><img src="geoTiles/hiveIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="true" id="wall" title="Wall"><img src="resources/wallIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="slope" title="Slope. Press again to change the slope's facing "><img src="resources/slopeIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="hPole" title="Horizontal pole"><img src="resources/hPoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="vPole" title="Vertical pole"><img src="resources/vPoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="crossPole" title="Crossed pole"><img src="resources/crossPoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="semisolidFloor" title="Semisolid platform"><img src="resources/semisolidIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="hive" title="Batfly hive"><img src="resources/hiveIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="batFly" title="cool scug :0">😻</button>
-                        <button class="tileButton" selected="false" id="entrance" title="Shortcut entrance"><img src="geoTiles/entranceIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="path" title="Shortcut path"><img src="geoTiles/pathIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="roomExit" title="Room exit/entrance"><img src="geoTiles/roomExitIcon.png" draggable="false"></button>
-                    </div>
-                    <div class="buttons">
-                        <button class="tileButton" selected="false" id="dragonDen" title="Creature den"><img src="geoTiles/dragonDenIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="whackamole" title="Creature shortcut (aka whack-a-mole entrance)"><img src="geoTiles/whackamoleIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="scavHole" title="Scavenger entrance/exit"><img src="geoTiles/scavHoleIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="garbageWorm" title="Garbage worm den"><img src="geoTiles/garbageWormIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="waterfall" title="Waterfall"><img src="geoTiles/waterfallIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="wormGrass" title="Worm grass"><img src="geoTiles/wormGrassIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="entrance" title="Shortcut entrance"><img src="resources/entranceIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="path" title="Shortcut path"><img src="resources/pathIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="roomExit" title="Room exit/entrance"><img src="resources/roomExitIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="dragonDen" title="Creature den"><img src="resources/dragonDenIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="whackamole" title="Creature shortcut (aka whack-a-mole entrance)"><img src="resources/whackamoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="scavHole" title="Scavenger entrance/exit"><img src="resources/scavHoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="garbageWorm" title="Garbage worm den"><img src="resources/garbageWormIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="waterfall" title="Waterfall"><img src="resources/waterfallIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="wormGrass" title="Worm grass"><img src="resources/wormGrassIcon.png" draggable="false"></button>
                     </div>
                 </div>
                 <hr>
@@ -52,26 +48,25 @@
                     </div>
                     <div class="buttons">
                         <button class="toolButton" selected="true" id="paint" title="Paint">🖌</button>
+                        <button class="toolButton" selected="false" id="eraser" title="Erases only the selected tile type">❌</button>
                         <button class="toolButton" selected="false" id="boxFill" title="Box fill">📦</button>
                         <button class="toolButton" selected="false" id="eraseAll" title="Box erase all layer components for the current layer">💀</button>
                         <button class="toolButton" selected="false" id="boxSelect" title="Select a box to copy and paste. Pastes to the selected layer.">🎁</button>
                         <button class="toolButton" selected="false" id="ruler" title="Ruler">📏</button>
                         <button class="toolButton" selected="false" id="cameras" title="Create and position cameras">📷</button>
-                    </div>
-                    <div class="buttons">
                         <button class="toolButton" selected="false" id="playEdit" title="Edit the play area">✏</button>
                     </div>
                 </div>
                 <hr>
                 <div class="toolSet" id="workLayers">
                     <div class="toolHeader">
-                        <p class="header" style="line-height: 0;">work layer selection</p>
+                        <p class="header">work layer selection</p>
                     </div>
                     <div class="toolHeader">
-                        <p class="subHeader" id="layerSelection" style="line-height: 0;">selected layer: 1</p>
+                        <p class="subHeader" id="layerSelection">selected layer: 1</p>
                     </div>
                     <div class="buttons"> 
-                        <button class="layerSelButton" selected="false" id="layer1" title="Select work layer 1">1</button>
+                        <button class="layerSelButton" selected="true" id="layer1" title="Select work layer 1">1</button>
                         <button class="layerSelButton" selected="false" id="layer2" title="Select work layer 2">2</button>
                         <button class="layerSelButton" selected="false" id="layer3" title="Select work layer 3">3</button>
                     </div>
@@ -94,8 +89,8 @@
                     <p class="header">editor settings</p>
                 </div>
                 <div class="buttons">
-                    <button class="editorSettings" selected="false" id="resetView" title="Reset the editor's view">reset view</button>
-                    <button class="editorSettings" id="showGrid" title="Hide the grid">hide grid</button>
+                    <button class="editorSettings" selected="false" id="resetView" title="Reset the editor's view" style="font-size: 1rem;">reset<br>view</button>
+                    <button class="editorSettings" id="showGrid" title="Hide the grid" style="font-size: 1rem;">hide<br>grid</button>
                 </div>
             </div>
             <br><br><br>

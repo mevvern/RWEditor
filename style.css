@@ -1,7 +1,7 @@
 @font-face {
     font-family: 'rodondo';
-    src: url('extras/rodondo.woff2') format('woff2'),
-         url('extras/rodondo.woff') format('woff');
+    src: url('resources/fonts/rodondo.woff2') format('woff2'),
+         url('resources/fonts/rodondo.woff') format('woff');
     font-weight: normal;
     font-style: normal;
 }
@@ -41,6 +41,9 @@ canvas {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
+    gap: 4px;
+    flex-wrap: wrap;
+    width: 480px;
 }
 
 .form {
@@ -64,6 +67,9 @@ input[type="number"] {
     cursor: pointer;
     font-size: 2rem;
     border: 5px solid #666666;
+    border-radius: 4px;
+    width: 65px;
+    height: 65px;
     outline: none;
     background-color: rgb(206, 206, 206);
 }
@@ -112,11 +118,15 @@ button[selected="false"] {
 .header {
     font-size: 1.5rem;
     color: black;
+    margin-top: 3px;
+    margin-bottom: 6px;
 }
 
 .subHeader {
     font-size: 1rem;
     color: gray;
+    margin-top: 3px;
+    margin-bottom: 6px;
 }
 
 .toolSet {

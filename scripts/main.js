@@ -21,10 +21,12 @@ let layerComponentChoice = 1;                           //stores which layer com
 let showGrid = true;                                    
 let slopeChoice = 2;
 let previewChoice = true;
-let selStartX;
-let selStartY;
-let selEndX;
-let selEndY;
+let doingMouseThing = false;
+let selBox = false;
+let selStartX = 0;
+let selStartY = 0;
+let selEndX = 0;
+let selEndY = 0;
 
 const screen = document.getElementById('editorCanvas');                         //the canvas element which forms the main display
 const tileButtons = document.querySelectorAll('.tileButton');                   //the tile choice buttons
@@ -161,6 +163,28 @@ function handleLevelsizeChange(event) {
     };
 };
 
+function drawSelBox() {
+    if (selBox) {
+        switch (toolChoice) {
+            case 1:
+                color = 'red';
+                width = 1;
+            break
+            case 4:
+                color = 'gold';
+                width = 3;
+            break
+            case 7:
+                color = 'red';
+                width = 5;
+            break
+        };
+        mainCtx.strokeStyle = color;
+        mainCtx.lineWidth = width;
+        mainCtx.strokeRect((selStartX * tileSize) + panX - 0.5, (selStartY * tileSize) + panY - 0.5, (selEndX - selStartX) * tileSize, (selEndY - selStartY) * tileSize);
+    }
+}
+
 function drawLevelOutline() {
     mainCtx.strokeStyle = 'rgb(127, 127, 255'
     mainCtx.lineWidth = 2
@@ -168,7 +192,7 @@ function drawLevelOutline() {
 };
 
 function drawPlayAreaOutline() {
-    mainCtx.strokeStyle = 'rgb(255, 127, 255)'
+    mainCtx.strokeStyle = 'rgb(255, 127, 127)'
     mainCtx.lineWidth = 4
     mainCtx.strokeRect((playStartX * tileSize) + panX, (playStartY * tileSize) + panY, (playEndX - playStartX) * tileSize, (playEndY - playStartY) * tileSize)
 };
@@ -360,6 +384,7 @@ function drawVisValues(x, y) {                //draws all visible values at one 
     drawGrid();
     drawLevelOutline();
     drawPlayAreaOutline();
+    drawSelBox();
 };
 
 function drawLayerValues(layer) {                   //draws the supplied layer
@@ -382,6 +407,7 @@ function drawVisLevel() {                           //draws only the layers whic
     drawGrid();
     drawLevelOutline();
     drawPlayAreaOutline();
+    drawSelBox();
 };
 
 function addValue(x, y) {
@@ -501,26 +527,9 @@ function ruler() {
 
 function box() {
     if (mouseTileChanged) {
-        drawVisLevel()
         if (previewChoice) {
             preview();
         };
-        switch (toolChoice) {
-            case 1:
-                color = 'red';
-                width = 1;
-            break
-            case 4:
-                color = 'teal';
-                width = 3;
-            break
-            case 7:
-                color = 'red';
-                width = 5;
-            break
-        };
-        mainCtx.strokeStyle = color;
-        mainCtx.lineWidth = width;
         const selX = selStartX;
         const selY = selStartY;
         selEndX = mouseTileX;
@@ -537,7 +546,7 @@ function box() {
         if (selEndY > selStartY) {
             selEndY++;
         };
-        mainCtx.strokeRect((selStartX * tileSize) + panX - 0.5, (selStartY * tileSize) + panY - 0.5, (selEndX - selStartX) * tileSize, (selEndY - selStartY) * tileSize);
+        drawVisLevel();
         selStartX = selX;
         selStartY = selY;
     }
@@ -824,10 +833,9 @@ editorSettings.forEach(button => {						//event listener for the editor settings
         switch (button.id) {
             case 'resetView':
                 zoomLevel = 1;
-                panX = -playStartX * baseTileSize;
-                panY = -playStartY * baseTileSize;
+                panX = 0;
+                panY = 0;
                 tileSize = baseTileSize;
-                
                 initMainCanvas();
                 console.log('reset the view');
             break
@@ -851,6 +859,7 @@ editorSettings.forEach(button => {						//event listener for the editor settings
 
 toolButtons.forEach(button => {
     button.addEventListener('click', () => {
+        selBox = false;
         let toolName
         switch (button.id) {
             case 'paint':
@@ -866,7 +875,7 @@ toolButtons.forEach(button => {
             case 'boxFill':
                 toolChoice = 1;
                 toolName = 'Box fill';
-                previewChoice = false;
+                previewChoice = true;
             break
             case 'playEdit':
                 toolChoice = 3;
@@ -877,6 +886,7 @@ toolButtons.forEach(button => {
                 toolChoice = 4;
                 toolName = 'box select';
                 previewChoice = false;
+                selBox = true;
             break
             case 'cameras':
                 toolChoice = 5;
@@ -890,7 +900,7 @@ toolButtons.forEach(button => {
             break
             case 'eraseAll':
                 toolChoice = 7;
-                toolName = 'erase all';
+                toolName = 'box erase';
                 previewChoice = false;
             break
         };
@@ -899,6 +909,7 @@ toolButtons.forEach(button => {
             button.setAttribute('selected', 'false');
         })
         button.setAttribute('selected', 'true');
+        drawVisLevel();
     });
 });
 
@@ -914,8 +925,7 @@ screen.addEventListener('mouseleave', () => {		//draws the last mouse tile if th
 
 screen.addEventListener('mousedown', (event) => {       //adds a mousemove event listener when the user clicks on the main canvas for the specified mouse button
     event.preventDefault();
-    selStartX = mouseTileX;
-    selStartY = mouseTileY;
+    doingMouseThing = true;
     switch (event.button) {
         case 0:
             switch (toolChoice) {
@@ -930,6 +940,9 @@ screen.addEventListener('mousedown', (event) => {       //adds a mousemove event
                 case 1:
                 case 4:
                 case 7:
+                    selStartX = mouseTileX;
+                    selStartY = mouseTileY;
+                    selBox = true;
                     screen.addEventListener('mousemove', box);
                 break
                 case 3:
@@ -955,42 +968,59 @@ screen.addEventListener('mousedown', (event) => {       //adds a mousemove event
 });
 
 document.addEventListener('mouseup', (event) => {            //removes the mousemove event listener when the user is done doing the thing
-    screen.removeEventListener('mousemove', paint);
-    screen.removeEventListener('mousemove', erase);
-    screen.removeEventListener('mousemove', pan);
-    screen.removeEventListener('mousemove', box);
-    screen.removeEventListener('mousemove', ruler);
-    screen.removeEventListener('mousemove', playEndEdit);
-    screen.removeEventListener('mousemove', playStartEdit);
-    if (event.button === 0) {
-        if (selEndX <= selStartX) {
-            selStartX++;
+    if (doingMouseThing) {
+        doingMouseThing = false;
+        screen.removeEventListener('mousemove', paint);
+        screen.removeEventListener('mousemove', erase);
+        screen.removeEventListener('mousemove', pan);
+        screen.removeEventListener('mousemove', box);
+        screen.removeEventListener('mousemove', ruler);
+        screen.removeEventListener('mousemove', playEndEdit);
+        screen.removeEventListener('mousemove', playStartEdit);
+        if (event.button === 0) {
+            if (selEndX <= selStartX) {
+                selStartX++;
+            };
+            if (selEndY <= selStartY) {
+                selStartY++;
+            };
+            switch (toolChoice) {
+                case 1:
+                    if (visArray[layerChoice] === 1) {
+                        for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
+                            for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
+                                addValue(x, y);
+                            };
+                        };
+                    };
+                    selBox = false;
+                    selStartX = 0;
+                    selStartY = 0;
+                    selEndX = 0;
+                    selEndY = 0;
+                break
+                case 7:
+                    if (visArray[layerChoice] === 1) {
+                        levelArray[layerChoice].forEach(layerComponent => {
+                            for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
+                                for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
+                                    layerComponent[x].splice(y, 1, 0);
+                                };
+                            };
+                        });
+                    };
+                    selBox = false;
+                    selStartX = 0;
+                    selStartY = 0;
+                    selEndX = 0;
+                    selEndY = 0;
+                break 
+                case 4:
+                    if (visArray[layerChoice] === 1) {
+                        selBox = true;
+                    }
+            };
         };
-        if (selEndY <= selStartY) {
-            selStartY++;
-        };
-        switch (toolChoice) {
-            case 1:
-                if (visArray[layerChoice] === 1) {
-					for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
-						for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
-							addValue(x, y);
-						};
-					};
-				};
-            break
-            case 7:
-                if (visArray[layerChoice] === 1) {
-					levelArray[layerChoice].forEach(layerComponent => {
-						for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
-							for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
-								layerComponent[x].splice(y, 1, 0);
-							};
-						};
-					});
-				};
-            break  
-        };
+        drawVisLevel();
     };
-    drawVisLevel();
 });

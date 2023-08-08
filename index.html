@@ -2,10 +2,10 @@
 <html lang="en" dir="ltr">
     <head    
         <meta charset="utf-8">
-        <title>RWEditor</title>
-        <link href="style.css" rel="stylesheet">
-        <script src="scripts/main.js" defer></script>
-        <script src="scripts/shortcuts.js" defer></script>
+        <title>New Level</title>
+        <link href="style.css?cachebuster1" rel="stylesheet">
+        <script src="scripts/main.js?cachebuster1" defer></script>
+        <script src="scripts/shortcuts.js?cachebuster1" defer></script>
     </head>
     <body>
         <div class="editor">
@@ -22,6 +22,7 @@
                     <div class="buttons">
                         <button class="tileButton" selected="true" id="wall" title="Wall"><img src="resources/wallIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="slope" title="Slope. Press again to change the slope's facing "><img src="resources/slopeIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="invisWall" title="Invisible Wall"><img src="resources/invisWallIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="hPole" title="Horizontal pole"><img src="resources/hPoleIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="vPole" title="Vertical pole"><img src="resources/vPoleIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="crossPole" title="Crossed pole"><img src="resources/crossPoleIcon.png" draggable="false"></button>
@@ -50,9 +51,9 @@
                     </div>
                     <div class="buttons">
                         <button class="toolButton" selected="true" id="paint" title="Paint">🖌</button>
-                        <button class="toolButton" selected="false" id="eraser" title="Erases only the selected tile type">❌</button>
                         <button class="toolButton" selected="false" id="boxFill" title="Box fill">📦</button>
-                        <button class="toolButton" selected="false" id="eraseAll" title="Box erase the entire layer rather than the selected tile type">💀</button>
+                        <button class="toolButton" selected="false" id="eraser" title="Erases only the selected tile type">❌</button>
+                        <button class="toolButton" selected="false" id="eraseAll" title="Box erase all layer components">💀</button>
                         <button class="toolButton" selected="false" id="boxSelect" title="Select a box to copy and paste. Pastes to the selected layer.">🎁</button>
                         <button class="toolButton" selected="false" id="ruler" title="Ruler">📏</button>
                         <button class="toolButton" selected="false" id="cameras" title="Create and position cameras">📷</button>
@@ -105,7 +106,13 @@
                     <input type="number" id="screensWide" name="screensWide" title="Enter the width of the level in screens" required><br><br>
                     <label for="screensWide">Height of the level in screens:</label>
                     <input type="number" id="screensTall" name="screensTall" title="Enter the height of the level in screens" required><br><br>
-                    <input type="submit" id="levelSizeSubmit" value="Change level size (will empty the entire level!)">
+                    <input type="submit" id="levelSizeSubmit" value="Change level size (will add to left and/or bottom)">
+                </form>
+                <br><hr style="width: 200px;"><br>
+                <form id="levelNameForm" action="" method="GET" onsubmit="return false">
+                    <label for="LevelName">Name of your level:</label>
+                    <input id="levelName" value="New Level" style="width: 100px;"><br><br>
+                    <input type="submit" id="levelNameSubmit" value="Change level name">
                 </form>
             </div>
         </div>

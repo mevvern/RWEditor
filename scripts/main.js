@@ -9,6 +9,9 @@ let playStartX = 12;						//play area starting coordinates
 let playStartY = 3;
 let playEndX = 60							//play area ending coordinates
 let playEndY = 38
+let screensWide = 1;
+let screensTall = 1;
+let levelName = 'New Level'
 
 //"visual" settings
 let customScreenWidth = 70;					//size of the main canvas in tiles (multiplied by baseTileSize to get the final )
@@ -23,9 +26,9 @@ let gridColor = 'rgb(200, 200, 200)';
 let playColor =	'rgb(255, 127, 127)';
 let selColor = 'gold';
 let levelBorderColor = 'rgb(127, 127, 255';
-let layer1Color = 'black';
-let layer2Color = 'rgb(200, 255, 200)';
-let layer3Color = 'rgb(255, 200, 200)';
+let layer1Color = 'rgba(0, 0, 0, 1)';
+let layer2Color = 'rgba(200, 255, 200, 0.7)';
+let layer3Color = 'pink';
 let previewColor = 'rgba(200, 200, 200, 0.5)';
 let deleteColor = 'rgba(255, 200, 200, 0.5)';
 let boxFillColor = 'red';
@@ -42,10 +45,15 @@ let doingMouseThing = false;
 
 //selection
 let selBox = false;							//whether or not to show the selection box
+let drawSel = false;
+let startTileX = 0;
+let startTileY = 0;
 let selStartX = 0;							//selection starting coords
 let selStartY = 0;
 let selEndX = 0;							//selection ending coords
 let selEndY = 0;
+let mouseOffsetX = 0;
+let mouseOffsetY = 0;
 
 //DOM elements
 const screen = document.getElementById('editorCanvas');							//the canvas element which forms the main display
@@ -58,6 +66,11 @@ const layerVisIndicators = document.querySelectorAll('.layerVisIndicator');		//l
 const selectedLayerIndicator = document.getElementById('layerSelection');		//work layer indicator element
 const editorSettings = document.querySelectorAll('.editorSettings');			//editor settings buttons
 const levelSizeForm = document.getElementById('levelSizeForm');					//level size form
+const widthField = document.getElementById('screensWide');
+const heightField = document.getElementById('screensTall');
+const levelNameForm = document.getElementById('levelNameForm');
+const levelNameField = document.getElementById('levelName');
+const pageTitle = document.querySelector('title');
 
 //arrays & canvases
 const mainCtx = screen.getContext('2d');							//canvas rendering context for the main display
@@ -65,6 +78,7 @@ const atlasCanvas = new OffscreenCanvas(29 * tileCount * 2, 29);	//offScreenCanv
 let levelArray;														//array that stores all the data of the level. each array contained within this one is one layer of the level data
 let visArray = new Array(layerCount).fill(1);						//array that stores the layer visibility choice for each layer
 let selArray;														//array that stores the current selection. structured similar to the levels array but without layers, and only as many components as the source selection
+let clipBoard;
 const atlasCtx = atlasCanvas.getContext('2d');						//canvas rendering context for the atlas's canvas
 
 //mouse vars
@@ -72,15 +86,17 @@ let mouseTileX = 0;					//stores the x value of the current grid cell that the m
 let mouseTileY = 0;					//same but for the y value
 let prevMouseX = 0;					//stores the previous tileX that the mouse was over
 let prevMouseY = 0;					//same but for y
+let isMouseDown = false;
+let mouseInsideSel = false;
 let mouseTileChanged = false;		//true if the mouse tile changed since the last mousemove event, false if it didn't change
 let mouseXInsideLevel = false;
 let mouseYInsideLevel = false;
 
 
 function initMainCanvas() {								//sets the size of the main canvas based on some vars
-	screen.width = customScreenWidth * baseTileSize;
-	screen.height = customScreenHeight * baseTileSize;
-};
+	screen.width = 1400 //customScreenWidth * baseTileSize;
+	screen.height = 800 //customScreenHeight * baseTileSize;
+}
 
 function initLevelArray() {					//structure: [root: [layer 1: [0 poles], [1 base geo], [2 items], [3 tunnels]], [layer 2: [0 poles], [1 base geo]], [layer 3: [0 poles], [1 base geo]]
 	function createLayerComponents(layer, compCount) {
@@ -88,18 +104,18 @@ function initLevelArray() {					//structure: [root: [layer 1: [0 poles], [1 base
 			levelArray[layer].push(new Array());
 			for (let j = 0; j < tilesPerRow; j++) {
 				levelArray[layer][i].push(new Array(tilesPerColumn).fill(0));
-			};
-		};
-	};
+			}
+		}
+	}
 	
 	levelArray = new Array();
 	for (let i = 0; i < layerCount; i++) {		//layer components are structured like [[col1]...[col999]]
 		levelArray.push(new Array());
-	};
+	}
 	createLayerComponents(0, 4);
 	createLayerComponents(1, 2);
 	createLayerComponents(2, 2);
-};
+}
 
 function initAtlas() {							//initializes the atlas with the tileset in 'resources/tiles.png'
 	const atlasSrc = new Image();
@@ -108,13 +124,13 @@ function initAtlas() {							//initializes the atlas with the tileset in 'resour
 		atlasCtx.drawImage(atlasSrc, 0, 0);
 		drawVisLevel();
 		console.log('initialized atlas!');
-	};
-};
+	}
+}
 
 function drawFromAtlas(atlasIndex, x, y) {		//copies a specified tile from the atlas to a specified location on the display
 	const atlasX = atlasIndex * 29;
 	mainCtx.drawImage(atlasCanvas, atlasX, 0, 29, 29, x, y, tileSize, tileSize);
-};
+}
 
 function getGridPos(event) {					//gets the position of the mouse and updates a bunch of related vars
 	let prevX = mouseTileX;
@@ -123,12 +139,13 @@ function getGridPos(event) {					//gets the position of the mouse and updates a 
 	let tileY = Math.floor((event.offsetY - panY) / tileSize);
 	mouseXInsideLevel = ((tileX >= 0) && (tileX < tilesPerRow));
 	mouseYInsideLevel = ((tileY >= 0) && (tileY < tilesPerColumn));
+	mouseInsideSel = (tileX >= selStartX) && (tileX < selEndX) && (tileY >= selStartY) && (tileY < selEndY)
 	if (mouseXInsideLevel) {
 		mouseTileX = tileX;
-	};
+	}
 	if (mouseYInsideLevel) {
 		mouseTileY = tileY;
-	};
+	}
 	if ((prevX === mouseTileX) && (prevY === mouseTileY)) {
 		mouseTileChanged = false;
 	}
@@ -136,8 +153,57 @@ function getGridPos(event) {					//gets the position of the mouse and updates a 
 		mouseTileChanged = true;
 		prevMouseX = prevX;
 		prevMouseY = prevY;
-	};
-};
+	}
+}
+
+function chooseCursor() {
+	let cursor;
+	switch (toolChoice) {
+		case 0:
+			if (mouseXInsideLevel && mouseYInsideLevel) {
+				cursor = 'url("resources/pencilCursor.png"), crosshair';
+			} else {
+				cursor = 'default';
+			}
+		break
+		case 1:
+			if (mouseXInsideLevel && mouseYInsideLevel) {
+				cursor = 'crosshair';
+			} else {
+				cursor = 'default';
+			}
+		break
+		case 3:
+			if ((mouseTileX === playStartX && mouseTileY === playStartY) || ((mouseTileX + 1) === playEndX && (mouseTileY + 1) === playEndY)) {
+				cursor = 'nwse-resize';
+			}
+		break
+		case 4:
+			if (isMouseDown || ! mouseInsideSel) {
+				cursor = 'crosshair';
+			} else {
+				cursor = 'move';
+			}
+		break
+		case 5:
+			//camera cursors
+		break
+		case 6:
+			cursor = 'crosshair';
+		break
+		case 7:
+			cursor = 'crosshair';
+		break
+		case 8:
+			if (mouseXInsideLevel && mouseYInsideLevel) {
+				cursor = 'url("resources/erasorCursor.png"), crosshair';
+			} else {
+				cursor = 'default';
+			}
+		break
+	}
+	screen.setAttribute('style', `cursor: ${cursor}`);
+}
 
 function drawLine(x1, y1, x2, y2, color, width) {
 	mainCtx.lineWidth = width;
@@ -146,44 +212,178 @@ function drawLine(x1, y1, x2, y2, color, width) {
 	mainCtx.moveTo(x1, y1);
 	mainCtx.lineTo(x2, y2);
 	mainCtx.stroke();
-};
+}
 
 function drawRect(color, x, y, w, h) {			//draws a rectangle of width w and height h, or a square if h is not provided
 	if (h === undefined) {
 		h = w;
-	};
+	}
 	mainCtx.fillStyle = color;
 	mainCtx.fillRect(x, y, w , h);
-};
+}
 
 function clearScreen() {						//clears the screen
 	drawRect(backgroundColor, 0, 0, screen.width, screen.height);
-};
+}
 
 function handleLevelsizeChange(event) {
+    event.preventDefault();
+    const width = parseInt(widthField.value);
+    const height = parseInt(heightField.value);
+    const levelArea = width * height;
+    switch (levelArea <= 12 && levelArea > 0) {
+        case true:
+            screensWide = width;
+			screensTall = height;
+			let prevTilesPerRow = tilesPerRow;
+			let prevTilesPerColumn = tilesPerColumn;
+			tilesPerRow = (width * 72) - ((width - 1) * 5);
+            tilesPerColumn = (height * 43) - ((height - 1) * 3);
+			let widthDif = tilesPerRow - prevTilesPerRow;
+			let heightDif = tilesPerColumn - prevTilesPerColumn;
+				if (widthDif < 0) {
+					console.log(`removing ${widthDif} tiles from the width`);
+					levelArray.forEach((layer) => {
+						layer.forEach((layerComponent) => {
+							for (i = 0; i < Math.abs(widthDif); i++) {
+								layerComponent.pop();
+							}
+						})
+					})
+				} else if (widthDif > 0) {
+					console.log(`adding ${widthDif} tiles to the width`);
+					levelArray.forEach((layer) => {
+						layer.forEach((layerComponent) => {
+							for (i = 0; i < Math.abs(widthDif); i++) {
+								layerComponent.push(new Array(tilesPerColumn).fill(0));
+							}
+						})
+					})
+				}
+				if (heightDif < 0) {
+					console.log(`removing ${heightDif} tiles from the height`);
+					levelArray.forEach((layer) => {
+						layer.forEach((layerComponent) => {
+							layerComponent.forEach((column) => {
+								for (i = 0; i < Math.abs(heightDif); i++) {
+									column.pop();
+								}
+							})
+						})
+					})
+				} else if (heightDif > 0) {
+					console.log(`adding ${heightDif} tiles to the height`);
+					levelArray.forEach((layer) => {
+						layer.forEach((layerComponent) => {
+							layerComponent.forEach((column) => {
+								for (i = 0; i < Math.abs(heightDif); i++) {
+									column.push(0);
+								}
+							})
+						})
+					})
+				}
+            drawVisLevel();
+        break 
+        case false:
+            switch (levelArea <= 0) {
+                case true:
+                    alert('Level size can\'t be zero or negative!!!!!!!');
+                break
+                case false:
+                    alert('Level size too big!\nthe total number of screens must be 12 or lower');
+                break
+            }
+        break
+    }
+}
+
+function handleNameChange(event) {
 	event.preventDefault();
-	const width = parseInt(document.getElementById('screensWide').value);
-	const height = parseInt(document.getElementById('screensTall').value);
-	const levelArea = width * height;
-	switch (levelArea <= 12 && levelArea > 0) {
-		case true:
-			tilesPerRow = width * 72;
-			tilesPerColumn = height * 43;
-			initLevelArray();
-			drawVisLevel();
-		break 
-		case false:
-			switch (levelArea <= 0) {
-				case true:
-					alert('Level size can\'t be zero or negative!!!!!!!');
-				break
-				case false:
-					alert('Level size too big!\nthe total number of screens must be 12 or lower');
-				break
-			};
+	levelName = levelNameField.value;
+	pageTitle.innerText = levelName;
+}
+
+function changeTool(tool) {
+	selBox = false;
+	let toolName
+	switch (tool) {
+		case 'paint':
+			toolChoice = 0;
+			toolName = 'Paint';
+			previewChoice = true;
 		break
-	};
-};
+		case 'eraser':
+			toolChoice = 8;
+			toolName = 'Erase'
+			previewChoice = true
+		break
+		case 'boxFill':
+			toolChoice = 1;
+			toolName = 'Box fill';
+			previewChoice = true;
+		break
+		case 'playEdit':
+			toolChoice = 3;
+			toolName = 'play area editor';
+			previewChoice = true;
+		break
+		case 'boxSelect':
+			toolChoice = 4;
+			toolName = 'box select';
+			previewChoice = false;
+			selBox = true;
+		break
+		case 'cameras':
+			toolChoice = 5;
+			toolName = 'CAmera editor';
+			previewChoice = false;
+		break
+		case 'ruler':
+			toolChoice = 6;
+			toolName = 'ruler'
+			previewChoice = false;
+		break
+		case 'eraseAll':
+			toolChoice = 7;
+			toolName = 'box erase';
+			previewChoice = false;
+		break
+	}
+	toolIndicator.innerText = toolName;
+	toolButtons.forEach(button => {
+		button.setAttribute('selected', 'false');
+		if (button.id === tool) {
+			button.setAttribute('selected', 'true')
+		}
+	});
+	drawVisLevel();
+}
+
+function moveSel(event) {
+	event.preventDefault();
+	selStartX = mouseTileX - mouseOffsetX;
+	selStartY = mouseTileY - mouseOffsetY;
+	selEndX = selStartX + selArray[0].length;
+	selEndY = selStartY + selArray[0][0].length;
+	if (selStartX <= 0) {
+		selStartX = 0;
+		selEndX = selArray[0].length;
+	}
+	if (selStartY <= 0) {
+		selStartY = 0;
+		selEndY = selArray[0][0].length;
+	}
+	if (selEndX >= tilesPerRow) {
+		selStartX = tilesPerRow - selArray[0].length;
+		selEndX = tilesPerRow;
+	}
+	if (selEndY >= tilesPerColumn) {
+		selStartY = tilesPerColumn - selArray[0][0].length;
+		selEndY = tilesPerColumn;
+	}
+	drawVisLevel();
+}
 
 function drawSelBox() {
 	if (selBox) {
@@ -200,7 +400,7 @@ function drawSelBox() {
 				color = boxDeleteColor;
 				width = 5;
 			break
-		};
+		}
 		mainCtx.strokeStyle = color;
 		mainCtx.lineWidth = width;
 		mainCtx.strokeRect((selStartX * tileSize) + panX - 0.5, (selStartY * tileSize) + panY - 0.5, (selEndX - selStartX) * tileSize, (selEndY - selStartY) * tileSize);
@@ -211,13 +411,13 @@ function drawLevelOutline() {
 	mainCtx.strokeStyle = levelBorderColor;
 	mainCtx.lineWidth = 2;
 	mainCtx.strokeRect(panX, panY, tileSize * tilesPerRow, tileSize * tilesPerColumn);
-};
+}
 
 function drawPlayAreaOutline() {
 	mainCtx.strokeStyle = playColor;
 	mainCtx.lineWidth = 4;
 	mainCtx.strokeRect((playStartX * tileSize) + panX, (playStartY * tileSize) + panY, (playEndX - playStartX) * tileSize, (playEndY - playStartY) * tileSize);
-};
+}
 
 function drawGrid() {
 	if (showGrid) {
@@ -228,9 +428,9 @@ function drawGrid() {
 		for (let i = 1; i < tilesPerColumn; i++) {
 		const ts = i * tileSize;
 		drawLine(panX, ts + panY - 0.5, (tileSize * tilesPerRow) + panX, ts + panY - 0.5, gridColor, 1);
-		};
-	};
-};
+		}
+	}
+}
 
 function drawTri(x, y, s, color, facing) {				//draws a right triangle with both legs being length s 
 	mainCtx.beginPath();									 //facing can be ul, dl, ur, dr, ct, cl, cb, cr (up-left, down-left, up-right, down-right, center-top, center-left, center-bottom, center-right)
@@ -275,11 +475,11 @@ function drawTri(x, y, s, color, facing) {				//draws a right triangle with both
 			mainCtx.lineTo(x + (0.4 * s), y + (s / 3))
 			mainCtx.lineTo(x + (0.4 * s), y + ((s / 3) * 2))
 		break
-	};
+	}
 	mainCtx.closePath();
 	mainCtx.fillStyle = color;
 	mainCtx.fill();
-};
+}
 
 function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the chosen location. mode can be 0 for array draw mode or 1 for preview draw mode. 
 	let atlasMod;										//additional modes are for coloring layers differently from each other 
@@ -302,49 +502,46 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 		case undefined:									//preview draw mode
 			color = previewColor;
 			atlasMod = tileCount;
-	};
+	}
 	switch (value) {
-		case 0:
+		case 0:											//draw nothing for air
 		break
 		case 1:
-			drawRect(color, x, y, tileSize);
+			drawRect(color, x, y, tileSize);			//wall
 		break
 		case 2:
-			drawTri(x, y, tileSize, color, 'dl');
+			drawTri(x, y, tileSize, color, 'dl');		//down-left slope
 		break
 		case 3:
-			drawTri(x, y, tileSize, color, 'ul');
+			drawTri(x, y, tileSize, color, 'ul');		//up-left slope
 		break
 		case 4: 
-			drawTri(x, y, tileSize, color, 'ur');
+			drawTri(x, y, tileSize, color, 'ur');		//up-right slope
 		break
 		case 5:
-			drawTri(x, y, tileSize, color, 'dr');
+			drawTri(x, y, tileSize, color, 'dr');		//down-right slope
 		break
 		case 6:
-			drawFromAtlas(9 + atlasMod, x, y);
+			drawFromAtlas(9 + atlasMod, x, y);			//cool scug yea
 		break
 		case 7:
-			drawRect(color, x, y + tileSize / 2 - tileSize / 10, tileSize, tileSize / 5);
+			drawRect(color, x, y + tileSize / 2 - tileSize / 10, tileSize, tileSize / 5);			//vertical pole
 		break
 		case 8:
-			drawRect(color, x + tileSize / 2 - tileSize / 10, y, tileSize / 5, tileSize);
+			drawRect(color, x + tileSize / 2 - tileSize / 10, y, tileSize / 5, tileSize);			//horizontal pole
 		break
 		case 9:
-			drawRect(color, x, y + tileSize / 2 - tileSize / 10, tileSize, tileSize / 5);
+			drawRect(color, x, y + tileSize / 2 - tileSize / 10, tileSize, tileSize / 5);			//cross pole
 			drawRect(color, x + tileSize / 2 - tileSize / 10, y, tileSize / 5, tileSize);
 		break
 		case 10:
-			drawRect(color, x, y, tileSize, tileSize / 3);
+			drawRect(color, x, y, tileSize, tileSize / 3);				//semisolid platform
 		break
 		case 11:
-			drawRect(backgroundColor, x, y, tileSize);
+			drawRect(backgroundColor, x, y, tileSize);					//special case for the eraser tool preview
 		break
 		case 12:
-			drawFromAtlas(6, x, y);
-		break
-		case 13: 
-			drawFromAtlas(3 + atlasMod, x, y); 
+			drawRect('gray', x + tileSize * (3 / 8), y + tileSize * (3 / 8), tileSize / 4);				//shortcut path
 		break
 		case 14:
 			drawFromAtlas(5 + atlasMod, x, y);
@@ -374,7 +571,7 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			drawRect(deleteColor, x, y, tileSize)
 		break
 		case 23:
-			drawTri(x, y, tileSize, 'gray', 'cr');
+			drawTri(x, y, tileSize, 'gray', 'cr');		//
 		break
 		case 24:
 			drawTri(x, y, tileSize, 'gray', 'cl');
@@ -390,23 +587,41 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 		break
 		case 28:
 			drawFromAtlas(12 + atlasMod, x, y);
-	};
-};
+		break
+		case 29:
+			drawRect('rgba(200, 200, 255, 0.5)', x, y, tileSize);
+		break
+	}
+}
+
+function drawSelection() {
+	if (drawSel === true) {
+		selArray.forEach((layerComponent) => {
+			layerComponent.forEach((column, x) => {
+					column.forEach((value, y) => {
+						drawValue(value, x + selStartX, y + selStartY);
+					})
+			});
+		});
+		mainCtx.strokeStyle = selColor
+		mainCtx.lineWidth = 2
+		mainCtx.strokeRect(panX + selStartX * tileSize, panY + selStartY * tileSize, selArray[0].length * tileSize, selArray[0][0].length * tileSize)
+	}
+}
 
 function drawVisValues(x, y) {					//draws all visible values at one tile 
 	drawValue(11, x, y);
-	for (let layer = layerCount - 1; layer >= 0; layer--) {
-		if (visArray[layer] === 1) {
-			levelArray[layer].forEach((layerComponent) => {
-				drawValue(layerComponent[x][y], x, y, layer);
+	for (let i = layerCount - 1; i >= 0; i--) {
+		if (visArray[i] === 1) {
+			levelArray[i].forEach((layerComponent) => {
+				drawValue(layerComponent[x][y], x, y, i);
 			});
-		};
-	};
+		}
+	}
 	drawGrid();
 	drawLevelOutline();
 	drawPlayAreaOutline();
-	drawSelBox();
-};
+}
 
 function drawLayerValues(layer) {				//draws the supplied layer
 	levelArray[layer].forEach((layerComponent) => {
@@ -416,7 +631,7 @@ function drawLayerValues(layer) {				//draws the supplied layer
 				})
 		});
 	});
-};
+}
 
 function drawVisLevel() {						//draws only the layers which are set to visible
 	clearScreen();
@@ -424,28 +639,37 @@ function drawVisLevel() {						//draws only the layers which are set to visible
 		if (visArray[i] === 1) {
 			drawLayerValues(i);
 		}
-	};
+		if (i === layerChoice && visArray[layerChoice] === 1) {
+			drawSelection();
+		}
+	}
 	drawGrid();
 	drawLevelOutline();
 	drawPlayAreaOutline();
 	drawSelBox();
-};
+}
 
-function addValue(x, y, tileChoice) {
-	let poleValueUnderTile = levelArray[layerChoice][0][x][y];
-	let poleIsDifferent = ((poleValueUnderTile === 7 && tileChoice === 8) || (poleValueUnderTile === 8 && tileChoice === 7));
-	let willCrossPoleBeReplaced = (poleValueUnderTile === 9) && ((tileChoice === 7) || (tileChoice === 8));
-	switch (tileChoice) {
+function addValue(x, y, tileType, autoChoice) {			//autoChoice is true if using the layer component of the global tileChoice or false if using the component of the block-scoped tileType
+	let tile;
+	switch (autoChoice) {
+		case true:
+			tile = tileChoice;
+		break
+		case false:
+			tile = tileType;
+	}
+	switch (tile) {
 		case 1:		//wall
 		case 2:		//slope
 		case 3:		//slope
 		case 4:		//slope
 		case 5:		//slope
 		case 10:	//semisolid platform
+		case 18:	//batfly hive
+		case 29:
 			layerComponentChoice = 1;
 		break
 		case 6:		//cool slugcat
-		case 18:	//batfly hive
 		case 19:	//waterfall
 		case 20:	//worm grass
 		case 27:	//spear
@@ -469,60 +693,58 @@ function addValue(x, y, tileChoice) {
 	}
 	if (mouseXInsideLevel && mouseYInsideLevel) {
 		if (visArray[layerChoice] === 1) {
-			switch(poleIsDifferent) {
-				case true:
-					levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, 9);
+			switch(tileType) {
+				default:
+					levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, tileType);
 				break
-				case false:
-					switch(willCrossPoleBeReplaced) {
-						case false:
-							switch(tileChoice) {
-							default:
-								levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, tileChoice);
-							break
-							case 13:
-								const adjArray = [levelArray[0][3][x][y - 1], levelArray[0][3][x][y + 1], levelArray[0][3][x - 1][y], levelArray[0][3][x + 1][y]];
-								let totalAdj = 0;
-								let entranceDir;
-								adjArray.forEach((value) => {
-									if (value === undefined) {
-										value = 0
-									}
-									if (value != 0) {
-										totalAdj++
-									}
-								});
-								console.log(totalAdj)
-								if ((totalAdj === 1) && (levelArray[0][3][x][y] === 0)) {
-									adjArray.forEach((value, index) => {
-										if (value != 0) {
-											switch (index) {
-												case 0:
-													entranceDir = 25;
-												break
-												case 1:
-													entranceDir = 26;
-												break
-												case 2:
-													entranceDir = 24;
-												break
-												case 3:
-													entranceDir = 23;
-												break
-											};
-										}
-										else {}
-									});
-									console.log('aweh9utghaeruhgy9iuoer')
-									levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, entranceDir); 
+				case 7:
+				case 8:
+				case 9:
+					let curTile = levelArray[layerChoice][0][x][y];
+					if (curTile != 8 && curTile != 7 && curTile != 9) {
+						levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, tileType);
+					} else if ((curTile === 7 && tileType === 8) || (curTile === 8 && tileType === 7)) {
+						levelArray[layerChoice][0][x].splice(y, 1, 9);
+					}
+				break
+				case 13:
+					const adjArray = [levelArray[0][3][x][y - 1], levelArray[0][3][x][y + 1], levelArray[0][3][x - 1][y], levelArray[0][3][x + 1][y]];
+					let totalAdj = 0;
+					let entranceDir;
+					adjArray.forEach((value) => {
+						if (value === undefined) {
+							value = 0;
+						}
+						if (value === 12 || value === 14 || value === 15 || value === 16 || value === 21) {
+							totalAdj++;
+						}
+					});
+					if ((totalAdj === 1) && (levelArray[0][3][x][y] === 0)) {
+						adjArray.forEach((value, index) => {
+							if (value != 0) {
+								switch (index) {
+									case 0:
+										entranceDir = 25;
+									break
+									case 1:
+										entranceDir = 26;
+									break
+									case 2:
+										entranceDir = 24;
+									break
+									case 3:
+										entranceDir = 23;
+									break
 								}
 							}
-					};
-			};
+						});
+						console.log('aweh9utghaeruhgy9iuoer')
+						levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, entranceDir); 
+					}
+				}			
 		}
-		
 	}
-};
+}
 
 function playEndEdit() {
 	if (mouseTileChanged) {
@@ -542,7 +764,7 @@ function playEndEdit() {
 		}
 	}
 	drawVisLevel()
-};
+}
 
 function playStartEdit() {
 	if (mouseTileChanged) {
@@ -564,68 +786,66 @@ function playStartEdit() {
 	drawVisLevel()
 }
 
-function ruler() {
+function rulerFn() {
 	if (mouseTileChanged) {
 		drawVisLevel()
 		selEndX = mouseTileX;
 		selEndY = mouseTileY;
-		if (selEndX > selStartX) {
+		if (selEndX > startTileX) {
 			selEndX++;
-		};
-		if (selEndY > selStartY) {
+		}
+		if (selEndY > startTileY) {
 			selEndY++;
-		};
-		drawLine(selStartX * tileSize + panX, selStartY * tileSize + panY, selEndX * tileSize + panX, selEndY * tileSize + panY, 'brown', 8)
-		let length = Math.round(Math.sqrt((selEndY - selStartY) ** 2 + (selEndX - selStartX) ** 2) * 10) / 10
+		}
+		drawLine(startTileX * tileSize + panX, startTileY * tileSize + panY, selEndX * tileSize + panX, selEndY * tileSize + panY, 'brown', 8)
+		let length = Math.round(Math.sqrt((selEndY - startTileY) ** 2 + (selEndX - startTileX) ** 2) * 10) / 10
 		mainCtx.fillStyle = 'orange'
 		mainCtx.font = '30px rodondo'
 		mainCtx.fillText(length, (mouseTileX + 1.5) * tileSize + panX, (mouseTileY) * tileSize + panY)
-	};
-};
-
-function box() {
-	if (previewChoice) {
-		preview();
-	};
-	const selX = selStartX;
-	const selY = selStartY;
-	selEndX = mouseTileX;
-	selEndY = mouseTileY;
-	if (selEndX <= selStartX) {
-		selStartX++;
-	};
-	if (selEndY <= selStartY) {
-		selStartY++;
-	};
-	if (selEndX > selStartX) {
-		selEndX++;
-	};
-	if (selEndY > selStartY) {
-		selEndY++;
-	};
-	drawVisLevel();
-	selStartX = selX;
-	selStartY = selY;
+	}
 }
 
-function paint() {
-	addValue(mouseTileX, mouseTileY, tileChoice)
+function boxFn() {
 	if (mouseTileChanged) {
-			addValue(mouseTileX, mouseTileY, tileChoice);
-	};
-	drawVisValues(mouseTileX, mouseTileY);
-};
+		preview();
+		if (mouseTileX > startTileX) {
+			selStartX = startTileX;
+			selEndX = mouseTileX;
+		}
+		if (mouseTileX < startTileX) {
+			selStartX = mouseTileX;
+			selEndX = startTileX + 1;
+		}
+		if (mouseTileY > startTileY) {
+			selStartY = startTileY;
+			selEndY = mouseTileY;
+		}
+		if (mouseTileY < startTileY) {
+			selStartY = mouseTileY;
+			selEndY = startTileY + 1;
+		}
+		drawVisLevel();
+	}
+}
 
-function erase() {
-	const prevTileChoice = tileChoice;
-	addValue(mouseTileX, mouseTileY, 0)
+function paintFn() {
+	addValue(mouseTileX, mouseTileY, tileChoice, true)
 	if (mouseTileChanged) {
-			addValue(mouseTileX, mouseTileY, 0);
-	};
+			addValue(mouseTileX, mouseTileY, tileChoice, true);
+	}
+	drawVisValues(mouseTileX, mouseTileY);
+}
+
+function eraseFn() {
+	addValue(mouseTileX, mouseTileY, 0, true)
+	if (mouseTileChanged) {
+			addValue(mouseTileX, mouseTileY, 0, true);
+	}
 	drawVisValues(mouseTileX, mouseTileY);
 }
 
 function pan(event) {
+	screen.setAttribute('style', `cursor: all-scroll`);
 	panX += event.movementX;
 	panY += event.movementY;
 	clearScreen();
@@ -654,7 +874,7 @@ function preview() {
 							if (value === undefined) {
 								value = 0
 							}
-							if (value != 0) {
+							if (value === 12 || value === 14 || value === 15 || value === 16 || value === 21) {
 								totalAdj++
 							}
 						});
@@ -674,7 +894,7 @@ function preview() {
 										case 3:
 											entranceDir = 23;
 										break
-									};
+									}
 									drawValue(entranceDir, x, y)
 								}
 							}); 
@@ -695,6 +915,10 @@ initAtlas();
 
 drawVisLevel();
 
+levelSizeForm.addEventListener('submit', handleLevelsizeChange);
+
+levelNameForm.addEventListener('submit', handleNameChange);
+
 layerSelButtons.forEach(button => {					//get the work layer choice any time a cork layer button is pressed
 	button.addEventListener('click', () => {
 		switch(button.id) {
@@ -706,7 +930,7 @@ layerSelButtons.forEach(button => {					//get the work layer choice any time a c
 			break
 			case 'layer3':
 				layerChoice = 2;
-		};
+		}
 		drawVisLevel();
 		layerSelButtons.forEach(button => {
 			button.setAttribute('selected', 'false');
@@ -744,7 +968,7 @@ layerVisIndicators.forEach(button => {
 						visArray.splice(1, 1, 0);
 						button.setAttribute('selected', 'false');
 						console.log('turned layer 2 off');
-				};
+				}
 			break
 			case 'layer3':
 				switch(visArray[2]) {
@@ -757,8 +981,8 @@ layerVisIndicators.forEach(button => {
 						visArray.splice(2, 1, 0);
 						button.setAttribute('selected', 'false');
 						console.log('turned layer 3 off');
-				};
-		};
+				}
+		}
 		drawVisLevel();
 	});
 });
@@ -792,7 +1016,7 @@ tileButtons.forEach(button => {						 //get the tile choice any time a tile butt
 						tileChoice++;
 						tileName = 'bottom right slope';
 					break
-				};
+				}
 			break
 			case 'batFly':
 				tileChoice = 6;
@@ -865,7 +1089,10 @@ tileButtons.forEach(button => {						 //get the tile choice any time a tile butt
 				tileChoice = 28;
 				tileName = 'rock spawn loaction'
 			break
-		};
+			case 'invisWall':
+				tileChoice = 29;
+				tileName = 'invisible wall'
+		}
 		tileIndicator.innerText = tileName;
 		tileButtons.forEach(button => {
 			button.setAttribute('selected', 'false');
@@ -896,72 +1123,25 @@ editorSettings.forEach(button => {						//event listener for the editor settings
 						showGrid = false;
 						button.innerText = 'show grid';
 						console.log('turned grid off');
-				};
+				}
 		
-			};
+			}
 		drawVisLevel();
 	});
 });
 
 toolButtons.forEach(button => {
 	button.addEventListener('click', () => {
-		selBox = false;
-		let toolName
-		switch (button.id) {
-			case 'paint':
-				toolChoice = 0;
-				toolName = 'Paint';
-				previewChoice = true;
-			break
-			case 'eraser':
-				toolChoice = 8;
-				toolName = 'Erase'
-				previewChoice = true
-			break
-			case 'boxFill':
-				toolChoice = 1;
-				toolName = 'Box fill';
-				previewChoice = true;
-			break
-			case 'playEdit':
-				toolChoice = 3;
-				toolName = 'play area editor';
-				previewChoice = true;
-			break
-			case 'boxSelect':
-				toolChoice = 4;
-				toolName = 'box select';
-				previewChoice = false;
-				selBox = true;
-			break
-			case 'cameras':
-				toolChoice = 5;
-				toolName = 'CAmera editor';
-				previewChoice = false;
-			break
-			case 'ruler':
-				toolChoice = 6;
-				toolName = 'ruler'
-				previewChoice = false;
-			break
-			case 'eraseAll':
-				toolChoice = 7;
-				toolName = 'box erase';
-				previewChoice = false;
-			break
-		};
-		toolIndicator.innerText = toolName;
-		toolButtons.forEach(button => {
-			button.setAttribute('selected', 'false');
-		})
-		button.setAttribute('selected', 'true');
-		drawVisLevel();
+		changeTool(button.id);
 	});
 });
 
 screen.addEventListener('mousemove', getGridPos);   //calculates a bunch of values based on current mouse position to use elsewhere
 
-screen.addEventListener('mousemove', preview)		//draws the preview
+screen.addEventListener('mousemove', () => {		//draws the preview and updates the cursor type
+	preview();
+	chooseCursor();
+});
 
 screen.addEventListener('mouseleave', () => {		//draws the last mouse tile if the mouse leaves the canvas element
 	if (previewChoice) {
@@ -972,25 +1152,56 @@ screen.addEventListener('mouseleave', () => {		//draws the last mouse tile if th
 screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event listener when the user clicks on the main canvas for the specified mouse button
 	event.preventDefault();
 	doingMouseThing = true;
+	isMouseDown = true;
+	switch (toolChoice) {
+		case 1:
+		case 4:
+		case 7:
+		case 6:
+			startTileX = mouseTileX;
+			startTileY = mouseTileY;
+		break
+	}
 	switch (event.button) {
 		case 0:
 			switch (toolChoice) {
 				case 0:
-					paint();
-					screen.addEventListener('mousemove', paint);
+					paintFn();
+					screen.addEventListener('mousemove', paintFn);
 				break
 				case 8:
-					erase();
-					screen.addEventListener('mousemove', erase);
+					eraseFn();
+					screen.addEventListener('mousemove', eraseFn);
+				break
+				case 4:
+					if (visArray[layerChoice] === 1) {
+						if (drawSel && !mouseInsideSel) {
+							placeSelection();
+							selStartX = 0;
+							selStartY = 0;
+							selEndX = 0;
+							selEndY = 0;
+							selArray = 'fucked up isnt it';
+							drawSel = false;
+						}
+					}
+					if (drawSel) {
+						if (mouseInsideSel) {
+							mouseOffsetX = mouseTileX - selStartX;
+							mouseOffsetY = mouseTileY - selStartY;
+							screen.addEventListener('mousemove', moveSel);
+						}
+					} else {
+						drawSel = false;
+						selBox = true;
+						screen.addEventListener('mousemove', boxFn);
+					}
 				break
 				case 1:
-				case 4:
 				case 7:
-					selStartX = mouseTileX;
-					selStartY = mouseTileY;
 					selBox = true;
-					box();
-					screen.addEventListener('mousemove', box);
+					boxFn();
+					screen.addEventListener('mousemove', boxFn);
 				break
 				case 3:
 					if (mouseTileX === playStartX && mouseTileY === playStartY) {
@@ -1001,84 +1212,82 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 						if ((mouseTileX + 1) === playEndX && (mouseTileY + 1) === playEndY) {
 							console.log('shit');
 							screen.addEventListener('mousemove', playEndEdit);
-						};
-					};
+						}
+					}
 				break
 				case 6:
-					selStartX = mouseTileX;
-					selStartY = mouseTileY;
 					selBox = false;
-					ruler();
-					screen.addEventListener('mousemove', ruler);
-			};
+					rulerFn();
+					screen.addEventListener('mousemove', rulerFn);
+				break
+			}
 		break
 		case 1:
 			screen.addEventListener('mousemove', pan);
 		break
-	};
+	}
 });
 
 document.addEventListener('mouseup', (event) => {			//removes the mousemove event listener when the user is done doing the thing
+	isMouseDown = false;
 	if (doingMouseThing) {
 		doingMouseThing = false;
-		screen.removeEventListener('mousemove', paint);
-		screen.removeEventListener('mousemove', erase);
+		screen.removeEventListener('mousemove', paintFn);
+		screen.removeEventListener('mousemove', eraseFn);
 		screen.removeEventListener('mousemove', pan);
-		screen.removeEventListener('mousemove', box);
-		screen.removeEventListener('mousemove', ruler);
+		screen.removeEventListener('mousemove', boxFn);
+		screen.removeEventListener('mousemove', rulerFn);
 		screen.removeEventListener('mousemove', playEndEdit);
+		screen.removeEventListener('mousemove', moveSel);
 		screen.removeEventListener('mousemove', playStartEdit);
+		chooseCursor();
 		if (event.button === 0) {
-			if (selEndX <= selStartX) {
-				selStartX++;
-			};
-			if (selEndY <= selStartY) {
-				selStartY++;
-			};
 			switch (toolChoice) {
 				case 1:
 					if (visArray[layerChoice] === 1) {
-						for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
-							for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
-								addValue(x, y, tileChoice);
-							};
-						};
-					};
+						for (let x = selStartX; x < selEndX; x++) {
+							for (let y = selStartY; y < selEndY; y++) {
+								addValue(x, y, tileChoice, true);
+							}
+						}
+					}
 					selBox = false;
-					selStartX = undefined;
+					selStartX = 0;
 					selStartY = 0;
 					selEndX = 0;
 					selEndY = 0;
 				break
+				case 4:
+					console.log(startTileX, selEndX);
+					if (!drawSel && selEndX + selEndY > 0) {
+						addToSelArray();
+						drawSel = true;
+					}
+				break
 				case 7:
 					if (visArray[layerChoice] === 1) {
 						levelArray[layerChoice].forEach(layerComponent => {
-							for (let x = Math.min(selStartX, selEndX); x < Math.max(selStartX, selEndX); x++) {
-								for (let y = Math.min(selStartY, selEndY); y < Math.max(selStartY, selEndY); y++) {
+							for (let x = selStartX; x < selEndX; x++) {
+								for (let y = selStartY; y < selEndY; y++) {
 									layerComponent[x].splice(y, 1, 0);
-								};
-							};
+								}
+							}
 						});
-					};
+					}
 					selBox = false;
 					selStartX = 0;
 					selStartY = 0;
 					selEndX = 0;
 					selEndY = 0;
 				break 
-				case 4:
-					if (visArray[layerChoice] === 1) {
-						selBox = true;
-					}
-				break
 				case 6:
 					selBox = false;
 					selStartX = 0;
 					selStartY = 0;
 					selEndX = 0;
 					selEndY = 0;
-			};
-		};
+			}
+		}
 		drawVisLevel();
-	};
+	}
 });

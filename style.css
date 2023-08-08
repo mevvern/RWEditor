@@ -34,8 +34,6 @@ body {
 canvas {
     outline: rgb(170, 0, 170) 4px solid;
     border-radius: 2px;
-    cursor: pointer;
-
 }
 
 .buttons {

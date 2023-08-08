@@ -17,10 +17,6 @@ function addToSelArray() {
 	console.log('added to selection array...')
 }
 
-function placeSelection() {
-	
-}
-
 function copy(event) {
 	event.preventDefault();
 	clipBoard = selArray;
@@ -62,6 +58,7 @@ function paste(event) {
 	selEndX = clipBoard[0].length;
 	selEndY = clipBoard[0][0].length;
 	drawSel = true;
+	selBox = true;
 	console.log('pasted the selection');
 	drawVisLevel();
 }

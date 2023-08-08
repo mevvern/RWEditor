@@ -46,6 +46,7 @@ let doingMouseThing = false;
 //selection
 let selBox = false;							//whether or not to show the selection box
 let drawSel = false;
+let airReplace = true;
 let startTileX = 0;
 let startTileY = 0;
 let selStartX = 0;							//selection starting coords
@@ -385,6 +386,41 @@ function moveSel(event) {
 	drawVisLevel();
 }
 
+function clearSelection() {
+	levelArray[layerChoice].forEach(layerComponent => {
+		for (let x = selStartX; x < selEndX; x++) {
+			for (let y = selStartY; y < selEndY; y++) {
+				layerComponent[x].splice(y, 1, 0);
+			}
+		}
+	});
+}
+
+function placeSelection() {
+	selArray.forEach((layerComponent, componentIndex) => {
+		layerComponent.forEach((column, x) => {
+			column.forEach((value, y) => {
+				if (layerChoice != 0) {
+					if (componentIndex > 1) {
+					} else {
+						if (airReplace) {
+							levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+						} else if (value != 0) {
+							levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+						}
+					}
+				} else {
+					if (airReplace) {
+						levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+					} else if (value != 0) {
+						levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+					}
+				}
+			})
+		})
+	})
+}
+
 function drawSelBox() {
 	if (selBox) {
 		switch (toolChoice) {
@@ -603,9 +639,6 @@ function drawSelection() {
 					})
 			});
 		});
-		mainCtx.strokeStyle = selColor
-		mainCtx.lineWidth = 2
-		mainCtx.strokeRect(panX + selStartX * tileSize, panY + selStartY * tileSize, selArray[0].length * tileSize, selArray[0][0].length * tileSize)
 	}
 }
 
@@ -810,15 +843,24 @@ function boxFn() {
 		preview();
 		if (mouseTileX > startTileX) {
 			selStartX = startTileX;
-			selEndX = mouseTileX;
+			selEndX = mouseTileX + 1;
+		}
+		if (mouseTileX === startTileX) {
+			selStartX = startTileX;
+			selEndX = startTileX + 1;
 		}
 		if (mouseTileX < startTileX) {
 			selStartX = mouseTileX;
 			selEndX = startTileX + 1;
 		}
+		
 		if (mouseTileY > startTileY) {
 			selStartY = startTileY;
-			selEndY = mouseTileY;
+			selEndY = mouseTileY + 1;
+		}
+		if (mouseTileY === startTileY) {
+			selStartY = startTileY;
+			selEndY = startTileY + 1;
 		}
 		if (mouseTileY < startTileY) {
 			selStartY = mouseTileY;
@@ -1124,7 +1166,15 @@ editorSettings.forEach(button => {						//event listener for the editor settings
 						button.innerText = 'show grid';
 						console.log('turned grid off');
 				}
-		
+			break
+			case 'airReplace':
+				if (airReplace) {
+					button.setAttribute('selected', false);
+					airReplace = false;
+				} else {
+					button.setAttribute('selected', true);
+					airReplace = true;
+				}
 			}
 		drawVisLevel();
 	});
@@ -1183,6 +1233,7 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 							selEndY = 0;
 							selArray = 'fucked up isnt it';
 							drawSel = false;
+							selBox = false;
 						}
 					}
 					if (drawSel) {
@@ -1261,6 +1312,7 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 					console.log(startTileX, selEndX);
 					if (!drawSel && selEndX + selEndY > 0) {
 						addToSelArray();
+						clearSelection();
 						drawSel = true;
 					}
 				break

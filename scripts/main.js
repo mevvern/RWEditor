@@ -29,7 +29,7 @@ let levelBorderColor = 'rgb(127, 127, 255';
 let layer1Color = 'rgba(0, 0, 0, 1)';
 let layer2Color = 'rgba(200, 255, 200, 0.7)';
 let layer3Color = 'pink';
-let previewColor = 'rgba(200, 200, 200, 0.5)';
+let previewColor = 'rgba(150, 150, 150, 0.5)';
 let deleteColor = 'rgba(255, 200, 200, 0.5)';
 let boxFillColor = 'red';
 let boxDeleteColor = 'red';
@@ -72,6 +72,7 @@ const heightField = document.getElementById('screensTall');
 const levelNameForm = document.getElementById('levelNameForm');
 const levelNameField = document.getElementById('levelName');
 const pageTitle = document.querySelector('title');
+const levelTxtSelect = document.getElementById('importLevel')
 
 //arrays & canvases
 const mainCtx = screen.getContext('2d');							//canvas rendering context for the main display
@@ -642,6 +643,25 @@ function drawSelection() {
 	}
 }
 
+function addToSelArray() {
+	w = selEndX - selStartX;
+	h = selEndY - selStartY;
+	layer = levelArray[layerChoice];
+	selArray = new Array();
+	for (let index = 0; index < layer.length; index++) {
+		selArray.push(new Array());
+		for (let i = 0; i < w; i++) {
+			selArray[index].splice(i, 1, new Array(h));
+		}
+		for (let x = selStartX; x < selEndX; x++) {
+			for (let y = selStartY; y < selEndY; y++) {
+				selArray[index][x - selStartX].splice(y - selStartY, 1, layer[index][x][y]);
+			}
+		}
+	}
+	console.log('added to selection array...')
+}
+
 function drawVisValues(x, y) {					//draws all visible values at one tile 
 	drawValue(11, x, y);
 	for (let i = layerCount - 1; i >= 0; i--) {
@@ -956,6 +976,16 @@ initLevelArray();
 initAtlas();
 
 drawVisLevel();
+
+levelTxtSelect.addEventListener('change', () => {
+	let ogLevelFile;
+	file = levelTxtSelect.files[0]
+	const reader = new FileReader();
+    reader.readAsText(file, "UTF-8");
+    reader.onload = function (event) {
+        ogLevelFile = event.target.result;
+	}
+})
 
 levelSizeForm.addEventListener('submit', handleLevelsizeChange);
 

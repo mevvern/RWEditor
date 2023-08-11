@@ -46,13 +46,24 @@ This selection determines which layer your edits will affect. You can only have 
 If a button is selected here, it means the layer is visible. if a layer is invisible you can't edit it
 
 ## Import a Level
-### currently does nothing
+### where to get the level files
+the basegame's project files can be found at the bottom of this page, to be downloaded alongside the original editor: https://store.steampowered.com/news/app/312520/view/3671033323706467799
+
+The project files for the game are located at *\Official Level Editor Downpour\LevelEditorProjects\World. currently,  my editor is limited to reading and editing geometry only.
+
+have fun and poke around in there!
+### Export a Level
+Level exporting is currently not implemented, but will be in the future
+### Disclaimer
+I currently cannot guarantee that my editor can open all project files without issue. if you need a functioning editor, use the official one I linked above
 
 ## Editor Settings
 ### Reset View
 Resets the view to the default, useful if you moved the view too far and dont know where the level is
 ### Hide Grid
 guess what this does lol
+### Auto Slope
+(currently does nothing despite what I've written here) toggles whether or not to automatically decide the facing of a placed slope based on surrounding tiles. if toggled off, slope can be changed with the space bar
 ### Replace Air
 Toggles whether or not to replace a level's tiles with a selection's air (air means a grid cell is empty)
 
@@ -66,11 +77,11 @@ idk what this does it just appeared here one day after i had a bad dream
 ### save 
 * ctrl-s
 
-to save a level you must rename from the default name. there is only one save slot currently
+to save a level to browser storage. There is only one save slot currently
 ### load
 * ctrl+L
 
-to load a level. this will permanently delete whatever you didn't save, so be careful!
+to load a level from browser storage. this will permanently delete whatever you didn't save, so be careful!
 ### copy
 * ctrl-c
 ### paste

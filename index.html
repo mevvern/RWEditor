@@ -3,9 +3,9 @@
     <head    
         <meta charset="utf-8">
         <title>New Level</title>
-        <link href="style.css?cachebuster1" rel="stylesheet">
-        <script src="scripts/main.js?cachebuster1" defer></script>
-        <script src="scripts/shortcuts.js?cachebuster1" defer></script>
+        <link href="style.css?v2" rel="stylesheet">
+        <script src="scripts/main.js?v2" defer></script>
+        <script src="scripts/shortcuts.js?v2" defer></script>
     </head>
     <body>
         <div class="editor">
@@ -38,6 +38,7 @@
                         <button class="tileButton" selected="false" id="garbageWorm" title="Garbage worm den"><img src="resources/garbageWormIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="waterfall" title="Waterfall"><img src="resources/waterfallIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="wormGrass" title="Worm grass"><img src="resources/wormGrassIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="fuckFlies" title="Forbid fly chains from forming wherever this is placed"><img src="resources/noFliesIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="spear" title="Spear spawn location"><img src="resources/spearIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="rock" title="Rock spawn location"><img src="resources/rockIcon.png" draggable="false"></button>
                     </div>
@@ -105,9 +106,10 @@
                     <p class="header">editor settings</p>
                 </div>
                 <div class="buttons">
-                    <button class="editorSettings" selected="false" id="resetView" title="Reset the editor's view" style="font-size: 1rem;">reset<br>view</button>
+                    <button class="editorSettings" id="resetView" selected="false" title="Reset the editor's view" style="font-size: 1rem;">reset<br>view</button>
                     <button class="editorSettings" id="showGrid" title="Hide the grid" style="font-size: 1rem;">hide<br>grid</button>
-                    <button class="editorSettings" selected="true" id="airReplace" title="if selected, will replace underlaying tiles with air that is in the selection" style="font-size: 1rem;">replace<br>air</button>
+                    <button class="editorSettings" id="autoSlope" selected="false" title="if selected, automatically place the right direction of slope" style="font-size: 1rem;">auto<br>slope</button>
+                    <button class="editorSettings" id="airReplace" selected="false" title="if selected, will replace underlaying tiles with air that is in the selection" style="font-size: 1rem;">replace<br>air</button>
                 </div>
             </div>
             <br><br><br>

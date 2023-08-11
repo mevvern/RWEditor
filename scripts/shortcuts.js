@@ -33,6 +33,9 @@ function del(event) {
 
 function paste(event) {
 	event.preventDefault();
+	if (drawSel) {
+		placeSelection();
+	}
 	selArray = clipBoard;
 	selStartX = 0;
 	selStartY = 0;
@@ -108,7 +111,44 @@ function zoom(event) {
 screen.addEventListener('wheel', zoom);
 
 document.addEventListener('keydown', (event) => {
-	if (toolChoice === 4) {
+	if (event.key === ' ') {
+		if (! autoSlope) {
+			switch (tileChoice) {				//manual slope
+				case 2:
+				case 3:
+				case 4:
+					event.preventDefault();
+					tileChoice++;
+					slopeChoice++;
+				break
+				case 5:
+					event.preventDefault();
+					tileChoice = 2;
+					slopeChoice = 2;
+			}
+		}
+		switch (tileChoice) {
+			case 7:
+				event.preventDefault();
+				tileChoice = 8;
+			break
+			case 8:
+				event.preventDefault();
+				tileChoice = 7;
+		}
+		preview();
+	}
+	if (event.ctrlKey) {
+		switch (event.key) {
+			case 's':
+				save(event);
+			break
+			case 'l':
+				load(event);
+			break
+		}
+	}
+	if (toolChoice === 'boxSelect') {
 		if (event.ctrlKey) {
 			switch (event.key) {
 				case 'c':
@@ -122,12 +162,6 @@ document.addEventListener('keydown', (event) => {
 				break
 				case 'z':
 					undo(event);
-				break
-				case 's':
-					save(event);
-				break
-				case 'l':
-					load(event);
 				break
 			}
 		} else {

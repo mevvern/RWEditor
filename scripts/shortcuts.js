@@ -120,11 +120,13 @@ document.addEventListener('keydown', (event) => {
 					event.preventDefault();
 					tileChoice++;
 					slopeChoice++;
+					tileIndicator.innerText = tileMap.numericalIdToName(tileChoice);
 				break
 				case 5:
 					event.preventDefault();
 					tileChoice = 2;
 					slopeChoice = 2;
+					tileIndicator.innerText = tileMap.numericalIdToName(tileChoice);
 			}
 		}
 		switch (tileChoice) {

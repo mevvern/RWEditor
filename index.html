@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <title>New Level</title>
         <link href="style.css?v2" rel="stylesheet">
+        <script src="scripts/tileMap.js" defer></script>
         <script src="scripts/main.js?v2" defer></script>
         <script src="scripts/shortcuts.js?v2" defer></script>
     </head>
@@ -21,24 +22,24 @@
                     </div>
                     <div class="buttons">
                         <button class="tileButton" selected="true" id="wall" title="Wall"><img src="resources/wallIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="slope" title="Slope. Press again to change the slope's facing "><img src="resources/slopeIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="invisWall" title="Invisible Wall"><img src="resources/invisWallIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="hPole" title="Horizontal pole"><img src="resources/hPoleIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="vPole" title="Vertical pole"><img src="resources/vPoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="slope" title="Slope. Press space to change the slope's facing"><img src="resources/slopeIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="invisible wall" title="Invisible Wall"><img src="resources/invisWallIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="horizontal pole" title="Horizontal pole"><img src="resources/hPoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="vertical pole" title="Vertical pole"><img src="resources/vPoleIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="crossPole" title="Crossed pole"><img src="resources/crossPoleIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="semisolidFloor" title="Semisolid platform"><img src="resources/semisolidIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="hive" title="Batfly hive"><img src="resources/hiveIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="batFly" title="cool scug :0">😻</button>
-                        <button class="tileButton" selected="false" id="entrance" title="Shortcut entrance"><img src="resources/entranceIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="path" title="Shortcut path"><img src="resources/pathIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="roomExit" title="Room exit/entrance"><img src="resources/roomExitIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="dragonDen" title="Creature den"><img src="resources/dragonDenIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="whackamole" title="Creature shortcut (aka whack-a-mole entrance)"><img src="resources/whackamoleIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="scavHole" title="Scavenger entrance/exit"><img src="resources/scavHoleIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="garbageWorm" title="Garbage worm den"><img src="resources/garbageWormIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="semisolid platform" title="Semisolid platform"><img src="resources/semisolidIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="batfly hive" title="Batfly hive"><img src="resources/hiveIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="cool scug 0:" title="cool scug :0">😻</button>
+                        <button class="tileButton" selected="false" id="shortcut entrance" title="Shortcut entrance"><img src="resources/entranceIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="shortcut path" title="Shortcut path"><img src="resources/pathIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="room transition" title="Room exit/entrance"><img src="resources/roomExitIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="creature den" title="Creature den"><img src="resources/dragonDenIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="creature shortcut" title="Creature shortcut (aka whack-a-mole entrance)"><img src="resources/whackamoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="scavenger hole" title="Scavenger entrance/exit"><img src="resources/scavHoleIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="garbage worm den" title="Garbage worm den"><img src="resources/garbageWormIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="waterfall" title="Waterfall"><img src="resources/waterfallIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="wormGrass" title="Worm grass"><img src="resources/wormGrassIcon.png" draggable="false"></button>
-                        <button class="tileButton" selected="false" id="fuckFlies" title="Forbid fly chains from forming wherever this is placed"><img src="resources/noFliesIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="worm grass" title="Worm grass"><img src="resources/wormGrassIcon.png" draggable="false"></button>
+                        <button class="tileButton" selected="false" id="forbid batfly chains" title="Forbid batfly chains from forming wherever this is placed"><img src="resources/noFliesIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="spear" title="Spear spawn location"><img src="resources/spearIcon.png" draggable="false"></button>
                         <button class="tileButton" selected="false" id="rock" title="Rock spawn location"><img src="resources/rockIcon.png" draggable="false"></button>
                     </div>

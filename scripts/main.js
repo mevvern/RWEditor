@@ -13,7 +13,7 @@ let playEndY = 38
 let screensWide = 1;
 let screensTall = 1;
 let levelName = 'New Level'
-let ogLevelFile;
+let ogLevelFile;							//a string containing the text of the original level file that is currently open
 
 //"visual" settings
 let customScreenWidth = 70;					//size of the main canvas in tiles (multiplied by baseTileSize to get the final )
@@ -25,16 +25,16 @@ let panX = 25;								//stores the x position in pixels that the user has moved 
 let panY = 52;								//same, but for the y axis
 let backgroundColor = 'white';
 let gridColor = 'rgb(200, 200, 200)';
-let playColor =	'rgb(255, 127, 127)';
-let selColor = 'gold';
+let playColor =	'rgb(255, 127, 127)';			//color of the play area's border
+let selColor = 'gold';							//color of the selection box
 let levelBorderColor = 'rgb(127, 127, 255';
 let layer1Color = 'rgba(0, 0, 0, 1)';
 let layer2Color = 'rgba(200, 255, 200, 0.7)';
 let layer3Color = 'pink';
-let previewColor = 'rgba(150, 150, 150, 0.5)';
-let deleteColor = 'rgba(255, 200, 200, 0.5)';
-let boxFillColor = 'red';
-let boxDeleteColor = 'red';
+let previewColor = 'rgba(150, 150, 150, 0.5)';	//color of the tile preview when certain tools are selected, if the tile being previewed supports custom colors
+let deleteColor = 'rgba(255, 200, 200, 0.5)';	//color of the tile preview when erase tool is selected
+let boxFillColor = 'red';						//color of the box fill selection border
+let boxDeleteColor = 'red';						//color of the box erase selection border
 let showGrid = true;						//whether or not to show the grid
 let previewChoice = true;					//whether or not to show the preview at the current mouse tile
 
@@ -43,20 +43,20 @@ let tileChoice = 1;
 let toolChoice = 'paint';
 let layerChoice = 0;						//stores the current work layer
 let slopeChoice = 2;
-let autoSlope = 0;
-let doingMouseThing = false;
+let autoSlope = false;
+let doingMouseThing = false;				//true if a mousedown event was fired on the editor's canvas, used to prevent unrelated mouseup events from affecting the ui
 
 //selection
 let selBox = false;							//whether or not to show the selection box
-let drawSel = false;
-let airReplace = false;
-let startTileX = 0;
+let drawSel = false;						//whether or not to draw the selection itself, if it exists
+let airReplace = false;						//whether or not to replace base tiles with air in the selection when placing
+let startTileX = 0;							//the tile that was first clicked on with any tool that uses boxFn()
 let startTileY = 0;
 let selStartX = 0;							//selection starting coords
 let selStartY = 0;
 let selEndX = 0;							//selection ending coords
 let selEndY = 0;
-let mouseOffsetX = 0;
+let mouseOffsetX = 0;						//the offset of the mouse from the selection starting corner when clicking on the inside of the selection to move it
 let mouseOffsetY = 0;
 
 //DOM elements
@@ -308,54 +308,61 @@ function handleNameChange(name) {
 	pageTitle.innerText = levelName;
 }
 
-function changeTool(tool) {
-	selBox = false;
-	drawSel = false;
-	let toolName
-	toolChoice = tool;
-	switch (tool) {
-		case 'paint':
-			toolName = 'Paint';
-			previewChoice = true;
-		break
-		case 'eraser':
-			toolName = 'Erase'
-			previewChoice = true
-		break
-		case 'boxFill':
-			toolName = 'Box fill';
-			previewChoice = true;
-		break
-		case 'playEdit':
-			toolName = 'play area editor';
-			previewChoice = true;
-		break
-		case 'boxSelect':
-			toolName = 'box select';
-			previewChoice = false;
-			selBox = true;
-		break
-		case 'cameras':
-			toolName = 'CAmera editor';
-			previewChoice = false;
-		break
-		case 'ruler':
-			toolName = 'ruler'
-			previewChoice = false;
-		break
-		case 'eraseAll':
-			toolName = 'box erase';
-			previewChoice = false;
-		break
-	}
-	toolIndicator.innerText = toolName;
-	toolButtons.forEach(button => {
-		button.setAttribute('selected', 'false');
-		if (button.id === tool) {
-			button.setAttribute('selected', 'true')
+function changeTool(toolId) {
+	if (typeof(toolId) != 'string') {
+		throw new TypeError('Tool id must be a string!')
+	} else {
+		selBox = false;
+		drawSel = false;
+		let toolName
+		toolChoice = toolId;
+		switch (toolId) {
+			default:
+				throw new Error('Tool does not exist!')
+			break
+			case 'paint':
+				toolName = 'Paint';
+				previewChoice = true;
+			break
+			case 'eraser':
+				toolName = 'Erase'
+				previewChoice = true
+			break
+			case 'boxFill':
+				toolName = 'Box fill';
+				previewChoice = true;
+			break
+			case 'playEdit':
+				toolName = 'play area editor';
+				previewChoice = true;
+			break
+			case 'boxSelect':
+				toolName = 'box select';
+				previewChoice = false;
+				selBox = true;
+			break
+			case 'cameras':
+				toolName = 'CAmera editor';
+				previewChoice = false;
+			break
+			case 'ruler':
+				toolName = 'ruler'
+				previewChoice = false;
+			break
+			case 'eraseAll':
+				toolName = 'box erase';
+				previewChoice = false;
+			break
 		}
-	});
-	drawVisLevel();
+		toolIndicator.innerText = toolName;
+		toolButtons.forEach(button => {
+			button.setAttribute('selected', 'false');
+			if (button.id === toolId) {
+				button.setAttribute('selected', 'true')
+			}
+		});
+		drawVisLevel();
+	}
 }
 
 function moveSel(event) {
@@ -597,8 +604,6 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 					}
 				}
 			}
-			console.log(adjPathArray, adjWallArray)
-			
 			drawRect(color, x, y, tileSize)
 			switch (6534672547) {
 				default:
@@ -777,6 +782,9 @@ function chooseComponent(tile) {
 function addValue(x, y, tileType, autoChoice) {			//autoChoice is true if using the layer component of the global tileChoice or false if using the component of the block-scoped tileType
 	let tile;
 	switch (autoChoice) {
+		default:
+			throw new Error('autochoice must be true or false');
+		break
 		case true:
 			tile = tileChoice;
 		break
@@ -976,100 +984,12 @@ levelTxtSelect.addEventListener('change', () => {
 						tile.forEach((layer, layerIndex) => {
 							layer.forEach((value, componentIndex) => {
 								//componentIndex of 0 is main value, 1 is stackables
+								layerChoice = layerIndex;
 								if (componentIndex === 0) {
-									switch(value) {
-										case 0:
-											tileToPlace = 0;
-										break
-										case 1:
-											tileToPlace = 1;
-										break
-										case 2:
-											tileToPlace = 2;
-										break
-										case 3:
-											tileToPlace = 5;
-										break
-										case 4:
-											tileToPlace = 3;
-										break
-										case 5:
-											tileToPlace = 4;
-										break
-										case 6:
-											tileToPlace = 10;
-										break
-										case 7:
-											tileToPlace = 13;
-										break
-										case 9:
-											tileToPlace = 29;
-										break
-									}
-									if (tileToPlace != 0) {
-										const layerComponentChoice = chooseComponent(tileToPlace);
-										console.log(`layer: ${layerIndex}, layer component: ${layerComponentChoice} tile type: ${tileToPlace}, base value: ${value}, x ${x}, y ${y}`)
-										layerChoice = layerIndex;
-										addValue(x, y, tileToPlace, false);
-									}
-								} else if (componentIndex === 1) {
-									value.forEach((stackableValue) => {
-										if (stackableValue != undefined) {
-											switch(stackableValue) {
-												case 1:
-													tileToPlace = 7;
-												break
-												case 2:
-													tileToPlace = 8;
-												break
-												case 3:
-													tileToPlace = 18;
-												break
-												case 4:
-													tileToPlace = 13;
-												break
-												case 5:
-													tileToPlace = 12;
-												break
-												case 6:
-													tileToPlace = 21;
-												break
-												case 7:
-													tileToPlace = 14;
-												break
-												case 9:
-													tileToPlace = 28;
-												break
-												case 10:
-													tileToPlace = 27;
-												break
-												case 11:
-													tileToPlace = 200005;
-												break
-												case 12:
-													tileToPlace = 30;
-												break
-												case 13:
-													tileToPlace = 17;
-												break
-												case 18:
-													tileToPlace = 19;
-												break
-												case 19:
-													tileToPlace = 15;
-												break
-												case 20:
-													tileToPlace = 20;
-												break
-												case 21:
-													tileToPlace = 16;
-												break
-											}
-											const layerComponentChoice = chooseComponent(tileToPlace);
-											console.log(`layer: ${layerIndex}, layer component: ${layerComponentChoice} tile type: ${tileToPlace}, stackable: ${stackableValue}, x ${x}, y ${y}`)
-											layerChoice = layerIndex;
-											addValue(x, y, tileToPlace, false);
-										}
+									addValue(x, y, tileMap.import(value, componentIndex), false);
+								} else {
+									value.forEach((stackable) => {
+										addValue(x, y, tileMap.import(stackable, componentIndex), false);
 									})
 								}
 							})
@@ -1092,7 +1012,7 @@ levelNameForm.addEventListener('submit', (event) => {
 });
 
 layerSelButtons.forEach(button => {					//get the work layer choice any time a cork layer button is pressed
-	button.addEventListener('click', () => {
+	button.addEventListener('mousedown', () => {
 		switch(button.id) {
 			case 'layer1':
 				layerChoice = 0;
@@ -1114,7 +1034,7 @@ layerSelButtons.forEach(button => {					//get the work layer choice any time a c
 });
 
 layerVisIndicators.forEach(button => {
-	button.addEventListener('click', () => {
+	button.addEventListener('mousedown', () => {
 		switch(button.id) {
 			case 'layer1':
 				switch(visArray[0]) {
@@ -1160,100 +1080,13 @@ layerVisIndicators.forEach(button => {
 });
 
 tileButtons.forEach(button => {						 //get the tile choice any time a tile button is pressed
-	button.addEventListener('click', () => {
-		let tileName
-		switch(button.id) {
-			case 'wall':
-				tileChoice = 1;
-				tileName = 'wall';
-			break
-			case 'slope':
-				if (tileChoice != 2 || tileChoice != 3 || tileChoice != 4 || tileChoice != 5) {
-					tileChoice = slopeChoice;
-					tileName = 'slope';
-				}
-			break
-			case 'batFly':
-				tileChoice = 6;
-				tileName = 'cool scug :0'
-			break 
-			case 'hPole':
-				tileChoice = 7;
-				tileName = 'horizontal pole'
-				console.log('remember me?')
-			break
-			case 'vPole':
-				tileChoice = 8;
-				tileName = 'vertical pole'
-			break
-			case 'crossPole':
-				tileChoice = 9;
-				tileName = 'cross pole'
-			break
-			case 'semisolidFloor':
-				tileChoice = 10;
-				tileName = 'Semisolid Platform'
-			break
-			//DONT use 11 please. im using it somewhere else,,
-			case 'path':
-				tileChoice = 12;
-				tileName = 'shortcut path';
-			break
-			case 'entrance':
-				tileChoice = 13;
-				tileName = 'shortcut entrance';
-			break
-			case 'dragonDen':
-				tileChoice = 14;
-				tileName = 'creature den';
-			break
-			case 'whackamole':
-				tileChoice = 15;
-				tileName = 'creature shortcut';
-			break
-			case 'scavHole':
-				tileChoice = 16;
-				tileName = 'scavenger hole';
-			break
-			case 'garbageWorm':
-				tileChoice = 17;
-				tileName = 'garbage worm den';
-			break
-			case 'hive':
-				tileChoice = 18;
-				tileName = 'batfly hive';
-			break
-			case 'waterfall':
-				tileChoice = 19;
-				tileName = 'waterfall';
-			break
-			case 'wormGrass':
-				tileChoice = 20;
-				tileName = 'worm grass';
-			break
-			case 'roomExit':
-				tileChoice = 21;
-				tileName = 'room exit/entrance';
-			break
-			//also dont use 22 please.. .pleaes.. i beg of you,,,
-			//wtf also dont use 23, 24, 25, 0r 26... wtf did i d o
-			case 'spear':
-				tileChoice = 27;
-				tileName = 'spear spawn location';
-			break
-			case 'rock':
-				tileChoice = 28;
-				tileName = 'rock spawn loaction';
-			break
-			case 'invisWall':
-				tileChoice = 29;
-				tileName = 'invisible wall';
-			break
-			case 'fuckFlies':
-				tileChoice = 30;
-				tileName = 'forbid fly chains';
+	button.addEventListener('mousedown', () => {
+		if (button.id === 'slope') {
+			tileChoice = slopeChoice;
+		} else {
+			tileChoice = tileMap.nameToNumericalId(button.id);
 		}
-		tileIndicator.innerText = tileName;
+		tileIndicator.innerText = tileMap.numericalIdToName(tileChoice);
 		tileButtons.forEach(button => {
 			button.setAttribute('selected', 'false');
 		})
@@ -1262,7 +1095,7 @@ tileButtons.forEach(button => {						 //get the tile choice any time a tile butt
 });
 
 editorSettings.forEach(button => {						//event listener for the editor settings
-	button.addEventListener('click', () => {
+	button.addEventListener('mousedown', () => {
 		switch (button.id) {
 			case 'resetView':
 				zoomLevel = 1;
@@ -1308,7 +1141,7 @@ editorSettings.forEach(button => {						//event listener for the editor settings
 });
 
 toolButtons.forEach(button => {
-	button.addEventListener('click', () => {
+	button.addEventListener('mousedown', () => {
 		changeTool(button.id);
 	});
 });

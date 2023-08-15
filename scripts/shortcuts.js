@@ -1,12 +1,10 @@
-function copy(event) {
-	event.preventDefault();
-	clipBoard = selArray;
+function copy() {
+	levelSave.clipBoard = selArray;
 	console.log('copied the selection');
 }
 
-function cut(event) {
-	event.preventDefault();
-	clipBoard = selArray;
+function cut() {
+	levelSave.clipBoard = selArray;
 	selArray = 'cutter';
 	selStartX = 0;
 	selStartY = 0;
@@ -18,8 +16,7 @@ function cut(event) {
 	drawVisLevel();
 }
 
-function del(event) {
-	event.preventDefault();
+function del() {
 	selArray = 'really sad tbh';
 	selStartX = 0;
 	selStartY = 0;
@@ -31,24 +28,22 @@ function del(event) {
 	drawVisLevel();
 }
 
-function paste(event) {
-	event.preventDefault();
+function paste() {
 	if (drawSel) {
 		placeSelection();
 	}
-	selArray = clipBoard;
+	selArray = levelSave.clipBoard;
 	selStartX = 0;
 	selStartY = 0;
-	selEndX = clipBoard[0].length;
-	selEndY = clipBoard[0][0].length;
+	selEndX = levelSave.clipBoard[0].length;
+	selEndY = levelSave.clipBoard[0][0].length;
 	drawSel = true;
 	selBox = true;
 	console.log('pasted the selection');
 	drawVisLevel();
 }
 
-function save(event) {
-	event.preventDefault();
+function saveLevelSettings() {
 	if (confirm('Do you really want to save the level?\nThis will delete the previously saved level...')) {
 		localStorage.setItem('levelArray', JSON.stringify(levelArray));
 		localStorage.setItem('tilesPerRow', tilesPerRow);
@@ -64,8 +59,7 @@ function save(event) {
 	}
 }
 
-function load(event) {
-	event.preventDefault();
+function loadLevelSettings() {
 	if (localStorage.getItem('levelArray') === null) {
 		alert('cannot load a nonexistent level!!!!')
 	} else {
@@ -80,8 +74,7 @@ function load(event) {
 			screensWide = parseInt(localStorage.getItem('screensWide'));
 			screensTall = parseInt(localStorage.getItem('screensTall'));
 			levelName = localStorage.getItem('levelName');
-			levelNameField.setAttribute('value', levelName);
-			pageTitle.innerText = levelName;
+			handleNameChange(levelName);
 			widthField.setAttribute('value', screensWide);
 			heightField.setAttribute('value', screensTall);
 			drawVisLevel();
@@ -90,20 +83,20 @@ function load(event) {
 	} 
 }
 
-function undo(event) {
-	event.preventDefault();
+function undo() {
 	console.log('undid the previous action');
 }
 
 function zoom(event) {
 	if (event.ctrlKey) {
 		event.preventDefault();
-		zoomLevel -= (event.deltaY / 100);
-		if ((zoomLevel + baseTileSize) <= 0) {
-			zoomLevel = -baseTileSize + 1;
+		editorSave.zoomLevel -= (event.deltaY / 100);
+		if ((editorSave.zoomLevel + baseTileSize) <= 0) {
+			editorSave.zoomLevel = -baseTileSize + 1;
 			console.log('ur zoom is too small :3!!!!');
 		}
-		tileSize = (zoomLevel + baseTileSize);
+		tileSize = (editorSave.zoomLevel + baseTileSize);
+		saveEditorSettings();
 		drawVisLevel();
 	}
 }
@@ -143,10 +136,12 @@ document.addEventListener('keydown', (event) => {
 	if (event.ctrlKey) {
 		switch (event.key) {
 			case 's':
-				save(event);
+				event.preventDefault();
+				newsaveLevelSettings();
 			break
 			case 'l':
-				load(event);
+				event.preventDefault();
+				newloadLevelSettings();
 			break
 		}
 	}
@@ -154,26 +149,32 @@ document.addEventListener('keydown', (event) => {
 		if (event.ctrlKey) {
 			switch (event.key) {
 				case 'c':
-					copy(event);
+					event.preventDefault();
+					copy();
 				break
 				case 'v':
-					paste(event);
+					event.preventDefault();
+					paste();
 				break
 				case 'x':
-					cut(event);
+					event.preventDefault();
+					cut();
 				break
 				case 'z':
-					undo(event);
+					event.preventDefault();
+					undo();
 				break
 			}
 		} else {
 			switch (event.key) {
 				case 'Delete':
-					del(event);
+					event.preventDefault();
+					del();
 				break
 				case 'Enter':
+					event.preventDefault();
 					placeSelection();
-					del(event);
+					del();
 				break
 			}
 		}

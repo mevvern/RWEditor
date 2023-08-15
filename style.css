@@ -1,137 +1,212 @@
 @font-face {
-    font-family: 'rodondo';
-    src: url('resources/fonts/rodondo.woff2') format('woff2'),
-         url('resources/fonts/rodondo.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
+	font-family: 'rodondo';
+	src: url('resources/fonts/rodondo.woff2') format('woff2'),
+		 url('resources/fonts/rodondo.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
 }
 
 :root {
-    box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 body {
-    font-family: rodondo;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px;
-    padding-top: 0px;
-    background-color: white;
+	font-family: rodondo;
+	padding: 0px;
+	margin: 0px;
+	background-color: white;
+	overflow: hidden;
 }
 
-.editor {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
-}
-
-.editorScreen {
-    padding-left: 20px;
-}
-
-canvas {
-    outline: rgb(170, 0, 170) 4px solid;
-    border-radius: 2px;
+p {
+	margin: 0px;
 }
 
 .buttons {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 4px;
-    flex-wrap: wrap;
-    width: 480px;
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	gap: 4px;
+	flex-wrap: wrap;
 }
 
 .form {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
 }
 
 input[type="number"] {
-    width: 40px;
+	width: 40px;
 }
 
-.buttons > button {
-    cursor: pointer;
-    font-size: 2rem;
-    border: 5px solid #666666;
-    border-radius: 9px;
-    width: 65px;
-    height: 55px;
-    outline: none;
-    background-color: rgb(187, 187, 187);
-    text-align: center;
+[customTitle] {
+	position: relative;
+  }
+  [customTitle]:after {
+	content: attr(customTitle);
+	pointer-events: none;
+	color: #FFFFFF;
+	background-color: rgba(0, 0, 0, 0.9);
+	padding: 3px 5px 7px;
+	white-space: nowrap;
+	z-index: 99999;
+	visibility: hidden;
+	position: absolute;
+	left: 0%;
+	bottom: 120%;
+	border-radius: 4px 4px 4px 4px;
+	font-size: 0.875rem;
+	box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
+  }
+  [customTitle]:hover:after {
+	opacity: 1;
+	transition: all 0.3s;
+	visibility: visible;
+  }
+
+button {
+	padding: 0px;
+	cursor: pointer;
+	font-size: 3vh;
+	border: 5px solid #666666;
+	border-radius: 9px;
+	width: 6vh;
+	height: 5vh;
+	outline: none;
+	background-color: rgb(187, 187, 187);
+	text-align: center;
 }
 
-.buttons > button:hover {
-    border: 5px solid #d6ae28
+#importLabel {
+	font-family: sans-serif;
+	padding: 0px;
+	cursor: pointer;
+	font-size: 1.5rem;
+	border: 5px solid #666666;
+	border-radius: 9px;
+	outline: none;
+	background-color: rgb(187, 187, 187);
+	text-align: center;
+}
+
+#importLabel:hover {
+	border: 5px solid #d6ae28
 }
 
 button > img {
-    position: relative;
+	width: 4vh;
+}
+
+button:hover {
+	border: 5px solid #d6ae28
 }
 
 button[selected="true"] {
-    border: 5px solid #b401cc
+	border: 5px solid #b401cc
 }
 
 button[selected="true"]:hover {
-    border: 5px solid #8201cc
+	border: 5px solid #8201cc
 }
 
 button[selected="false"] {
-    border: 5px solid #666666
+	border: 5px solid #666666
 }
 
-.tools {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    padding-top: 5px;
-    gap: 20px;
+button[selected="false"]:hover {
+	border: 5px solid #d6ae28
 }
 
-.settings {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
+.toolBox {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	padding: 10px;
+	margin: 0px;
+	padding: 8px;
+	outline: 8px solid black;
+	border-radius: 8px;
+	gap: 0px;
+	width: 21vh;
+	height: auto;
+	position: fixed;
+	top: 10px;
+	background-color: #ac87b8c4;
 }
+
+hr {
+	border: none;
+	height: 2px;
+	background-color: rgb(95, 95, 95);
+	width: 19vh;
+}
+
+
+[hidden="true"] {
+	display: none;
+}
+
+.collapseButton {
+	width: auto;
+	height: auto;
+}
+
+#settings { 
+	height: auto;
+	right:10px;
+}
+
+#settingsCollapse {
+	position: fixed;
+	right: 10px;
+	bottom: 10px;
+}
+
+#tools { 
+	left: 10px;
+}
+
+#toolCollapse {
+	position: fixed;
+	left: 10px;
+	bottom: 10px;
+}
+
 
 .levelSettings {
-    height: 40vh;
-    align-items: top;
+	height: 40vh;
+	align-items: top;
 }
 
 .editorSettings {
-    height: 40vh;
-    align-items: top;
+	height: 40vh;
+	align-items: top;
 }
 
 .toolHeader {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
 }
 
 .header {
-    font-size: 1.5rem;
-    color: black;
-    margin-top: 3px;
-    margin-bottom: 6px;
+	font-size: 1.5rem;
+	color: black;
+	margin-top: 3px;
+	margin-bottom: 6px;
 }
 
 .subHeader {
-    font-size: 1rem;
-    color: gray;
-    margin-top: 3px;
-    margin-bottom: 6px;
+	font-size: 1rem;
+	color: rgb(87, 87, 87);
+	margin-top: 3px;
+	margin-bottom: 6px;
 }
 
 .toolSet {
-    display: flex;
-    flex-direction: column;
+	display: flex;
+	flex-direction: column;
+	padding-bottom: 5px;
+	padding-top: 0px;
 }

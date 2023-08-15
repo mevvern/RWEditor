@@ -2,49 +2,49 @@
 const tileCount = 20;						//number of unique tiles for the atlas to store
 const layerCount = 3;						//stores the number of layers to use
 const testStr = 'when the world begins anew, will you wallow like a hog in your own despair, or will you welcome the new world with open wings and a gleeful smile'
+const editorSave = {};
+const levelSave = {};
 
 //vars which are saved with the level
-let tilesPerRow = 72;						//size of the level
-let tilesPerColumn = 43;
-let playStartX = 12;						//play area starting coordinates
-let playStartY = 3;
-let playEndX = 60							//play area ending coordinates
-let playEndY = 38
-let screensWide = 1;
-let screensTall = 1;
-let levelName = 'New Level'
-let ogLevelFile;							//a string containing the text of the original level file that is currently open
+levelSave.tilesPerRow = 72;						//size of the level
+levelSave.tilesPerColumn = 43;
+levelSave.playStartX = 12;						//play area starting coordinates
+levelSave.playStartY = 3;
+levelSave.playEndX = 60							//play area ending coordinates
+levelSave.playEndY = 38
+levelSave.levelName = 'New Level'
+levelSave.ogLevelFile;							//a string containing the text of the original level file that is currently open
 
 //"visual" settings
-let customScreenWidth = 70;					//size of the main canvas in tiles (multiplied by baseTileSize to get the final )
-let customScreenHeight = 35;
-let zoomLevel = -4;							//stores the zoom level of the editor
-let baseTileSize = 20;						//base size of each tile in pixels
-let tileSize = zoomLevel + baseTileSize;	//the final tile size in pixels with zoom taken into account
+editorSave.zoomLevel = -4;							//stores the zoom level of the editor
+let baseTileSize = 24;						//base size of each tile in pixels
+let tileSize = editorSave.zoomLevel + baseTileSize;	//the final tile size in pixels with zoom taken into account
 let panX = 25;								//stores the x position in pixels that the user has moved the display to
 let panY = 52;								//same, but for the y axis
-let backgroundColor = 'white';
-let gridColor = 'rgb(200, 200, 200)';
-let playColor =	'rgb(255, 127, 127)';			//color of the play area's border
-let selColor = 'gold';							//color of the selection box
-let levelBorderColor = 'rgb(127, 127, 255';
-let layer1Color = 'rgba(0, 0, 0, 1)';
-let layer2Color = 'rgba(200, 255, 200, 0.7)';
-let layer3Color = 'pink';
-let previewColor = 'rgba(150, 150, 150, 0.5)';	//color of the tile preview when certain tools are selected, if the tile being previewed supports custom colors
-let deleteColor = 'rgba(255, 200, 200, 0.5)';	//color of the tile preview when erase tool is selected
-let boxFillColor = 'red';						//color of the box fill selection border
-let boxDeleteColor = 'red';						//color of the box erase selection border
-let showGrid = true;						//whether or not to show the grid
-let previewChoice = true;					//whether or not to show the preview at the current mouse tile
+editorSave.backgroundColor = 'white';
+editorSave.gridColor = 'rgb(200, 200, 200)';
+editorSave.playColor =	'rgb(255, 127, 127)';			//color of the play area's border
+editorSave.selColor = 'gold';							//color of the selection box
+editorSave.levelBorderColor = 'rgb(127, 127, 255';
+editorSave.layer1Color = 'rgba(0, 0, 0, 1)';
+editorSave.layer2Color = 'rgba(200, 255, 200, 0.7)';
+editorSave.layer3Color = 'pink';
+editorSave.previewColor = 'rgba(150, 150, 150, 0.5)';	//color of the tile preview when certain tools are selected, if the tile being previewed supports custom colors
+editorSave.deleteColor = 'rgba(255, 200, 200, 0.5)';	//color of the tile preview when erase tool is selected
+editorSave.boxFillColor = 'red';						//color of the box fill selection border
+editorSave.boxDeleteColor = 'red';						//color of the box erase selection border
+editorSave.toolsHiddenSetting = 'true';			//weird fake booleans because you cant have booleans in css
+editorSave.settingsHiddenSetting = 'true';
+editorSave.showGrid = true;						//whether or not to show the grid
+previewChoice = true;							//whether or not to show the preview at the current mouse tile
 
 //tool and tile settings 
 let tileChoice = 1;
 let toolChoice = 'paint';
-let layerChoice = 0;						//stores the current work layer
+editorSave.layerChoice = 0;						//stores the current work layer
 let slopeChoice = 2;
-let autoSlope = false;
-let doingMouseThing = false;				//true if a mousedown event was fired on the editor's canvas, used to prevent unrelated mouseup events from affecting the ui
+editorSave.autoSlope = false;
+doingMouseThing = false;				//true if a mousedown event was fired on the editor's canvas, used to prevent unrelated mouseup events from affecting the ui
 
 //selection
 let selBox = false;							//whether or not to show the selection box
@@ -58,6 +58,8 @@ let selEndX = 0;							//selection ending coords
 let selEndY = 0;
 let mouseOffsetX = 0;						//the offset of the mouse from the selection starting corner when clicking on the inside of the selection to move it
 let mouseOffsetY = 0;
+let selArray;														//array that stores the current selection. structured similar to the levels array but without layers, and only as many components as the source selection
+levelSave.clipBoard;
 
 //DOM elements
 const screen = document.getElementById('editorCanvas');							//the canvas element which forms the main display
@@ -68,7 +70,7 @@ const toolIndicator = document.getElementById('toolSelection');					//tool choic
 const layerSelButtons = document.querySelectorAll('.layerSelButton');			//work layer selection buttons
 const layerVisIndicators = document.querySelectorAll('.layerVisIndicator');		//layer visibility buttons, which double as the layer visibility indicators
 const selectedLayerIndicator = document.getElementById('layerSelection');		//work layer indicator element
-const editorSettings = document.querySelectorAll('.editorSettings');			//editor settings buttons
+const editorSettingsButtons = document.querySelectorAll('.editorButton');	//editor settings buttons
 const levelSizeForm = document.getElementById('levelSizeForm');					//level size form
 const widthField = document.getElementById('screensWide');
 const heightField = document.getElementById('screensTall');
@@ -80,10 +82,8 @@ const levelTxtSelect = document.getElementById('importLevel')
 //arrays & canvases
 const mainCtx = screen.getContext('2d');							//canvas rendering context for the main display
 const atlasCanvas = new OffscreenCanvas(29 * tileCount * 2, 29);	//offScreenCanvas which stores the tiles that are bitmaps
-let levelArray;														//array that stores all the data of the level. each array contained within this one is one layer of the level data
-let visArray = new Array(layerCount).fill(1);						//array that stores the layer visibility choice for each layer
-let selArray;														//array that stores the current selection. structured similar to the levels array but without layers, and only as many components as the source selection
-let clipBoard;
+levelSave.levelArray;														//array that stores all the data of the level. each array contained within this one is one layer of the level data
+editorSave.visArray = new Array(layerCount).fill(1);						//array that stores the layer visibility choice for each layer
 const atlasCtx = atlasCanvas.getContext('2d');						//canvas rendering context for the atlas's canvas
 
 //mouse vars
@@ -97,29 +97,114 @@ let mouseTileChanged = false;		//true if the mouse tile changed since the last m
 let mouseXInsideLevel = false;
 let mouseYInsideLevel = false;
 
+//list of level settings to save and load
+const levelSettingsList = [
+	'levelArray',
+	"clipBoard",
+	'tilesPerRow',
+	'tilesPerColumn',
+	'playStartX',
+	'playStartY',
+	'playEndX',
+	'playEndY',
+	'levelName',
+	'ogLevelFile'
+]
+
+//list of editor settings to save and load 
+const editorSettingsList = [
+	"visArray",
+	"zoomLevel",
+	"backgroundColor",
+	"gridColor",
+	"playColor",
+	"selColor",
+	"levelBorderColor",
+	"layer1Color",
+	"layer2Color",
+	"layer3Color",
+	"previewColor",
+	"deleteColor",
+	"boxFillColor",
+	"boxDeleteColor",
+	"toolsHiddenSetting",
+	"settingsHiddenSetting",
+	"showGrid",
+	"autoSlope",
+	"airReplace"
+]
 
 function initMainCanvas() {								//sets the size of the main canvas based on some vars
-	screen.width = 1400 //customScreenWidth * baseTileSize;
-	screen.height = 800 //customScreenHeight * baseTileSize;
+	screen.width = window.visualViewport.width;
+	screen.height = window.visualViewport.height;
 }
 
 function initLevelArray() {					//structure: [root: [layer 1: [0 poles], [1 base geo], [2 items], [3 tunnels]], [layer 2: [0 poles], [1 base geo]], [layer 3: [0 poles], [1 base geo]]
 	function createLayerComponents(layer, compCount) {
 		for (let i = 0; i < compCount; i++) {
-			levelArray[layer].push(new Array());
-			for (let j = 0; j < tilesPerRow; j++) {
-				levelArray[layer][i].push(new Array(tilesPerColumn).fill(0));
+			levelSave.levelArray[layer].push(new Array());
+			for (let j = 0; j < levelSave.tilesPerRow; j++) {
+				levelSave.levelArray[layer][i].push(new Array(levelSave.tilesPerColumn).fill(0));
 			}
 		}
 	}
 	
-	levelArray = new Array();
+	levelSave.levelArray = new Array();
 	for (let i = 0; i < layerCount; i++) {		//layer components are structured like [[col1]...[col999]]
-		levelArray.push(new Array());
+		levelSave.levelArray.push(new Array());
 	}
 	createLayerComponents(0, 4);
 	createLayerComponents(1, 2);
 	createLayerComponents(2, 2);
+}
+
+function saveEditorSettings() {
+	const settingsArray = new Array()
+	editorSettingsList.forEach((setting, index) => {
+		settingsArray.push(item = {})
+		settingsArray[index].name = setting;										//0: name of the saved var
+		settingsArray[index].value = editorSave[editorSettingsList[index]];			//1: value that was saved
+	})
+	localStorage.setItem('editorSettings', JSON.stringify(settingsArray));
+}
+
+function initEditorSettings() {
+	const settingsArray = JSON.parse(localStorage.getItem('editorSettings'));
+	settingsArray.forEach((setting) => {
+		editorSave[setting.name] = setting.value;
+	})
+	drawVisLevel();
+}
+
+function newsaveLevelSettings() {
+	if (confirm('Do you really want to save the level?\nThis will delete the previously saved level...')) {
+		const settingsArray = new Array()
+		levelSettingsList.forEach((setting, index) => {
+			settingsArray.push(option = {})
+			settingsArray[index].name = setting;							//0: name of the saved var
+			settingsArray[index].value = levelSave[levelSettingsList[index]];	//1: value that was saved
+		})
+		localStorage.setItem('levelSettings', JSON.stringify(settingsArray));
+		console.log('saved the level');
+	}
+}
+
+function newloadLevelSettings() {
+	if (localStorage.getItem('levelSettings') === null) {
+		alert('cannot load a nonexistent level!!!!')
+	} else {
+		if (confirm('Do you really want to load the saved level?\nThis will delete the current level')) {
+			const settingsArray = JSON.parse(localStorage.getItem('levelSettings'));
+			settingsArray.forEach((setting) => {
+				levelSave[setting.name] = setting.value;
+			})
+			drawVisLevel();
+			handleNameChange(levelSave.levelName);
+			drawVisLevel();
+			console.log('loaded the level :3');
+
+		} 
+	}
 }
 
 function initAtlas() {							//initializes the atlas with the tileset in 'resources/tiles.png'
@@ -142,8 +227,8 @@ function getGridPos(event) {					//gets the position of the mouse and updates a 
 	let prevY = mouseTileY;
 	let tileX = Math.floor((event.offsetX - panX) / tileSize);
 	let tileY = Math.floor((event.offsetY - panY) / tileSize);
-	mouseXInsideLevel = ((tileX >= 0) && (tileX < tilesPerRow));
-	mouseYInsideLevel = ((tileY >= 0) && (tileY < tilesPerColumn));
+	mouseXInsideLevel = ((tileX >= 0) && (tileX < levelSave.tilesPerRow));
+	mouseYInsideLevel = ((tileY >= 0) && (tileY < levelSave.tilesPerColumn));
 	mouseInsideSel = (tileX >= selStartX) && (tileX < selEndX) && (tileY >= selStartY) && (tileY < selEndY)
 	if (mouseXInsideLevel) {
 		mouseTileX = tileX;
@@ -179,7 +264,7 @@ function chooseCursor() {
 			}
 		break
 		case 'playEdit':
-			if ((mouseTileX === playStartX && mouseTileY === playStartY) || ((mouseTileX + 1) === playEndX && (mouseTileY + 1) === playEndY)) {
+			if ((mouseTileX === levelSave.playStartX && mouseTileY === levelSave.playStartY) || ((mouseTileX + 1) === levelSave.playEndX && (mouseTileY + 1) === levelSave.playEndY)) {
 				cursor = 'nwse-resize';
 			}
 		break
@@ -228,27 +313,25 @@ function drawRect(color, x, y, w, h) {			//draws a rectangle of width w and heig
 }
 
 function clearScreen() {						//clears the screen
-	drawRect(backgroundColor, 0, 0, screen.width, screen.height);
+	drawRect(editorSave.backgroundColor, 0, 0, screen.width, screen.height);
 }
 
 function handleLevelsizeChange(event) {
-    event.preventDefault();
-    const width = parseInt(widthField.value);
-    const height = parseInt(heightField.value);
-    const levelArea = width * height;
-    switch (levelArea <= 12 && levelArea > 0) {
-        case true:
-            screensWide = width;
-			screensTall = height;
-			let prevTilesPerRow = tilesPerRow;
-			let prevTilesPerColumn = tilesPerColumn;
-			tilesPerRow = (width * 72) - ((width - 1) * 5);
-            tilesPerColumn = (height * 43) - ((height - 1) * 3);
-			let widthDif = tilesPerRow - prevTilesPerRow;
-			let heightDif = tilesPerColumn - prevTilesPerColumn;
+	event.preventDefault();
+	const width = parseInt(widthField.value);
+	const height = parseInt(heightField.value);
+	const levelArea = width * height;
+	switch (levelArea <= 12 && levelArea > 0) {
+		case true:
+			let prevTilesPerRow = levelSave.tilesPerRow;
+			let prevTilesPerColumn = levelSave.tilesPerColumn;
+			levelSave.tilesPerRow = (width * 72) - ((width - 1) * 5);
+			levelSave.tilesPerColumn = (height * 43) - ((height - 1) * 3);
+			let widthDif = levelSave.tilesPerRow - prevTilesPerRow;
+			let heightDif = levelSave.tilesPerColumn - prevTilesPerColumn;
 				if (widthDif < 0) {
 					console.log(`removing ${widthDif} tiles from the width`);
-					levelArray.forEach((layer) => {
+					levelSave.levelArray.forEach((layer) => {
 						layer.forEach((layerComponent) => {
 							for (i = 0; i < Math.abs(widthDif); i++) {
 								layerComponent.pop();
@@ -257,17 +340,17 @@ function handleLevelsizeChange(event) {
 					})
 				} else if (widthDif > 0) {
 					console.log(`adding ${widthDif} tiles to the width`);
-					levelArray.forEach((layer) => {
+					levelSave.levelArray.forEach((layer) => {
 						layer.forEach((layerComponent) => {
 							for (i = 0; i < Math.abs(widthDif); i++) {
-								layerComponent.push(new Array(tilesPerColumn).fill(0));
+								layerComponent.push(new Array(levelSave.tilesPerColumn).fill(0));
 							}
 						})
 					})
 				}
 				if (heightDif < 0) {
 					console.log(`removing ${heightDif} tiles from the height`);
-					levelArray.forEach((layer) => {
+					levelSave.levelArray.forEach((layer) => {
 						layer.forEach((layerComponent) => {
 							layerComponent.forEach((column) => {
 								for (i = 0; i < Math.abs(heightDif); i++) {
@@ -278,7 +361,7 @@ function handleLevelsizeChange(event) {
 					})
 				} else if (heightDif > 0) {
 					console.log(`adding ${heightDif} tiles to the height`);
-					levelArray.forEach((layer) => {
+					levelSave.levelArray.forEach((layer) => {
 						layer.forEach((layerComponent) => {
 							layerComponent.forEach((column) => {
 								for (i = 0; i < Math.abs(heightDif); i++) {
@@ -288,24 +371,25 @@ function handleLevelsizeChange(event) {
 						})
 					})
 				}
-            drawVisLevel();
-        break 
-        case false:
-            switch (levelArea <= 0) {
-                case true:
-                    alert('Level size can\'t be zero or negative!!!!!!!');
-                break
-                case false:
-                    alert('Level size too big!\nthe total number of screens must be 12 or lower');
-                break
-            }
-        break
-    }
+			drawVisLevel();
+		break 
+		case false:
+			switch (levelArea <= 0) {
+				case true:
+					alert('Level size can\'t be zero or negative!!!!!!!');
+				break
+				case false:
+					alert('Level size too big!\nthe total number of screens must be 12 or lower');
+				break
+			}
+		break
+	}
 }
 
 function handleNameChange(name) {
-	levelName = name;
-	pageTitle.innerText = levelName;
+	levelSave.levelName = name 					//.replace(/[^. ._\d\p{L}-]+/ug, ""); to sanitize it. uneccessary lol
+	pageTitle.innerText = levelSave.levelName;
+	levelNameField.value = levelSave.levelName;
 }
 
 function changeTool(toolId) {
@@ -379,19 +463,19 @@ function moveSel(event) {
 		selStartY = 0;
 		selEndY = selArray[0][0].length;
 	}
-	if (selEndX >= tilesPerRow) {
-		selStartX = tilesPerRow - selArray[0].length;
-		selEndX = tilesPerRow;
+	if (selEndX >= levelSave.tilesPerRow) {
+		selStartX = levelSave.tilesPerRow - selArray[0].length;
+		selEndX = levelSave.tilesPerRow;
 	}
-	if (selEndY >= tilesPerColumn) {
-		selStartY = tilesPerColumn - selArray[0][0].length;
-		selEndY = tilesPerColumn;
+	if (selEndY >= levelSave.tilesPerColumn) {
+		selStartY = levelSave.tilesPerColumn - selArray[0][0].length;
+		selEndY = levelSave.tilesPerColumn;
 	}
 	drawVisLevel();
 }
 
 function clearSelection() {
-	levelArray[layerChoice].forEach(layerComponent => {
+	levelSave.levelArray[editorSave.layerChoice].forEach(layerComponent => {
 		for (let x = selStartX; x < selEndX; x++) {
 			for (let y = selStartY; y < selEndY; y++) {
 				layerComponent[x].splice(y, 1, 0);
@@ -404,20 +488,20 @@ function placeSelection() {
 	selArray.forEach((layerComponent, componentIndex) => {
 		layerComponent.forEach((column, x) => {
 			column.forEach((value, y) => {
-				if (layerChoice != 0) {
+				if (editorSave.layerChoice != 0) {
 					if (componentIndex > 1) {
 					} else {
 						if (airReplace) {
-							levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+							levelSave.levelArray[editorSave.layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
 						} else if (value != 0) {
-							levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+							levelSave.levelArray[editorSave.layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
 						}
 					}
 				} else {
 					if (airReplace) {
-						levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+						levelSave.levelArray[editorSave.layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
 					} else if (value != 0) {
-						levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+						levelSave.levelArray[editorSave.layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
 					}
 				}
 			})
@@ -429,15 +513,15 @@ function drawSelBox() {
 	if (selBox) {
 		switch (toolChoice) {
 			case 'boxFill':
-				color = boxFillColor;
+				color = editorSave.boxFillColor;
 				width = 1;
 			break
 			case 'boxSelect':
-				color = selColor;
+				color = editorSave.selColor;
 				width = 3;
 			break
 			case 'eraseAll':
-				color = boxDeleteColor;
+				color = editorSave.boxDeleteColor;
 				width = 5;
 			break
 		}
@@ -448,28 +532,38 @@ function drawSelBox() {
 }
 
 function drawLevelOutline() {
-	mainCtx.strokeStyle = levelBorderColor;
+	mainCtx.strokeStyle = editorSave.levelBorderColor;
 	mainCtx.lineWidth = 2;
-	mainCtx.strokeRect(panX, panY, tileSize * tilesPerRow, tileSize * tilesPerColumn);
+	mainCtx.strokeRect(panX, panY, tileSize * levelSave.tilesPerRow, tileSize * levelSave.tilesPerColumn);
 }
 
 function drawPlayAreaOutline() {
-	mainCtx.strokeStyle = playColor;
+	mainCtx.strokeStyle = editorSave.playColor;
 	mainCtx.lineWidth = 4;
-	mainCtx.strokeRect((playStartX * tileSize) + panX, (playStartY * tileSize) + panY, (playEndX - playStartX) * tileSize, (playEndY - playStartY) * tileSize);
+	mainCtx.strokeRect((levelSave.playStartX * tileSize) + panX, (levelSave.playStartY * tileSize) + panY, (levelSave.playEndX - levelSave.playStartX) * tileSize, (levelSave.playEndY - levelSave.playStartY) * tileSize);
 }
 
 function drawGrid() {
-	if (showGrid) {
-		for (let i = 1; i < tilesPerRow; i++) {
+	if (editorSave.showGrid) {
+		for (let i = 1; i < levelSave.tilesPerRow; i++) {
 		const ts = i * tileSize;
-		drawLine(ts + panX - 0.5, panY, ts + panX - 0.5, (tileSize * tilesPerColumn) + panY, gridColor, 1);
+		drawLine(ts + panX - 0.5, panY, ts + panX - 0.5, (tileSize * levelSave.tilesPerColumn) + panY, editorSave.gridColor, 1);
 		}
-		for (let i = 1; i < tilesPerColumn; i++) {
+		for (let i = 1; i < levelSave.tilesPerColumn; i++) {
 		const ts = i * tileSize;
-		drawLine(panX, ts + panY - 0.5, (tileSize * tilesPerRow) + panX, ts + panY - 0.5, gridColor, 1);
+		drawLine(panX, ts + panY - 0.5, (tileSize * levelSave.tilesPerRow) + panX, ts + panY - 0.5, editorSave.gridColor, 1);
 		}
 	}
+}
+
+function drawCustomTri(x, y, width, height, color) {
+	mainCtx.beginPath();
+	mainCtx.moveTo(x + (width / 2), y + 0.2);
+	mainCtx.lineTo(x, y + height);
+	mainCtx.lineTo(x + width, y + height);
+	mainCtx.closePath();
+	mainCtx.fillStyle = color;
+	mainCtx.fill();
 }
 
 function drawTri(x, y, s, color, facing) {				//draws a right triangle with both legs being length s 
@@ -524,23 +618,28 @@ function drawTri(x, y, s, color, facing) {				//draws a right triangle with both
 function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the chosen location. mode can be 0 for array draw mode or 1 for preview draw mode. 
 	let atlasMod;										//additional modes are for coloring layers differently from each other 
 	let color;
+	let batflyColor;
 	x = (tileX * tileSize) + panX;
 	y = (tileY * tileSize) + panY;
 	switch (mode) {
 		case 0:											//layer 0 draw mode
-			color = layer1Color;
+			color = editorSave.layer1Color;
+			batflyColor = color;
 			atlasMod = 0;
 		break
 		case 1:											//layer 1 draw mode
-			color = layer2Color;
+			color = editorSave.layer2Color;
+			batflyColor = 'green';
 			atlasMod = 0;
 		break
 		case 2:											//layer 2 draw mode
-			color = layer3Color;
+			color = editorSave.layer3Color;
+			batflyColor = color;
 			atlasMod = 0;
 		break
 		case undefined:									//preview draw mode
-			color = previewColor;
+			color = editorSave.previewColor;
+			batflyColor = color;
 			atlasMod = tileCount;
 	}
 	switch (value) {
@@ -578,51 +677,79 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			drawRect(color, x, y, tileSize, tileSize / 3);				//semisolid platform
 		break
 		case 11:
-			drawRect(backgroundColor, x, y, tileSize);					//special case for the eraser tool preview
+			drawRect(editorSave.backgroundColor, x, y, tileSize);					//special case for the eraser tool preview
 		break
 		case 12:
 			drawRect('gray', x + tileSize * (3 / 8), y + tileSize * (3 / 8), tileSize / 4);				//shortcut path
 		break
 		case 13:
-			let adjPathArray = new Array();
-			let adjWallArray = new Array();
-			for (let x = -1; x < 2; x++) {
-				adjPathArray.push(new Array(3).fill(0));
-				adjWallArray.push(new Array(3).fill(0));
-				for (let y = -1; y < 2; y++) {
-					if (x != 0 && y != 0) {
-						if (tileX + x < 0 || tileX + x >= tilesPerRow || tileY + y < 0 || tileY + y >= tilesPerColumn) {
-							adjPathArray[x + 1].splice(y + 1, 1, 0);
-							adjWallArray[x + 1].splice(y + 1, 1, 0);
-						} else {
-							adjPathArray[x + 1].splice(y + 1, 1, levelArray[0][3][tileX + x][tileY + y]);
-							adjWallArray[x + 1].splice(y + 1, 1, levelArray[0][1][tileX + x][tileY + y]);
+			let adjPathArray = [[], [], []]
+			let adjWallArray = [[], [], []]
+			let adjPathTotal;
+			let adjWallTotal;
+			let entranceDir;
+			let pathPos = [0, 0];
+			for (let x = 0; x < 3; x++) {
+				for (let y = 0; y < 3; y++) {
+					adjPathArray[x].push(levelSave.levelArray[0][3][tileX + x - 1][tileY + y - 1]);
+					adjWallArray[x].push(levelSave.levelArray[0][1][tileX + x - 1][tileY + y - 1]);
+				}
+			}
+			for (let x = 0; x < 3; x++) {
+				for (let y = 0; y < 3; y++) {
+					if (x != 1 && y != 1) {
+						if (adjPathArray[x][y] != 0) {
+							adjPathTotal++;
+							pathPos = [x, y];
 						}
-					} else {
-						adjPathArray[x + 1].splice(y + 1, 1, 0);
-						adjWallArray[x + 1].splice(y + 1, 1, 0);
+						if (adjWallArray[x][y] === 1 || adjWallArray[x][y] === 29) {
+							adjWallTotal++;
+						}
 					}
 				}
 			}
-			drawRect(color, x, y, tileSize)
-			switch (6534672547) {
-				default:
-					drawFromAtlas(3 + atlasMod, x, y, tileSize)
-				break
-				case 2:
-					drawTri(x, y, tileSize, 'gray', 'cb');
-				break
-				case 3:
-					drawTri(x, y, tileSize, 'gray', 'cl');
-				break
-				case 4:
-					drawTri(x, y, tileSize, 'gray', 'cr');
-				break
-				case 1:
-					drawTri(x, y, tileSize, 'gray', 'ct');
-				break
+			drawRect(color, x, y, tileSize);
+			if (adjPathTotal === 1 && pathPos[0] + pathPos[1] != 2 || pathPos[0] + pathPos[1] != 4 || pathPos[0] + pathPos[1] != 0) {
+				let oppositePos;
+				switch (pathPos) {
+					case [1, 0]:
+						oppositePos = [1, 2];
+						entranceDir = 1;
+					break
+					case [1, 2]:
+						oppositePos = [1, 0];
+						entranceDir = 2;
+					break
+					case [0, 1]:
+						oppositePos = [2, 1];
+						entranceDir = 3;
+					break
+					case [2, 1]:
+						oppositePos = [0, 1];
+						entranceDir = 4;
+					break
+				}
+				if (adjWallTotal === 7 && adjWallArray[oppositePos[0]][oppositePos[1]] === 0) {
+					switch (entranceDir) {
+						case 1:
+							drawTri(x, y, tileSize, 'gray', 'ct');
+						break
+						case 2:
+							drawTri(x, y, tileSize, 'gray', 'cb');
+						break
+						case 3:
+							drawTri(x, y, tileSize, 'gray', 'cl');
+						break
+						case 4:
+							drawTri(x, y, tileSize, 'gray', 'cr');
+						break
+					}
+				} else {
+					drawFromAtlas(3 + atlasMod, x, y, tileSize);
+				}
+			} else {
+				drawFromAtlas(3 + atlasMod, x, y, tileSize);
 			}
-			//console.log('aweh9utghaeruhgy9iuoer') 
 		break
 		case 14:
 			drawFromAtlas(5 + atlasMod, x, y, tileSize);
@@ -637,7 +764,9 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			drawFromAtlas(7 + atlasMod, x, y, tileSize);
 		break
 		case 18:
-			drawFromAtlas(1 + atlasMod, x, y, tileSize);
+			for (let i = 0; i < 3; i++) {
+				drawCustomTri(x + (tileSize / 3 * i), y, tileSize / 3, tileSize, batflyColor)
+			}
 		break
 		case 19:
 			drawFromAtlas(2 + atlasMod, x, y, tileSize);
@@ -649,7 +778,7 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			drawFromAtlas(10 + atlasMod, x, y, tileSize);
 		break
 		case 22:
-			drawRect(deleteColor, x, y, tileSize)
+			drawRect(editorSave.deleteColor, x, y, tileSize)
 		break
 		case 27:
 			drawFromAtlas(11 + atlasMod, x, y, tileSize);
@@ -683,7 +812,7 @@ function drawSelection() {
 function addToSelArray() {
 	w = selEndX - selStartX;
 	h = selEndY - selStartY;
-	layer = levelArray[layerChoice];
+	layer = levelSave.levelArray[editorSave.layerChoice];
 	selArray = new Array();
 	for (let index = 0; index < layer.length; index++) {
 		selArray.push(new Array());
@@ -702,8 +831,8 @@ function addToSelArray() {
 function drawVisValues(x, y) {					//draws all visible values at one tile 
 	drawValue(11, x, y);
 	for (let i = layerCount - 1; i >= 0; i--) {
-		if (visArray[i] === 1) {
-			levelArray[i].forEach((layerComponent) => {
+		if (editorSave.visArray[i] === 1) {
+			levelSave.levelArray[i].forEach((layerComponent) => {
 				drawValue(layerComponent[x][y], x, y, i);
 			});
 		}
@@ -714,7 +843,7 @@ function drawVisValues(x, y) {					//draws all visible values at one tile
 }
 
 function drawLayerValues(layer) {				//draws the supplied layer
-	levelArray[layer].forEach((layerComponent) => {
+	levelSave.levelArray[layer].forEach((layerComponent) => {
 		layerComponent.forEach((column, x) => {
 				column.forEach((value, y) => {
 					drawValue(value, x, y, layer);
@@ -726,10 +855,10 @@ function drawLayerValues(layer) {				//draws the supplied layer
 function drawVisLevel() {						//draws only the layers which are set to visible
 	clearScreen();
 	for (let i = layerCount - 1; i > -1; i--) {
-		if (visArray[i] === 1) {
+		if (editorSave.visArray[i] === 1) {
 			drawLayerValues(i);
 		}
-		if (i === layerChoice && visArray[layerChoice] === 1) {
+		if (i === editorSave.layerChoice && editorSave.visArray[editorSave.layerChoice] === 1) {
 			drawSelection();
 		}
 	}
@@ -793,22 +922,22 @@ function addValue(x, y, tileType, autoChoice) {			//autoChoice is true if using 
 	}
 	const layerComponentChoice = chooseComponent(tile);
 	if (layerComponentChoice === 2 || layerComponentChoice === 3) {
-		layerChoice = 0;
+		editorSave.layerChoice = 0;
 	}
 	if (mouseXInsideLevel && mouseYInsideLevel) {
-		if (visArray[layerChoice] === 1) {
+		if (editorSave.visArray[editorSave.layerChoice] === 1) {
 			switch(tileType) {
 				default:
-					levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, tileType);
+					levelSave.levelArray[editorSave.layerChoice][layerComponentChoice][x].splice(y, 1, tileType);
 				break
 				case 7:
 				case 8:
 				case 9:
-					let curTile = levelArray[layerChoice][0][x][y];
+					let curTile = levelSave.levelArray[editorSave.layerChoice][0][x][y];
 					if (curTile != 8 && curTile != 7 && curTile != 9) {
-						levelArray[layerChoice][layerComponentChoice][x].splice(y, 1, tileType);
+						levelSave.levelArray[editorSave.layerChoice][layerComponentChoice][x].splice(y, 1, tileType);
 					} else if ((curTile === 7 && tileType === 8) || (curTile === 8 && tileType === 7)) {
-						levelArray[layerChoice][0][x].splice(y, 1, 9);
+						levelSave.levelArray[editorSave.layerChoice][0][x].splice(y, 1, 9);
 					}
 				break
 			}			
@@ -818,19 +947,19 @@ function addValue(x, y, tileType, autoChoice) {			//autoChoice is true if using 
 
 function playEndEdit() {
 	if (mouseTileChanged) {
-		if (playStartY >= (mouseTileY - 1)) {
+		if (levelSave.playStartY >= (mouseTileY - 1)) {
 			console.log('limiting height!')
-			playEndY = playStartY + 2
+			levelSave.playEndY = levelSave.playStartY + 2
 		}
 		else {
-			playEndY = mouseTileY + 1;
+			levelSave.playEndY = mouseTileY + 1;
 		}
-		if (playStartX >= (mouseTileX - 1)) {
+		if (levelSave.playStartX >= (mouseTileX - 1)) {
 			console.log('limiting height!')
-			playEndX = playStartX + 2
+			levelSave.playEndX = levelSave.playStartX + 2
 		}
 		else {
-			playEndX = mouseTileX + 1;
+			levelSave.playEndX = mouseTileX + 1;
 		}
 	}
 	drawVisLevel()
@@ -838,19 +967,19 @@ function playEndEdit() {
 
 function playStartEdit() {
 	if (mouseTileChanged) {
-		if (playEndY <= (mouseTileY + 1)) {
+		if (levelSave.playEndY <= (mouseTileY + 1)) {
 			console.log('limiting height!')
-			playStartY = playEndY - 2
+			levelSave.playStartY = levelSave.playEndY - 2
 		}
 		else {
-			playStartY = mouseTileY;
+			levelSave.playStartY = mouseTileY;
 		}
-		if (playEndX <= (mouseTileX + 1)) {
+		if (levelSave.playEndX <= (mouseTileX + 1)) {
 			console.log('limiting width!')
-			playStartX = playEndX - 2
+			levelSave.playStartX = levelSave.playEndX - 2
 		}
 		else {
-			playStartX = mouseTileX;
+			levelSave.playStartX = mouseTileX;
 		}
 	}
 	drawVisLevel()
@@ -950,13 +1079,20 @@ initMainCanvas();
 
 initLevelArray();
 
+initEditorSettings();
+
 initAtlas();
 
 drawVisLevel();
 
+window.addEventListener('resize', () => {
+	initMainCanvas();
+	drawVisLevel();
+})
+
 levelTxtSelect.addEventListener('change', () => {
 	file = levelTxtSelect.files[0]
-	fileName = file.name.slice(0, file.name.indexOf('.txt'))
+	fileName = file.name.slice(0, file.name.lastIndexOf('.txt')) 				//.replace(/[^.!.@.#.$.%.^.&.*\d\p{L}-]+/ug, "") to sanitize the level name. unused for now 
 	if (file && confirm('Do you really want to load a level?\nthis will delete the previous level if it\'s not saved')) {
 		const reader = new FileReader();
 		reader.readAsText(file, "UTF-8");
@@ -964,19 +1100,19 @@ levelTxtSelect.addEventListener('change', () => {
 			let fileStr = event.target.result
 			if (typeof(fileStr) === 'string' && fileStr.slice(0, 4) === '[[[[' && fileStr.includes(']]]]]')) {
 				handleNameChange(fileName);
-				ogLevelFile = fileStr;
-				geoData = JSON.parse(ogLevelFile.slice(0, ogLevelFile.indexOf(']]]]]') + 5));
+				levelSave.ogLevelFile = fileStr;
+				geoData = JSON.parse(fileStr.slice(0, fileStr.indexOf(']]]]]') + 5));
 				//getting the level size
-				tilesPerRow = parseInt(ogLevelFile.slice(ogLevelFile.indexOf('(', ogLevelFile.indexOf('#size:')) + 1, ogLevelFile.indexOf(' ,', ogLevelFile.indexOf('#size:')) - 1));
-				tilesPerColumn = parseInt(ogLevelFile.slice(ogLevelFile.indexOf(',', ogLevelFile.indexOf('#size:')) + 1, ogLevelFile.indexOf(')', ogLevelFile.indexOf('#size:'))));
-				console.log('level size:', tilesPerRow, tilesPerColumn);
+				levelSave.tilesPerRow = parseInt(fileStr.slice(fileStr.indexOf('(', fileStr.indexOf('#size:')) + 1, fileStr.indexOf(' ,', fileStr.indexOf('#size:')) - 1));
+				levelSave.tilesPerColumn = parseInt(fileStr.slice(fileStr.indexOf(',', fileStr.indexOf('#size:')) + 1, fileStr.indexOf(')', fileStr.indexOf('#size:'))));
+				console.log('level size:', levelSave.tilesPerRow, levelSave.tilesPerColumn);
 				//getting the play area
-				extraTiles = JSON.parse(ogLevelFile.slice(ogLevelFile.indexOf('[', ogLevelFile.indexOf('#extraTiles:')), ogLevelFile.indexOf(']', ogLevelFile.indexOf('#extraTiles:')) + 1));
+				extraTiles = JSON.parse(fileStr.slice(fileStr.indexOf('[', fileStr.indexOf('#extraTiles:')), fileStr.indexOf(']', fileStr.indexOf('#extraTiles:')) + 1));
 				console.log(extraTiles);
-				playStartX = extraTiles[0];
-				playStartY = extraTiles[1];
-				playEndX = tilesPerRow - extraTiles[2]
-				playEndY = tilesPerColumn - extraTiles[3]
+				levelSave.playStartX = extraTiles[0];
+				levelSave.playStartY = extraTiles[1];
+				levelSave.playEndX = levelSave.tilesPerRow - extraTiles[2]
+				levelSave.playEndY = levelSave.tilesPerColumn - extraTiles[3]
 				//mapping the data from the original file to this editor's format
 				initLevelArray();
 				geoData.forEach((column, x) => {
@@ -984,7 +1120,7 @@ levelTxtSelect.addEventListener('change', () => {
 						tile.forEach((layer, layerIndex) => {
 							layer.forEach((value, componentIndex) => {
 								//componentIndex of 0 is main value, 1 is stackables
-								layerChoice = layerIndex;
+								editorSave.layerChoice = layerIndex;
 								if (componentIndex === 0) {
 									addValue(x, y, tileMap.import(value, componentIndex), false);
 								} else {
@@ -1015,21 +1151,21 @@ layerSelButtons.forEach(button => {					//get the work layer choice any time a c
 	button.addEventListener('mousedown', () => {
 		switch(button.id) {
 			case 'layer1':
-				layerChoice = 0;
+				editorSave.layerChoice = 0;
 			break
 			case 'layer2':
-				layerChoice = 1;
+				editorSave.layerChoice = 1;
 			break
 			case 'layer3':
-				layerChoice = 2;
+				editorSave.layerChoice = 2;
 		}
 		drawVisLevel();
 		layerSelButtons.forEach(button => {
 			button.setAttribute('selected', 'false');
 		})
 		button.setAttribute("selected", "true");
-		console.log(`changed work layer choice to ${layerChoice}`);
-		selectedLayerIndicator.innerText = `selected layer: ${layerChoice + 1}`;
+		console.log(`changed work layer choice to ${editorSave.layerChoice}`);
+		selectedLayerIndicator.innerText = `selected layer: ${editorSave.layerChoice + 1}`;
 	});
 });
 
@@ -1037,40 +1173,40 @@ layerVisIndicators.forEach(button => {
 	button.addEventListener('mousedown', () => {
 		switch(button.id) {
 			case 'layer1':
-				switch(visArray[0]) {
+				switch(editorSave.visArray[0]) {
 					case 0:
-						visArray.splice(0, 1, 1);
+						editorSave.visArray.splice(0, 1, 1);
 						button.setAttribute('selected', 'true');
 						console.log('turned layer 1 on');
 					break
 					case 1:
-						visArray.splice(0, 1, 0);
+						editorSave.visArray.splice(0, 1, 0);
 						button.setAttribute('selected', 'false');
 						console.log('turned layer 1 off');
 				}   
 			break
 			case 'layer2':
-				switch(visArray[1]) {
+				switch(editorSave.visArray[1]) {
 					case 0:
-						visArray.splice(1, 1, 1);
+						editorSave.visArray.splice(1, 1, 1);
 						button.setAttribute('selected', 'true');
 						console.log('turned layer 2 on');
 					break
 					case 1:
-						visArray.splice(1, 1, 0);
+						editorSave.visArray.splice(1, 1, 0);
 						button.setAttribute('selected', 'false');
 						console.log('turned layer 2 off');
 				}
 			break
 			case 'layer3':
-				switch(visArray[2]) {
+				switch(editorSave.visArray[2]) {
 					case 0:
-						visArray.splice(2, 1, 1);
+						editorSave.visArray.splice(2, 1, 1);
 						button.setAttribute('selected', 'true');
 						console.log('turned layer 3 on');
 					break
 					case 1:
-						visArray.splice(2, 1, 0);
+						editorSave.visArray.splice(2, 1, 0);
 						button.setAttribute('selected', 'false');
 						console.log('turned layer 3 off');
 				}
@@ -1094,11 +1230,11 @@ tileButtons.forEach(button => {						 //get the tile choice any time a tile butt
 	});
 });
 
-editorSettings.forEach(button => {						//event listener for the editor settings
+editorSettingsButtons.forEach(button => {						//event listener for the editor settings
 	button.addEventListener('mousedown', () => {
 		switch (button.id) {
 			case 'resetView':
-				zoomLevel = 1;
+				editorSave.zoomLevel = 1;
 				panX = 0;
 				panY = 0;
 				tileSize = baseTileSize;
@@ -1106,25 +1242,25 @@ editorSettings.forEach(button => {						//event listener for the editor settings
 				console.log('reset the view');
 			break
 			case 'showGrid':
-				switch (showGrid) {
+				switch (editorSave.showGrid) {
 					case false:
-						showGrid = true;
+						editorSave.showGrid = true;
 						button.innerText = 'hide grid';
 						console.log('turned grid on');
 					break
 					case true:
-						showGrid = false;
+						editorSave.showGrid = false;
 						button.innerText = 'show grid';
 						console.log('turned grid off');
 				}
 			break
 			case 'autoSlope':
-				if (autoSlope) {
+				if (editorSave.autoSlope) {
 					button.setAttribute('selected', false);
-					autoSlope = false;
+					editorSave.autoSlope = false;
 				} else {
 					button.setAttribute('selected', true);
-					autoSlope = true;
+					editorSave.autoSlope = true;
 				}
 			break
 			case 'airReplace':
@@ -1135,7 +1271,8 @@ editorSettings.forEach(button => {						//event listener for the editor settings
 					button.setAttribute('selected', true);
 					airReplace = true;
 				}
-			}
+		}
+		saveEditorSettings();
 		drawVisLevel();
 	});
 });
@@ -1186,7 +1323,7 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 					screen.addEventListener('mousemove', eraseFn);
 				break
 				case 'boxSelect':
-					if (visArray[layerChoice] === 1) {
+					if (editorSave.visArray[editorSave.layerChoice] === 1) {
 						if (drawSel && !mouseInsideSel) {
 							placeSelection();
 							selStartX = 0;
@@ -1217,12 +1354,12 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 					screen.addEventListener('mousemove', boxFn);
 				break
 				case 'playEdit':
-					if (mouseTileX === playStartX && mouseTileY === playStartY) {
+					if (mouseTileX === levelSave.playStartX && mouseTileY === levelSave.playStartY) {
 						console.log('fuck');
 						screen.addEventListener('mousemove', playStartEdit);
 					}
 					else {
-						if ((mouseTileX + 1) === playEndX && (mouseTileY + 1) === playEndY) {
+						if ((mouseTileX + 1) === levelSave.playEndX && (mouseTileY + 1) === levelSave.playEndY) {
 							console.log('shit');
 							screen.addEventListener('mousemove', playEndEdit);
 						}
@@ -1257,7 +1394,7 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 		if (event.button === 0) {
 			switch (toolChoice) {
 				case 'boxFill':
-					if (visArray[layerChoice] === 1) {
+					if (editorSave.visArray[editorSave.layerChoice] === 1) {
 						for (let x = selStartX; x < selEndX; x++) {
 							for (let y = selStartY; y < selEndY; y++) {
 								addValue(x, y, tileChoice, true);
@@ -1279,8 +1416,8 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 					}
 				break
 				case 'eraseAll':
-					if (visArray[layerChoice] === 1) {
-						levelArray[layerChoice].forEach(layerComponent => {
+					if (editorSave.visArray[editorSave.layerChoice] === 1) {
+						levelSave.levelArray[editorSave.layerChoice].forEach(layerComponent => {
 							for (let x = selStartX; x < selEndX; x++) {
 								for (let y = selStartY; y < selEndY; y++) {
 									layerComponent[x].splice(y, 1, 0);

@@ -43,46 +43,6 @@ function paste() {
 	drawVisLevel();
 }
 
-function saveLevelSettings() {
-	if (confirm('Do you really want to save the level?\nThis will delete the previously saved level...')) {
-		localStorage.setItem('levelArray', JSON.stringify(levelArray));
-		localStorage.setItem('tilesPerRow', tilesPerRow);
-		localStorage.setItem('tilesPerColumn', tilesPerColumn);
-		localStorage.setItem('playStartX', playStartX);
-		localStorage.setItem('playStartY', playStartY);
-		localStorage.setItem('playEndX', playEndX);
-		localStorage.setItem('playEndY', playEndY);
-		localStorage.setItem('screensWide', screensWide);
-		localStorage.setItem('screensTall', screensTall);
-		localStorage.setItem('levelName', levelName);
-		console.log('saved the level');
-	}
-}
-
-function loadLevelSettings() {
-	if (localStorage.getItem('levelArray') === null) {
-		alert('cannot load a nonexistent level!!!!')
-	} else {
-		if (confirm('Do you really want to load the saved level?\nThis will delete the current level')) {
-			levelArray = JSON.parse(localStorage.getItem('levelArray'));
-			tilesPerRow = parseInt(localStorage.getItem('tilesPerRow'));
-			tilesPerColumn = parseInt(localStorage.getItem('tilesPerColumn'));
-			playStartX = parseInt(localStorage.getItem('playStartX'));
-			playStartY = parseInt(localStorage.getItem('playStartY'));
-			playEndX = parseInt(localStorage.getItem('playEndX'));
-			playEndY = parseInt(localStorage.getItem('playEndY'));
-			screensWide = parseInt(localStorage.getItem('screensWide'));
-			screensTall = parseInt(localStorage.getItem('screensTall'));
-			levelName = localStorage.getItem('levelName');
-			handleNameChange(levelName);
-			widthField.setAttribute('value', screensWide);
-			heightField.setAttribute('value', screensTall);
-			drawVisLevel();
-			console.log('loaded the level :3');
-		}
-	} 
-}
-
 function undo() {
 	console.log('undid the previous action');
 }
@@ -137,11 +97,11 @@ document.addEventListener('keydown', (event) => {
 		switch (event.key) {
 			case 's':
 				event.preventDefault();
-				newsaveLevelSettings();
+				saveLevelSettings();
 			break
 			case 'l':
 				event.preventDefault();
-				newloadLevelSettings();
+				loadLevelSettings();
 			break
 		}
 	}

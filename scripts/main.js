@@ -168,15 +168,17 @@ function saveEditorSettings() {
 	localStorage.setItem('editorSettings', JSON.stringify(settingsArray));
 }
 
-function initEditorSettings() {
-	const settingsArray = JSON.parse(localStorage.getItem('editorSettings'));
-	settingsArray.forEach((setting) => {
-		editorSave[setting.name] = setting.value;
-	})
-	drawVisLevel();
+function loadEditorSettings() {
+	if (localStorage.getItem('editorSettings')) {
+		const settingsArray = JSON.parse(localStorage.getItem('editorSettings'));
+		settingsArray.forEach((setting) => {
+			editorSave[setting.name] = setting.value;
+		})
+		drawVisLevel();
+	}
 }
 
-function newsaveLevelSettings() {
+function saveLevelSettings() {
 	if (confirm('Do you really want to save the level?\nThis will delete the previously saved level...')) {
 		const settingsArray = new Array()
 		levelSettingsList.forEach((setting, index) => {
@@ -189,7 +191,7 @@ function newsaveLevelSettings() {
 	}
 }
 
-function newloadLevelSettings() {
+function loadLevelSettings() {
 	if (localStorage.getItem('levelSettings') === null) {
 		alert('cannot load a nonexistent level!!!!')
 	} else {
@@ -1079,7 +1081,7 @@ initMainCanvas();
 
 initLevelArray();
 
-initEditorSettings();
+loadEditorSettings();
 
 initAtlas();
 

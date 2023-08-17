@@ -65,8 +65,8 @@ screen.addEventListener('wheel', zoom);
 
 document.addEventListener('keydown', (event) => {
 	if (event.key === ' ') {
-		if (! autoSlope) {
-			switch (tileChoice) {				//manual slope
+		if (!editorSave.autoSlope) {
+            switch (tileChoice) {				//manual slope
 				case 2:
 				case 3:
 				case 4:

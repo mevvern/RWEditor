@@ -2,13 +2,13 @@
 A rain world level editor remade from the ground up with javascript and html/css
 
 ## Current Features
-* not much
-* saving a level you created
-* creating a level
+* importing a project file from the original editor
+* saving a level you created (not exporting to the original editor!!!)
+* creating a new level
 * all "geometry" tiles from the original editor
 
 ## Planned Features (short-term)
-* importing and exporting levels in the original editor's format
+* exporting levels in the original editor's format
 * editing graphical tiles
 * editing effects
 

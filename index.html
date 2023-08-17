@@ -3,11 +3,15 @@
     <head    
         <meta charset="utf-8">
         <title>New Level</title>
-        <link href="style.css?v4" rel="stylesheet">
-        <script src="scripts/tileMap.js?v4" defer></script>
-        <script src="scripts/main.js?v4" defer></script>
-        <script src="scripts/shortcuts.js?v4" defer></script>
-        <script src="scripts/collapsible.js?v4" defer></script>
+        <!-- some version numbers just to make sure the browser gets a new version if it exists -->
+        <link href="style.css?v5" rel="stylesheet">
+        <script src="scripts/tileMap.js?v5" defer></script>
+        <script src="scripts/main.js?v5" defer></script>
+        <script src="scripts/shortcuts.js?v5" defer></script>
+        <script src="scripts/collapsible.js?v5" defer></script>
+        <script src="scripts/import.js?v5" defer></script>
+        <script src="scripts/parser.js?v5" defer></script>
+        <script src="scripts/classes.js?v5" defer></script>
     </head>
     <body>
         <canvas id="editorCanvas"></canvas>
@@ -24,7 +28,7 @@
                     <button class="tileButton" selected="false" id="invisible wall" customTitle="Invisible Wall"><img src="resources/invisWallIcon.png" draggable="false"></button>
                     <button class="tileButton" selected="false" id="horizontal pole" customTitle="Horizontal pole"><img src="resources/hPoleIcon.png" draggable="false"></button>
                     <button class="tileButton" selected="false" id="vertical pole" customTitle="Vertical pole"><img src="resources/vPoleIcon.png" draggable="false"></button>
-                    <button class="tileButton" selected="false" id="crossPole" customTitle="Crossed pole"><img src="resources/crossPoleIcon.png" draggable="false"></button>
+                    <button class="tileButton" selected="false" id="cross pole" customTitle="Crossed pole"><img src="resources/crossPoleIcon.png" draggable="false"></button>
                     <button class="tileButton" selected="false" id="semisolid platform" customTitle="Semisolid platform"><img src="resources/semisolidIcon.png" draggable="false"></button>
                     <button class="tileButton" selected="false" id="batfly hive" customTitle="Batfly hive"><img src="resources/hiveIcon.png" draggable="false"></button>
                     <button class="tileButton" selected="false" id="cool scug 0:" customTitle="cool scug :0"><img src="resources/coolScugIcon.png" draggable="false"></button>

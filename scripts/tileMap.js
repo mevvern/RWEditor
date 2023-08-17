@@ -11,6 +11,7 @@ const tileMapArray = [
     [29, 0, 9, "invisible wall"],
     [7, 1, 1, "horizontal pole"],
     [8, 1, 2, "vertical pole"],
+    [9, 1, null, "cross pole"],
     [12, 1, 5, "shortcut path"],
     [13, 1, 4, "shortcut entrance"],
     [14, 1, 7, "creature den"],

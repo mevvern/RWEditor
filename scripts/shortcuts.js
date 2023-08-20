@@ -50,13 +50,12 @@ function undo() {
 function zoom(event) {
 	if (event.ctrlKey) {
 		event.preventDefault();
-		editorSave.zoomLevel -= (event.deltaY / 100);
-		if ((editorSave.zoomLevel + baseTileSize) <= 0) {
-			editorSave.zoomLevel = -baseTileSize + 1;
+		zoomLevel -= (event.deltaY / 100)
+		if ((zoomLevel + baseTileSize) <= 0) {
+			zoomLevel = -baseTileSize + 1;
 			console.log('ur zoom is too small :3!!!!');
 		}
-		tileSize = (editorSave.zoomLevel + baseTileSize);
-		saveEditorSettings();
+        tileSize = (zoomLevel + baseTileSize);
 		drawVisLevel();
 	}
 }

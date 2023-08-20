@@ -18,32 +18,35 @@ levelSave.levelName = 'New Level'
 let ogLevelFile = {};									//a string containing the text of the original level file that is currently open
 
 //"visual" settings
-editorSave.zoomLevel = -4;							//stores the zoom level of the editor
+let zoomLevel = -4;							//stores the zoom level of the editor
 let baseTileSize = 24;						//base size of each tile in pixels
-let tileSize = editorSave.zoomLevel + baseTileSize;	//the final tile size in pixels with zoom taken into account
+let tileSize = zoomLevel + baseTileSize;	//the final tile size in pixels with zoom taken into account
 let panX = 25;								//stores the x position in pixels that the user has moved the display to
 let panY = 52;								//same, but for the y axis
-editorSave.backgroundColor = 'white';
-editorSave.gridColor = 'rgb(200, 200, 200)';
-editorSave.playColor =	'rgb(255, 127, 127)';			//color of the play area's border
-editorSave.selColor = 'gold';							//color of the selection box
-editorSave.levelBorderColor = 'rgb(127, 127, 255';
-editorSave.layer1Color = 'rgba(0, 0, 0, 1)';
-editorSave.layer2Color = 'rgba(200, 255, 200, 0.7)';
-editorSave.layer3Color = 'pink';
-editorSave.previewColor = 'rgba(150, 150, 150, 0.5)';	//color of the tile preview when certain tools are selected, if the tile being previewed supports custom colors
-editorSave.deleteColor = 'rgba(255, 200, 200, 0.5)';	//color of the tile preview when erase tool is selected
-editorSave.boxFillColor = 'red';						//color of the box fill selection border
-editorSave.boxDeleteColor = 'red';						//color of the box erase selection border
-editorSave.toolsHiddenSetting = 'true';			//weird fake booleans because you cant have booleans in css
+editorSave.backgroundColor = '#ffffff';
+editorSave.gridColor = '#c8c8c8';
+editorSave.playColor =	'#ff7f7f';			//color of the play area's border
+editorSave.selBoxColor = '#c0ad06';							//color of the selection box
+editorSave.selBodyColor = "#88a1d8"
+editorSave.levelBorderColor = '#7f7fff';
+editorSave.layer1Color = '#000000';
+editorSave.layer2Color = '#c8ffc8';
+editorSave.layer3Color = '#e2a0a0';
+editorSave.previewColor = '#969696';	//color of the tile preview when certain tools are selected, if the tile being previewed supports custom colors
+editorSave.deleteColor = '#ffc8c8';	//color of the tile preview when erase tool is selected
+editorSave.boxFillColor = '#ff0000';						//color of the box fill selection border
+editorSave.boxDeleteColor = '#ff0000';						//color of the box erase selection border
+editorSave.toolsHiddenSetting = 'false';			//weird fake booleans because you cant have booleans in css
 editorSave.settingsHiddenSetting = 'true';
+let colorToChange = "backgroundColor";
 editorSave.showGrid = true;						//whether or not to show the grid
+editorSave.showCoords = false;
 let previewChoice = true;							//whether or not to show the preview at the current mouse tile
 
 //tool and tile settings 
 let tileChoice = 1;
 let toolChoice = 'paint';
-editorSave.layerChoice = 0;						//stores the current work layer
+let layerChoice = 0;						//stores the current work layer
 let slopeChoice = 2;
 editorSave.autoSlope = false;
 let doingMouseThing = false;				//true if a mousedown event was fired on the editor's canvas, used to prevent unrelated mouseup events from affecting the ui
@@ -51,7 +54,7 @@ let doingMouseThing = false;				//true if a mousedown event was fired on the edi
 //selection
 let selBox = false;							//whether or not to show the selection box
 let drawSel = false;						//whether or not to draw the selection itself, if it exists
-let airReplace = false;						//whether or not to replace base tiles with air in the selection when placing
+editorSave.airReplace = false;						//whether or not to replace base tiles with air in the selection when placing
 let startTileX = 0;							//the tile that was first clicked on with any tool that uses boxFn()
 let startTileY = 0;
 let selStartX = 0;							//selection starting coords
@@ -61,7 +64,7 @@ let selEndY = 0;
 let mouseOffsetX = 0;						//the offset of the mouse from the selection starting corner when clicking on the inside of the selection to move it
 let mouseOffsetY = 0;
 let selArray;														//array that stores the current selection. structured similar to the levels array but without layers, and only as many components as the source selection
-levelSave.clipBoard;
+levelSave.clipBoard = [];
 
 //DOM elements
 const screen = document.getElementById('editorCanvas');							//the canvas element which forms the main display
@@ -79,13 +82,16 @@ const heightField = document.getElementById('screensTall');
 const levelNameForm = document.getElementById('levelNameForm');
 const levelNameField = document.getElementById('levelName');
 const pageTitle = document.querySelector('title');
-const levelTxtSelect = document.getElementById('importLevel')
+const levelTxtSelect = document.getElementById('importLevel');
+const editorColorSelect = document.getElementById('editorColorSelector');
+const editorColorPicker = document.getElementById('editorColorPicker');
+const editorColorReset = document.getElementById("editorColorReset");
 
 //arrays & canvases
 const mainCtx = screen.getContext('2d');							//canvas rendering context for the main display
 const atlasCanvas = new OffscreenCanvas(29 * tileCount * 2, 29);	//offScreenCanvas which stores the tiles that are bitmaps
 levelSave.levelArray;														//array that stores all the data of the level. each array contained within this one is one layer of the level data
-editorSave.visArray = new Array(layerCount).fill(1);						//array that stores the layer visibility choice for each layer
+const visArray = new Array(layerCount).fill(1);						//array that stores the layer visibility choice for each layer
 const atlasCtx = atlasCanvas.getContext('2d');						//canvas rendering context for the atlas's canvas
 
 //mouse vars
@@ -100,28 +106,65 @@ let mouseXInsideLevel = false;
 let mouseYInsideLevel = false;
 
 function initMainCanvas() {								//sets the size of the main canvas based on some vars
-	screen.width = window.visualViewport.width;
+    screen.width = window.visualViewport.width;
 	screen.height = window.visualViewport.height;
 }
 
-function checkForObjectMatch(obj1, obj2) {
+function strictEquals(obj1, obj2) {
+    if (JSON.stringify(obj1) === JSON.stringify(obj2)) {
+        return true
+    } else {
+        return false
+    }
+}
+
+function arrLooseEquals(arr1, arr2) {                   //loose in the sense that it doesn't care about the order of the elements
+    let boolean = true;
+    if (Array.isArray(arr1) && Array.isArray(arr2)) {
+        if (arr1.length === arr1.length) {
+            arr1.forEach((value) => {
+                if (!arr2.includes(value)) {
+                    boolean = false;
+                }
+            })
+        } else {
+            return false;
+        }
+        return boolean;
+    } else {
+        throw new Error("arrLooseEquals only accepts arrays")
+    }
+}
+
+function looseEquals(obj1, obj2) {          //loose in the sense that it only cares that a key exists, rather than the values being the same
     let keys1 = Object.keys(obj1);
     let keys2 = Object.keys(obj2);
     let boolean = true;
-    if (Math.min(keys1.length, keys2.length) === keys1.length) {
+    if (keys2.length === keys1.length) {
         keys1.forEach((key) => {
             if (!keys2.includes(key)) {
                 boolean = false;
             }
         })
     } else {
-        keys2.forEach((key) => {
-            if (!keys1.includes(key)) {
-                boolean = false
-            }
-        })
+        return false;
     }
     return boolean;
+}
+
+function initHtmlElements() {
+    changeToolboxState('tools', editorSave.toolsHiddenSetting);
+    changeToolboxState('settings', editorSave.settingsHiddenSetting);
+    editorColorPicker.value = editorSave.backgroundColor;
+    editorSettingsButtons.forEach(button => {						//event listener for the editor settings
+        if (button.id != 'resetView') {
+            if (editorSave[button.id]) {
+                button.setAttribute('selected', "true");
+            } else {
+                button.setAttribute('selected', "false");
+            }
+        }
+    });
 }
 
 function initLevelArray() {					//structure: [root: [layer 1: [0 poles], [1 base geo], [2 items], [3 tunnels]], [layer 2: [0 poles], [1 base geo]], [layer 3: [0 poles], [1 base geo]]
@@ -149,7 +192,7 @@ function saveEditorSettings() {
 
 function loadEditorSettings() {
 	let settings = JSON.parse(localStorage.getItem('editorSettings'))
-    if (settings && checkForObjectMatch(settings, editorSave)) {
+    if (settings && looseEquals(settings, editorSave)) {
 		editorSave = settings;
 
 		drawVisLevel();
@@ -170,7 +213,7 @@ function loadLevelSettings() {
 	let settings = JSON.parse(localStorage.getItem('levelSettings'))
     if (settings === null) {
 		alert('cannot load a nonexistent level!!!!')
-	} else if (checkForObjectMatch(settings, levelSave)) {
+	} else if (looseEquals(settings, levelSave)) {
 		if (confirm('Do you really want to load the saved level?\nThis will delete the current level')) {
 			levelSave = JSON.parse(localStorage.getItem('levelSettings'));
 			handleNameChange(levelSave.levelName);
@@ -203,15 +246,27 @@ function getGridPos(event) {					//gets the position of the mouse and updates a 
 	let prevY = mouseTileY;
 	let tileX = Math.floor((event.offsetX - panX) / tileSize);
 	let tileY = Math.floor((event.offsetY - panY) / tileSize);
-	mouseXInsideLevel = ((tileX >= 0) && (tileX < levelSave.tilesPerRow));
-	mouseYInsideLevel = ((tileY >= 0) && (tileY < levelSave.tilesPerColumn));
-	mouseInsideSel = (tileX >= selStartX) && (tileX < selEndX) && (tileY >= selStartY) && (tileY < selEndY)
+	let mouseOutsideLeft = tileX < 0
+    let mouseOutsideRight = tileX > levelSave.tilesPerRow - 1
+    let mouseOutsideTop = tileY < 0
+    let mouseOutsideBottom = tileY > levelSave.tilesPerColumn - 1
+    mouseXInsideLevel = !mouseOutsideLeft && !mouseOutsideRight;
+	mouseYInsideLevel = !mouseOutsideTop && !mouseOutsideBottom;
+    mouseInsideSel = (tileX >= selStartX) && (tileX < selEndX) && (tileY >= selStartY) && (tileY < selEndY)
 	if (mouseXInsideLevel) {
 		mouseTileX = tileX;
-	}
+	} else if (mouseOutsideLeft) {
+        mouseTileX = 0;
+    } else if (mouseOutsideRight) {
+        mouseTileX = levelSave.tilesPerRow - 1;
+    }
 	if (mouseYInsideLevel) {
 		mouseTileY = tileY;
-	}
+	} else if (mouseOutsideTop) {
+        mouseTileY = 0;
+    } else if (mouseOutsideBottom) {
+        mouseTileY = levelSave.tilesPerColumn - 1;
+    }
 	if ((prevX === mouseTileX) && (prevY === mouseTileY)) {
 		mouseTileChanged = false;
 	}
@@ -471,7 +526,7 @@ function moveSel(event) {
 }
 
 function clearSelection() {
-	levelSave.levelArray[editorSave.layerChoice].forEach(layerComponent => {
+	levelSave.levelArray[layerChoice].forEach(layerComponent => {
 		for (let x = selStartX; x < selEndX; x++) {
 			for (let y = selStartY; y < selEndY; y++) {
 				layerComponent[x].splice(y, 1, 0);
@@ -484,20 +539,20 @@ function placeSelection() {
 	selArray.forEach((layerComponent, componentIndex) => {
 		layerComponent.forEach((column, x) => {
 			column.forEach((value, y) => {
-				if (editorSave.layerChoice != 0) {
+				if (layerChoice != 0) {
 					if (componentIndex > 1) {
 					} else {
 						if (airReplace) {
-							levelSave.levelArray[editorSave.layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+							levelSave.levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
 						} else if (value != 0) {
-							levelSave.levelArray[editorSave.layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+							levelSave.levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
 						}
 					}
 				} else {
 					if (airReplace) {
-						levelSave.levelArray[editorSave.layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+						levelSave.levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
 					} else if (value != 0) {
-						levelSave.levelArray[editorSave.layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+						levelSave.levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
 					}
 				}
 			})
@@ -515,7 +570,7 @@ function drawSelBox() {
 				width = 1;
 			break
 			case 'boxSelect':
-				color = editorSave.selColor;
+				color = editorSave.selBoxColor;
 				width = 3;
 			break
 			case 'eraseAll':
@@ -635,6 +690,11 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			batflyColor = color;
 			atlasMod = 0;
 		break
+        case 3:                                         //selection preview draw mode
+            color = editorSave.selBodyColor; 
+            batflyColor = color;
+            atlasMod = tileCount;
+        break
 		case undefined:									//preview draw mode
 			color = editorSave.previewColor;
 			batflyColor = color;
@@ -647,7 +707,53 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			drawRect(color, x, y, tileSize);			//wall
 		break
 		case 2:
-			drawTri(x, y, tileSize, color, 'dl');		//down-left slope
+			if (mode === undefined && editorSave.autoSlope) {
+                const adjWallArray = [[], [], []]
+                const adjWallTotal = [];
+                for (let x = 0; x < 3; x++) {
+                    for (let y = 0; y < 3; y++) {
+                        if (! (tileY - 1 < 0 || tileY - 1 > levelSave.tilesPerColumn || tileX - 1 < 0 || tileX > levelSave.tilesPerRow)) {
+                            adjWallArray[x].push(levelSave.levelArray[layerChoice][1][tileX + x - 1][tileY + y - 1]);
+                        } else {
+                            adjWallArray[x].push(0);
+                        }
+                    }
+                }
+                for (let xCoord = 0; xCoord < 3; xCoord++) {
+                    for (let yCoord = 0; yCoord < 3; yCoord++) {
+                        function eq(pair) {
+                            return strictEquals([xCoord, yCoord], pair)
+                        }
+                        if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
+                            if (eq([0, 1])) {
+                                adjWallTotal.push(1)
+                            } else if (eq([1, 0])) {
+                                adjWallTotal.push(2)
+                            } else if (eq([2, 1])) {
+                                adjWallTotal.push(3)
+                            } else if (eq([1, 2])) {
+                                adjWallTotal.push(4)
+                            }
+                        }
+                    }
+                }
+                if (adjWallTotal.length === 2 && adjWallArray[1][1] === 0) {
+                    function eq(pair) {
+                        return arrLooseEquals(adjWallTotal, pair)
+                    }
+                    if (eq([1, 4])) {
+                        drawTri(x, y, tileSize, color, 'dl');
+                    } else if (eq([1, 2])) {
+                        drawTri(x, y, tileSize, color, 'ul');
+                    } else if (eq([2, 3])) {
+                        drawTri(x, y, tileSize, color, 'ur');
+                    } else if (eq([3, 4])) {
+                        drawTri(x, y, tileSize, color, 'dr');
+                    }
+                }
+            } else {
+                drawTri(x, y, tileSize, color, 'dl');
+            }
 		break
 		case 3:
 			drawTri(x, y, tileSize, color, 'ul');		//up-left slope
@@ -683,71 +789,71 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 		case 13:
 			let adjPathArray = [[], [], []]
 			let adjWallArray = [[], [], []]
-			let adjPathTotal;
-			let adjWallTotal;
+			let adjPathTotal = 0;
+			let adjWallTotal = 0;
 			let entranceDir;
 			let pathPos = [0, 0];
+            let oppositeTile;
 			for (let x = 0; x < 3; x++) {
 				for (let y = 0; y < 3; y++) {
-					adjPathArray[x].push(levelSave.levelArray[0][3][tileX + x - 1][tileY + y - 1]);
-					adjWallArray[x].push(levelSave.levelArray[0][1][tileX + x - 1][tileY + y - 1]);
+					if (! (tileY - 1 < 0 || tileY - 1 > levelSave.tilesPerColumn || tileX - 1 < 0 || tileX > levelSave.tilesPerRow)) {
+                        adjPathArray[x].push(levelSave.levelArray[0][3][tileX + x - 1][tileY + y - 1]);
+					    adjWallArray[x].push(levelSave.levelArray[0][1][tileX + x - 1][tileY + y - 1]);
+                    } else {
+                        adjPathArray[x].push(0);
+					    adjWallArray[x].push(0);
+                    }
 				}
 			}
-			for (let x = 0; x < 3; x++) {
-				for (let y = 0; y < 3; y++) {
-					if (x != 1 && y != 1) {
-						if (adjPathArray[x][y] != 0) {
+			for (let xCoord = 0; xCoord < 3; xCoord++) {
+				for (let yCoord = 0; yCoord < 3; yCoord++) {
+					if (! (xCoord === 1 && yCoord === 1)) {
+						if (adjPathArray[xCoord][yCoord] != 0) {
 							adjPathTotal++;
-							pathPos = [x, y];
+							pathPos = [xCoord, yCoord];
 						}
-						if (adjWallArray[x][y] === 1 || adjWallArray[x][y] === 29) {
-							adjWallTotal++;
-						}
+                        if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
+                            adjWallTotal++;
+                        }
 					}
 				}
 			}
 			drawRect(color, x, y, tileSize);
-			if (adjPathTotal === 1 && pathPos[0] + pathPos[1] != 2 || pathPos[0] + pathPos[1] != 4 || pathPos[0] + pathPos[1] != 0) {
-				let oppositePos;
-				switch (pathPos) {
-					case [1, 0]:
-						oppositePos = [1, 2];
-						entranceDir = 1;
-					break
-					case [1, 2]:
-						oppositePos = [1, 0];
-						entranceDir = 2;
-					break
-					case [0, 1]:
-						oppositePos = [2, 1];
-						entranceDir = 3;
-					break
-					case [2, 1]:
-						oppositePos = [0, 1];
-						entranceDir = 4;
-					break
-				}
-				if (adjWallTotal === 7 && adjWallArray[oppositePos[0]][oppositePos[1]] === 0) {
-					switch (entranceDir) {
-						case 1:
-							drawTri(x, y, tileSize, 'gray', 'ct');
-						break
-						case 2:
-							drawTri(x, y, tileSize, 'gray', 'cb');
-						break
-						case 3:
-							drawTri(x, y, tileSize, 'gray', 'cl');
-						break
-						case 4:
-							drawTri(x, y, tileSize, 'gray', 'cr');
-						break
-					}
-				} else {
-					drawFromAtlas(3 + atlasMod, x, y, tileSize);
-				}
-			} else {
-				drawFromAtlas(3 + atlasMod, x, y, tileSize);
-			}
+            if (strictEquals(pathPos, [1, 0])) {
+                oppositeTile = adjWallArray[1][2];
+                entranceDir = 1;
+            } else if (strictEquals(pathPos, [1, 2])) {
+                oppositeTile = adjWallArray[1][0];
+                entranceDir = 2;
+            } else if (strictEquals(pathPos, [0, 1])) {
+                oppositeTile = adjWallArray[2][1];
+                entranceDir = 3;
+            } else if (strictEquals(pathPos, [2, 1])) {
+                oppositeTile = adjWallArray[0][1];
+                entranceDir = 4;
+            } else {
+                oppositeTile = undefined;
+                entranceDir = undefined;
+            }
+            if (oppositeTile != undefined && entranceDir && adjWallTotal === 7 && oppositeTile === 0 || oppositeTile === 10) {
+                switch (entranceDir) {
+                    case 1:
+                        drawTri(x, y, tileSize, 'gray', 'ct');
+                    break
+                    case 2:
+                        drawTri(x, y, tileSize, 'gray', 'cb');
+                    break
+                    case 3:
+                        drawTri(x, y, tileSize, 'gray', 'cl');
+                    break
+                    case 4:
+                        drawTri(x, y, tileSize, 'gray', 'cr');
+                    break
+                }
+            } else {
+                drawFromAtlas(3 + atlasMod, x, y, tileSize);
+            }
+			
 		break
 		case 14:
 			drawFromAtlas(5 + atlasMod, x, y, tileSize);
@@ -800,7 +906,7 @@ function drawSelection() {
 		selArray.forEach((layerComponent) => {
 			layerComponent.forEach((column, x) => {
 					column.forEach((value, y) => {
-						drawValue(value, x + selStartX, y + selStartY);
+						drawValue(value, x + selStartX, y + selStartY, 3);
 					})
 			});
 		});
@@ -810,7 +916,7 @@ function drawSelection() {
 function addToSelArray() {
 	let w = selEndX - selStartX;
 	let h = selEndY - selStartY;
-	let layer = levelSave.levelArray[editorSave.layerChoice];
+	let layer = levelSave.levelArray[layerChoice];
 	selArray = new Array();
 	for (let index = 0; index < layer.length; index++) {
 		selArray.push(new Array());
@@ -829,7 +935,7 @@ function addToSelArray() {
 function drawVisValues(x, y) {					//draws all visible values at one tile 
 	drawValue(11, x, y);
 	for (let i = layerCount - 1; i >= 0; i--) {
-		if (editorSave.visArray[i] === 1) {
+		if (visArray[i] === 1) {
 			levelSave.levelArray[i].forEach((layerComponent) => {
 				drawValue(layerComponent[x][y], x, y, i);
 			});
@@ -853,10 +959,10 @@ function drawLayerValues(layer) {				//draws the supplied layer
 function drawVisLevel() {						//draws only the layers which are set to visible
 	clearScreen();
 	for (let i = layerCount - 1; i > -1; i--) {
-		if (editorSave.visArray[i] === 1) {
+		if (visArray[i] === 1) {
 			drawLayerValues(i);
 		}
-		if (i === editorSave.layerChoice && editorSave.visArray[editorSave.layerChoice] === 1) {
+		if (i === layerChoice && visArray[layerChoice] === 1) {
 			drawSelection();
 		}
 	}
@@ -876,6 +982,7 @@ function chooseComponent(tile) {
 		case 5:		//slope
 		case 6:		//cool slugcat
         case 10:	//semisolid platform
+        case 13:	//shortcut entrance
 		case 18:	//batfly hive
 		case 29:	//invisible wall
 		case 20005: //cracked terrain
@@ -894,7 +1001,6 @@ function chooseComponent(tile) {
 			layerComponentChoice = 0;
 		break
 		case 12:	//shortcut path
-		case 13:	//shortcut entrance
 		case 14:	//creature den
 		case 15:	//creature shortcut
 		case 16:	//scavenger hole
@@ -922,13 +1028,63 @@ function addValue(layer, x, y, tileType, autoChoice) {			//autoChoice is true if
 	const layerComponentChoice = chooseComponent(tile);
 	//making sure tiles that should only be on the first layer cannot get outside of the first layer
     if ((layerComponentChoice === 2 || layerComponentChoice === 3) && layer != 0) {
-        console.log("not today. . .")
+        //console.log("not today. . .")
+        console.warn(`can't place "${tileMap.numericalIdToName(tileType)}" at layer ${layer + 1}, coords (${x}, ${y})`);
         return
 	}
-	if (editorSave.visArray[layer] === 1) {
+	if (visArray[layer] === 1) {
         switch(tileType) {
             default:
                 levelSave.levelArray[layer][layerComponentChoice][x].splice(y, 1, tileType);
+            break
+            case 2:
+                if (editorSave.autoSlope) {
+                    const adjWallArray = [[], [], []]
+                    const adjWallTotal = [];
+                    for (let xCoord = 0; xCoord < 3; xCoord++) {
+                        for (let yCoord = 0; yCoord < 3; yCoord++) {
+                            if (! (y - 1 < 0 || y - 1 > levelSave.tilesPerColumn || x - 1 < 0 || x > levelSave.tilesPerRow)) {
+                                adjWallArray[xCoord].push(levelSave.levelArray[layerChoice][1][x + xCoord - 1][y + yCoord - 1]);
+                            } else {
+                                adjWallArray[xCoord].push(0);
+                            }
+                        }
+                    }
+                    for (let xCoord = 0; xCoord < 3; xCoord++) {
+                        for (let yCoord = 0; yCoord < 3; yCoord++) {
+                            function eq(pair) {
+                                return strictEquals([xCoord, yCoord], pair)
+                            }
+                            if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
+                                if (eq([0, 1])) {
+                                    adjWallTotal.push(1)
+                                } else if (eq([1, 0])) {
+                                    adjWallTotal.push(2)
+                                } else if (eq([2, 1])) {
+                                    adjWallTotal.push(3)
+                                } else if (eq([1, 2])) {
+                                    adjWallTotal.push(4)
+                                }
+                            }
+                        }
+                    }
+                    if (adjWallTotal.length === 2 && adjWallArray[1][1] === 0) {
+                        function eq(pair) {
+                            return arrLooseEquals(adjWallTotal, pair)
+                        }
+                        if (eq([1, 4])) {
+                            levelSave.levelArray[layer][1][x].splice(y, 1, 2);
+                        } else if (eq([1, 2])) {
+                            levelSave.levelArray[layer][1][x].splice(y, 1, 3);
+                        } else if (eq([2, 3])) {
+                            levelSave.levelArray[layer][1][x].splice(y, 1, 4);
+                        } else if (eq([3, 4])) {
+                            levelSave.levelArray[layer][1][x].splice(y, 1, 5);
+                        }
+                    }
+                } else {
+                    levelSave.levelArray[layer][1][x].splice(y, 1, 2);
+                }
             break
             case 7:
             case 8:
@@ -1079,14 +1235,14 @@ function boxFn() {
 
 function paintFn() {
 	if (mouseTileChanged) {
-		addValue(editorSave.layerChoice, mouseTileX, mouseTileY, tileChoice, true);
+		addValue(layerChoice, mouseTileX, mouseTileY, tileChoice, true);
 	}
 	drawVisValues(mouseTileX, mouseTileY);
 }
 
 function eraseFn() {
 	if (mouseTileChanged) {
-		addValue(editorSave.layerChoice, mouseTileX, mouseTileY, 0, true);
+		addValue(layerChoice, mouseTileX, mouseTileY, 0, true);
 	}
 	drawVisValues(mouseTileX, mouseTileY);
 }
@@ -1095,8 +1251,29 @@ function pan(event) {
 	screen.setAttribute('style', `cursor: all-scroll`);
 	panX += event.movementX;
 	panY += event.movementY;
-	clearScreen();
 	drawVisLevel();
+}
+
+function drawMouseCoords() {
+    if (editorSave.showCoords) {
+        let tileNames = "";
+        levelSave.levelArray[layerChoice].forEach((component) => {
+            if (component[mouseTileX][mouseTileY] != 0) {
+                tileNames = tileNames + tileMap.numericalIdToName(component[mouseTileX][mouseTileY]) + ", ";
+            }
+        })
+        if (prevMouseX + 20 < levelSave.tilesPerRow && prevMouseY + 1 >= 0) { 
+            for (let x = 1; x < 21; x++) {
+                drawVisValues(prevMouseX + x, prevMouseY - 1)
+            }   
+        } else {
+            drawVisLevel();
+            preview();
+        }
+        mainCtx.fillStyle = 'red'
+        mainCtx.font = '15px sans-serif'
+        mainCtx.fillText(tileNames + `(${mouseTileX}, ${mouseTileY})`, (mouseTileX + 1.5) * tileSize + panX, (mouseTileY) * tileSize + panY - 5)
+    }
 }
 
 function preview() {
@@ -1122,11 +1299,71 @@ loadEditorSettings();
 
 initAtlas();
 
+initHtmlElements();
+
 drawVisLevel();
 
 window.addEventListener('resize', () => {
 	initMainCanvas();
 	drawVisLevel();
+})
+
+editorColorSelect.addEventListener('change', () => {
+    switch (editorColorSelect.value) {
+        case "levelBorder":
+            colorToChange = "levelBorderColor";
+        break
+        case "background":
+            colorToChange = "backgroundColor";
+        break
+        case "playBorder":
+            colorToChange = "playColor";
+        break
+        case "grid":
+            colorToChange = "gridColor";
+        break
+        case "selBox":
+            colorToChange = "selBoxColor";
+        break
+        case "selBody":
+            colorToChange = "selBodyColor";
+        break
+        case "layer1":
+            colorToChange = "layer1Color";
+        break
+        case "layer2":
+            colorToChange = "layer2Color";
+        break
+        case "layer3":
+            colorToChange = "layer3Color";
+        break
+        case "preview":
+            colorToChange = "previewColor";
+        break
+
+    }
+    editorColorPicker.value = editorSave[colorToChange];
+})
+
+editorColorPicker.addEventListener('change', () => {
+    if (colorToChange) {
+        editorSave[colorToChange] = editorColorPicker.value;
+        drawVisLevel();
+    }
+})
+
+editorColorReset.addEventListener('mousedown', () => {
+    editorSave.backgroundColor = '#ffffff';
+    editorSave.gridColor = '#c8c8c8';
+    editorSave.playColor =	'#ff7f7f';
+    editorSave.selBoxColor = '#c0ad06';
+    editorSave.selBodyColor = "#88a1d8";
+    editorSave.levelBorderColor = '#7f7fff';
+    editorSave.layer1Color = '#000000';
+    editorSave.layer2Color = '#c8ffc8';
+    editorSave.layer3Color = '#e2a0a0';
+    editorSave.previewColor = '#969696';
+    drawVisLevel();
 })
 
 levelSizeForm.addEventListener('submit', handleLevelsizeChange);
@@ -1140,21 +1377,21 @@ layerSelButtons.forEach(button => {					//get the work layer choice any time a c
 	button.addEventListener('mousedown', () => {
 		switch(button.id) {
 			case 'layer1':
-				editorSave.layerChoice = 0;
+				layerChoice = 0;
 			break
 			case 'layer2':
-				editorSave.layerChoice = 1;
+				layerChoice = 1;
 			break
 			case 'layer3':
-				editorSave.layerChoice = 2;
+				layerChoice = 2;
 		}
 		drawVisLevel();
 		layerSelButtons.forEach(button => {
 			button.setAttribute('selected', 'false');
 		})
 		button.setAttribute("selected", "true");
-		console.log(`changed work layer choice to ${editorSave.layerChoice}`);
-		selectedLayerIndicator.innerText = `selected layer: ${editorSave.layerChoice + 1}`;
+		console.log(`changed work layer choice to ${layerChoice}`);
+		selectedLayerIndicator.innerText = `selected layer: ${layerChoice + 1}`;
 	});
 });
 
@@ -1162,40 +1399,40 @@ layerVisIndicators.forEach(button => {
 	button.addEventListener('mousedown', () => {
 		switch(button.id) {
 			case 'layer1':
-				switch(editorSave.visArray[0]) {
+				switch(visArray[0]) {
 					case 0:
-						editorSave.visArray.splice(0, 1, 1);
+						visArray.splice(0, 1, 1);
 						button.setAttribute('selected', 'true');
 						console.log('turned layer 1 on');
 					break
 					case 1:
-						editorSave.visArray.splice(0, 1, 0);
+						visArray.splice(0, 1, 0);
 						button.setAttribute('selected', 'false');
 						console.log('turned layer 1 off');
 				}   
 			break
 			case 'layer2':
-				switch(editorSave.visArray[1]) {
+				switch(visArray[1]) {
 					case 0:
-						editorSave.visArray.splice(1, 1, 1);
+						visArray.splice(1, 1, 1);
 						button.setAttribute('selected', 'true');
 						console.log('turned layer 2 on');
 					break
 					case 1:
-						editorSave.visArray.splice(1, 1, 0);
+						visArray.splice(1, 1, 0);
 						button.setAttribute('selected', 'false');
 						console.log('turned layer 2 off');
 				}
 			break
 			case 'layer3':
-				switch(editorSave.visArray[2]) {
+				switch(visArray[2]) {
 					case 0:
-						editorSave.visArray.splice(2, 1, 1);
+						visArray.splice(2, 1, 1);
 						button.setAttribute('selected', 'true');
 						console.log('turned layer 3 on');
 					break
 					case 1:
-						editorSave.visArray.splice(2, 1, 0);
+						visArray.splice(2, 1, 0);
 						button.setAttribute('selected', 'false');
 						console.log('turned layer 3 off');
 				}
@@ -1223,44 +1460,22 @@ editorSettingsButtons.forEach(button => {						//event listener for the editor s
 	button.addEventListener('mousedown', () => {
 		switch (button.id) {
 			case 'resetView':
-				editorSave.zoomLevel = 1;
+				zoomLevel = 1;
 				panX = 0;
 				panY = 0;
 				tileSize = baseTileSize;
 				initMainCanvas();
 				console.log('reset the view');
 			break
-			case 'showGrid':
-				switch (editorSave.showGrid) {
-					case false:
-						editorSave.showGrid = true;
-						button.innerText = 'hide grid';
-						console.log('turned grid on');
-					break
-					case true:
-						editorSave.showGrid = false;
-						button.innerText = 'show grid';
-						console.log('turned grid off');
-				}
-			break
-			case 'autoSlope':
-				if (editorSave.autoSlope) {
+			default:
+                if (editorSave[button.id]) {
 					button.setAttribute('selected', false);
-					editorSave.autoSlope = false;
+					editorSave[button.id] = false;
 				} else {
 					button.setAttribute('selected', true);
-					editorSave.autoSlope = true;
+					editorSave[button.id] = true;
 				}
-			break
-			case 'airReplace':
-				if (airReplace) {
-					button.setAttribute('selected', false);
-					airReplace = false;
-				} else {
-					button.setAttribute('selected', true);
-					airReplace = true;
-				}
-		}
+        }
 		saveEditorSettings();
 		drawVisLevel();
 	});
@@ -1276,15 +1491,14 @@ screen.addEventListener('mousemove', getGridPos);   //calculates a bunch of valu
 
 screen.addEventListener('mousemove', () => {		//draws the preview and updates the cursor type
 	if (mouseTileChanged) {
-		preview();
+        preview();
+        drawMouseCoords();
 	}
 	chooseCursor();
 });
 
 screen.addEventListener('mouseleave', () => {		//draws the last mouse tile if the mouse leaves the canvas element
-	if (previewChoice) {
-		drawVisValues(mouseTileX, mouseTileY);
-	}
+	drawVisLevel();
 })
 
 screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event listener when the user clicks on the main canvas for the specified mouse button
@@ -1305,15 +1519,15 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 		case 0:
 			switch (toolChoice) {
 				case 'paint':
-					addValue(editorSave.layerChoice, mouseTileX, mouseTileY, tileChoice, true)
+					addValue(layerChoice, mouseTileX, mouseTileY, tileChoice, true)
 					screen.addEventListener('mousemove', paintFn);
 				break
 				case 'eraser':
-					addValue(editorSave.layerChoice, mouseTileX, mouseTileY, 0, true)
+					addValue(layerChoice, mouseTileX, mouseTileY, 0, true)
 					screen.addEventListener('mousemove', eraseFn);
 				break
 				case 'boxSelect':
-					if (editorSave.visArray[editorSave.layerChoice] === 1) {
+					if (visArray[layerChoice] === 1) {
 						if (drawSel && !mouseInsideSel) {
 							placeSelection();
 							selStartX = 0;
@@ -1396,10 +1610,10 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 		if (event.button === 0) {
 			switch (toolChoice) {
 				case 'boxFill':
-					if (editorSave.visArray[editorSave.layerChoice] === 1) {
+					if (visArray[layerChoice] === 1) {
 						for (let x = selStartX; x < selEndX; x++) {
 							for (let y = selStartY; y < selEndY; y++) {
-								addValue(editorSave.layerChoice, x, y, tileChoice, true);
+								addValue(layerChoice, x, y, tileChoice, true);
 							}
 						}
 					}
@@ -1418,8 +1632,8 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 					}
 				break
 				case 'eraseAll':
-					if (editorSave.visArray[editorSave.layerChoice] === 1) {
-						levelSave.levelArray[editorSave.layerChoice].forEach(layerComponent => {
+					if (visArray[layerChoice] === 1) {
+						levelSave.levelArray[layerChoice].forEach(layerComponent => {
 							for (let x = selStartX; x < selEndX; x++) {
 								for (let y = selStartY; y < selEndY; y++) {
 									layerComponent[x].splice(y, 1, 0);

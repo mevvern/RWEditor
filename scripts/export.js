@@ -1,4 +1,4 @@
-function parseLevel(projectFileString) {
+function parseMyLevel(projectFileString) {
 	console.log("parsing the level");
 	let rawLevel = projectFileString;
 	let parsedLevel = parse(rawLevel)
@@ -224,3 +224,24 @@ function parseLevel(projectFileString) {
 		return [string, tail];
 	}
 }
+
+function testExport() {
+
+}
+
+function exportLevel() {
+    //generate the text file
+    const file = new File(['ahgirewiuhgiesratnhojiktersjohkjeaoih'], `${levelSave.levelName}.txt`, {type: 'text/plain'});
+    //download text file
+    console.log("downloading" + ' "' + file.name + '"');
+    /* const link = document.createElement('a')
+    const url = URL.createObjectURL(file)
+  
+    link.href = url
+    link.download = file.name
+    document.body.appendChild(link)
+    link.click()
+  
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url) */
+  }

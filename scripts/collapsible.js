@@ -1,34 +1,38 @@
 const toolToolBox = document.getElementById('tools');
 const settingsToolBox = document.getElementById('settings');
+const colorsToolBox = document.getElementById('colors')
+const colorSelectButton = document.getElementById('colorSelectButton');
+const colorCloseButton = document.getElementById('colorCloseButton');
 const toolCollapse = document.getElementById('toolCollapseButton');
 const settingsCollapse = document.getElementById('settingsCollapseButton');
 
 function changeToolboxState(whichTool, state) {
-	if (whichTool === 'settings') {
-		if (state === 'false') {
-			settingsToolBox.setAttribute('hidden', 'false');
-			settingsCollapse.setAttribute('title', 'Collapse the settings');
-			settingsCollapse.innerText = 'Collapse settings';
-		} else {
-			settingsToolBox.setAttribute('hidden', 'true');
-			settingsCollapse.setAttribute('title', 'Expand the settings');
-			settingsCollapse.innerText = 'Expand settings';
-		}
-	} else {
-		if (state === 'false') {
-			toolToolBox.setAttribute('hidden', 'false');
-			toolCollapse.setAttribute('title', 'Collapse the toolbox');
-			toolCollapse.innerText = 'Collapse tools';
-		} else {
-			toolToolBox.setAttribute('hidden', 'true');
-			toolCollapse.setAttribute('title', 'Expand the toolbox');
-			toolCollapse.innerText = 'Expand tools';
-		}
-	}
+	let toolElement
+    switch (whichTool) {
+        case "settings":
+            toolElement = settingsToolBox;
+            buttonElement = settingsCollapse;
+        break
+        case "tools":
+            toolElement = toolToolBox;
+            buttonElement = toolCollapse;
+        break
+        default:
+            throw "that toolbox doesn't exist"
+    }
+    if (state === 'false') {
+        toolElement.setAttribute('hidden', 'false');
+        buttonElement.setAttribute('title', 'Collapse the settings');
+        buttonElement.innerText = 'Collapse ' + whichTool;
+    } else if (state === 'true'){
+        toolElement.setAttribute('hidden', 'true');
+        buttonElement.setAttribute('title', 'Expand the settings');
+        buttonElement.innerText = 'Expand ' + whichTool;
+    } else {
+        throw new Error("you must choose a state")
+    }
+	
 }
-
-changeToolboxState('tools', editorSave.toolsHiddenSetting);
-changeToolboxState('settings', editorSave.settingsHiddenSetting);
 
 toolCollapse.addEventListener('click', () => {
 	if (toolToolBox.getAttribute('hidden') === 'true') {

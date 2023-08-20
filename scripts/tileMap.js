@@ -9,6 +9,7 @@ const tileMapArray = [
     [6, 0, null, "cool scug 0:"],
     [10, 0, 6, "semisolid platform"],
     [29, 0, 9, "invisible wall"],
+    [13, 0, 7, "shortcut entrance"],
     [7, 1, 1, "horizontal pole"],
     [8, 1, 2, "vertical pole"],
     [9, 1, null, "cross pole"],

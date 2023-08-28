@@ -3,21 +3,16 @@
     <head    
         <meta charset="utf-8">
         <title>New Level</title>
-        <link rel="apple-touch-icon" sizes="180x180" href="/resources/icons/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/resources/icons/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/resources/icons/favicon-16x16.png">
-        <link rel="manifest" href="/resources/icons/site.webmanifest">
-        <link rel="mask-icon" href="/resources/icons/safari-pinned-tab.svg" color="#5bbad5">
-        <link rel="shortcut icon" href="/resources/icons/favicon.ico">
-        <meta name="msapplication-TileColor" content="#603cba">
-        <meta name="msapplication-config" content="/resources/icons/browserconfig.xml">
-        <meta name="theme-color" content="#ffffff">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?">
+        <link rel="shortcut icon" href="/favicon.ico?">
         <!-- some version numbers just to make sure the browser gets a new version if it exists -->
         <link href="style.css?v6" rel="stylesheet">
+        <link type="text/plain" href="template project.txt"></link>
         <script src="scripts/classes.js?v6" defer></script>
+        <script src="scripts/main.js?v6" defer></script>
         <script src="scripts/tileMap.js?v6" defer></script>
         <script src="scripts/collapsible.js?v6" defer></script>
-        <script src="scripts/main.js?v6" defer></script>
         <script src="scripts/shortcuts.js?v6" defer></script>
         <script src="scripts/import.js?v6" defer></script>
         <script src="scripts/export.js?v6" defer></script>
@@ -63,11 +58,12 @@
                     <p class="subHeader" id="toolSelection">paint</p>
                 </div>
                 <div class="buttons">
-                    <button class="toolButton" selected="true" id="paint" customTitle="Paint">🖌</button>
-                    <button class="toolButton" selected="false" id="boxFill" customTitle="Box fill">📦</button>
-                    <button class="toolButton" selected="false" id="eraser" customTitle="Erases only the selected tile type">❌</button>
-                    <button class="toolButton" selected="false" id="eraseAll" customTitle="Box erase all layer components">💀</button>
-                    <button class="toolButton" selected="false" id="boxSelect" customTitle="Select a box to copy and paste. Pastes to the selected layer.">🎁</button>
+                    <button class="toolButton" selected="true" id="paint" customTitle="Paint"><img src="/resources/paintIcon.png" alt="paint"></button>
+                    <button class="toolButton" selected="false" id="boxFill" customTitle="Box fill"><img src="/resources/boxfillIcon.png" alt="box fill"></button>
+                    <button class="toolButton" selected="false" id="moveView" customTitle="Move view"><img src="/resources/selMoveIcon.png" alt="All-Scroll"></button>
+                    <button class="toolButton" selected="false" id="eraser" customTitle="Erase"><img src="/resources/eraseIcon.png" alt="erase"></button>
+                    <button class="toolButton" selected="false" id="eraseAll" customTitle="Box erase"><img src="/resources/boxEraseIcon.png" alt="box erase"></button>
+                    <button class="toolButton" selected="false" id="boxSelect" customTitle="Select"><img src="/resources/selectionIcon.png" alt="selection"></button>
                     <button class="toolButton" selected="false" id="ruler" customTitle="Ruler">📏</button>
                     <button class="toolButton" selected="false" id="cameras" customTitle="Create and position cameras">📷</button>
                     <button class="toolButton" selected="false" id="playEdit" customTitle="Edit the play area">✏</button>
@@ -153,14 +149,14 @@
                 </div>
                 <form id="levelSizeForm" action="" method="GET" onsubmit="return false">
                     <label for="screensWide">Width of the level in screens:</label>
-                    <input type="number" id="screensWide" name="screensWide" title="Enter the width of the level in screens" required><br><br>
-                    <label for="screensWide">Height of the level in screens:</label>
-                    <input type="number" id="screensTall" name="screensTall" title="Enter the height of the level in screens" required><br><br>
+                    <input type="text" pattern="[0-9]*\.?[0-9]*" id="screensWide" name="screensWide" title="Enter the width of the level in screens" required><br><br>
+                    <label for="screensTall">Height of the level in screens:</label>
+                    <input type="text" pattern="[0-9]*\.?[0-9]*" id="screensTall" name="screensTall" title="Enter the height of the level in screens" required><br><br>
                     <input type="submit" id="levelSizeSubmit" value="Change level size">
                 </form>
                 <hr>
                 <form id="levelNameForm" action="" method="GET" onsubmit="return false">
-                    <label for="LevelName">Name of the level:</label>
+                    <label for="levelName">Name of the level:</label>
                     <input id="levelName" value="New Level" style="width: 100px;"><br><br>
                     <input type="submit" id="levelNameSubmit" value="Change level name">
                 </form>

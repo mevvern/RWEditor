@@ -1,237 +1,129 @@
-function parseMyLevel(projectFileString) {
-	console.log("parsing the level");
-	let rawLevel = projectFileString;
-	let parsedLevel = parse(rawLevel)
-	let rest = parsedLevel[1];
-	console.log("leftovers =>", rest);
-	return parsedLevel[0]
+function transferLevel() {
+	//apply all of my editor's parameters to the project file object
+    //a template project is parsed on startup so there's always something to work off of here
+    
+    let geometry = ogLevelFile.parsed.geometry;
+    let tlMatrix = ogLevelFile.parsed.tiles.tlMatrix;
+    let effects = ogLevelFile.parsed.effects.effects;
 
+    //initializing projectfile geometry so its the same size as the level in the editor, and also empty so theres no stray tiles
+    geometry = new Array();
+        for (let i = 0; i < levelSave.tilesPerRow; i++) {
+            geometry.push(new Array());
+            for (let j = 0; j < levelSave.tilesPerColumn; j++) {
+                geometry[i].push(new Array());
+                for (let k = 0; k < 3; k++) {
+                    geometry[i][j].push([0, []]);
+                }
+            }
+        }
 
-	/// Utilities ///
+    //writing geometry
+    levelSave.levelArray.forEach((layer, layerIndex) => {
+        layer.forEach((component) => {
+            component.forEach((column, x) => {
+                column.forEach((tileValue, y) => {
+                    if (tileValue != 0) {
+                        tile = tileMap.export(tileValue);
+                        if (tile[1] === 0) {
+                            if (layerIndex != 0 && tileValue === 13) {
+                                geometry[x][y][layerIndex].splice(0, 1, 1);
+                            } else {
+                                geometry[x][y][layerIndex].splice(0, 1, tile[0]);
+                            }
+                        } else {
+                            if (tile[0] === "cross pole") {
+                                geometry[x][y][layerIndex][1].push(1, 2);
+                            } else {
+                                geometry[x][y][layerIndex][1].push(tile[0]);
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    });
 
-	function looksNumeric(char) {
-		//need to nullcheck because (null >= '0' && null <= '9') == true, lmaoooo thanks js
-		return char != null && ((char >= '0' && char <= '9') || char == '-' || char == '.')
-	}
+    //initializing projectfile tiles and effects
+    //since i dont have tile or effect editors im just resizing their respective arrays to preserve the original tiles/effects, if any
+    let tlSize = new Point(tlMatrix.length, tlMatrix[0].length);
+    let tlDiff = new Point(levelSave.tilesPerRow - tlSize.x, levelSave.tilesPerColumn - tlSize.y);
+    
+    //if new width is smaller, remove tiles from the right
+    if (tlDiff.x < 0) {
+        for (let i = 0; i < Math.abs(tlDiff.x); i++) {
+            tlMatrix.pop();
+            effects.forEach((effect) => {
+                effect.mtrx.pop();
+            })
+        }
+    //if new width is larger, add tiles to the right    
+    } else if (tlDiff.x > 0) {
+        for (let i = 0; i < Math.abs(tlDiff.x); i++) {
+            tlMatrix.push(new Array(tlSize.y).fill(54))
+            effects.forEach((effect) => {
+                effect.mtrx.push(new Array(tlSize.y).fill(0));
+            })
+            tlMatrix[i + tlSize.x].forEach((tile, index) => {
+                tlMatrix[i + tlSize.x][index] = [];
+                for (let j = 0; j < 3; j++) {
+                    tlMatrix[i + tlSize.x][index].push({"tp": "default", "Data": 0});
+                }
+            })
+        }
+    }
+    //if new height is smaller, remove tiles from the bottom
+    if (tlDiff.y < 0) {
+        tlMatrix.forEach((column) => {
+            for (let i = 0; i < Math.abs(tlDiff.y); i++) {
+                effects.forEach((effect) => {
+                    effect.mtrx.forEach((column) => {
+                        column.pop();
+                    });
+                })
+                column.pop();
+            }
+        })
+    //if new height is larger, add tiles to the bottom
+    } else if (tlDiff.y > 0) {
+        tlMatrix.forEach((column) => {
+            for (let i = 0; i < Math.abs(tlDiff.y); i++) {
+                effects.forEach((effect) => {
+                    effect.mtrx.forEach((column) => {
+                        column.push(0);
+                    })
+                })
+                column.push([]);
+                for (let j = 0; j < 3; j++) {
+                    column[i + tlSize.y].push({"tp": "default", "Data": 0});
+                }
+            }
+        })
+    }
+    
+    ogLevelFile.parsed.geometry = geometry;
+    ogLevelFile.parsed.tiles.tlMatrix = tlMatrix;
+    ogLevelFile.parsed.effects.effects = effects;
 
-	function stripPrefixOptional(tail, prefix) {
-		if (tail.startsWith(prefix)) return tail.slice(prefix.length);
-		else return tail;
-	}
+    //changing play area border (extraTiles or buffer tiles)
+    let extraTiles = new Array(4);
+    extraTiles[0] = levelSave.playStartX;
+    extraTiles[1] = levelSave.playStartY;
+    extraTiles[2] = tilesPerRow - levelSave.playEndX;
+    extraTiles[3] = tilesPerColumn - levelSave.playEndY;
+    ogLevelFile.parsed.levelProperties.extraTiles = extraTiles;
 
-	function stripPrefixRequired(tail, prefix) {
-		if (tail.startsWith(prefix)) return tail.slice(prefix.length);
-		else throw { "Wrong prefix. Expected ": prefix, "at": tail };
-	}
-
-	/// Parsers ///
-
-	//The trick is that each parser function returns a 2-element array.
-	//Element 0 is the parsed item (the "head"), and element 1 is the rest of the string after that item
-	//has been removed (the "tail"). Each function chips away at only the piece it understands.
-	//This is the key to parser combinators.
-	//Also when we call multiple parsers from the same function, we need to be careful to always thread
-	//the `tail` returned from the *previous* function through, so that we always march forwards through
-	//the string. (Usually I redeclare `tail` with the funny destructuring syntax.)
-
-	function parse(tail) {
-		let geometry;
-		[geometry, tail] = parseExpr(tail.trimStart());
-
-		let tiles;
-		[tiles, tail] = parseExpr(tail.trimStart());
-
-		let effects;
-		[effects, tail] = parseExpr(tail.trimStart());
-
-		let light;
-		[light, tail] = parseExpr(tail.trimStart());
-
-		let environment;
-		[environment, tail] = parseExpr(tail.trimStart());
-
-		let levelProperties;
-		[levelProperties, tail] = parseExpr(tail.trimStart());
-
-		let cameras;
-		[cameras, tail] = parseExpr(tail.trimStart());
-
-		let water;
-		[water, tail] = parseExpr(tail.trimStart());
-
-		let props;
-		[props, tail] = parseExpr(tail.trimStart());
-
-		return [{
-			"geometry": geometry,
-			"tiles": tiles,
-			"effects": effects,
-			"light": light,
-			"environment": environment,
-			"levelProperties": levelProperties,
-			"cameras": cameras,
-			"water": water,
-			"props": props
-		}, tail]
-	}
-
-	function parseExpr(tail) {
-		tail = tail.trimStart();
-
-		let next = tail.charAt(0);
-		if (next == '[') return parseObject(tail);
-		else if (looksNumeric(next)) return parseNumber(tail);
-		else if (next == '"') return parseString(tail);
-		else if (tail.startsWith("point")) return parsePoint(tail);
-		else if (tail.startsWith("rect")) return parseRect(tail);
-		else if (tail.startsWith("color")) return parseColor(tail);
-		else throw { "parseExpr - dunno what to do with": next, "at": tail };
-	}
-
-	function parseObject(tail) {
-		tail = stripPrefixRequired(tail, '[');
-
-		let object = [];
-		while (true) {
-			tail = tail.trimStart(); //munch whitespace
-			let next = tail.charAt(0);
-
-			if (next == ']') {
-				//end of the array
-				tail = tail.slice(1); //consume the ]
-				return [object, tail];
-			} else if (next == '#') {
-				//Named property. First, read the property name.
-				//(parseKey munches the # and : characters)
-				let key;
-				[key, tail] = parseKey(tail);
-
-				//Then some whitespace maybe
-				tail = tail.trimStart();
-
-				//followed by the value.
-				let value;
-				[value, tail] = parseExpr(tail);
-
-				object[key] = value;
-			} else {
-				//Unnamed property (array-like), add it with .push().
-				let expr;
-				[expr, tail] = parseExpr(tail);
-
-				object.push(expr);
-			}
-
-			//Consume any whitespace and commas after the array element
-			tail = tail.trimStart();
-			tail = stripPrefixOptional(tail, ',');
-		}
-	}
-
-	//Parses some floating-point number.
-	function parseNumber(tail) {
-		let i = 0;
-		while (looksNumeric(tail.charAt(i))) i++;
-
-		if (i == 0) throw { "doesn't look numeric": tail };
-
-		let numberUnparsed = tail.slice(0, i);
-		let numberParsed = parseFloat(numberUnparsed);
-		tail = tail.slice(i);
-
-		return [numberParsed, tail];
-	}
-
-	//Parses the key of a lingo object, delimited on the left with # and the right with :.
-	function parseKey(tail) {
-		tail = stripPrefixRequired(tail, '#');
-
-		let colon = tail.indexOf(':');
-		if (colon == -1) throw { "couldn't find matching colon": tail };
-
-		let key = tail.slice(0, colon);
-		tail = tail.slice(colon + 1); //consume the colon too
-
-		return [key, tail]
-	}
-
-	//Parse the funny "point(1, 2)" syntax.
-	function parsePoint(tail) {
-		tail = stripPrefixRequired(tail, "point");
-
-		let tuple;
-		[tuple, tail] = parseTuple(tail);
-
-		return [{ "x": tuple[0], "y": tuple[1], "type": "point"}, tail];
-	}
-
-	function parseRect(tail) {
-		tail = stripPrefixRequired(tail, "rect");
-
-		let tuple;
-		[tuple, tail] = parseTuple(tail);
-
-		//idk if this is x/y/w/h or x1/y1/x2/y2 format, you figure it out
-		return [{ "a": tuple[0], "b": tuple[1], "c": tuple[2], "d": tuple[3], "type": "rect" }, tail];
-	}
-
-	function parseColor(tail) {
-		tail = stripPrefixRequired(tail, "color");
-
-		let tuple;
-		[tuple, tail] = parseTuple(tail);
-
-		return [{ "red": tuple[0], "green": tuple[1], "blue": tuple[2], "type": "color"}, tail];
-	}
-
-	//TODO: You could maybe feed this right back into parseObject; have it take
-	//whether to use parens or brackets as a parameter
-	function parseTuple(tail) {
-		tail = stripPrefixRequired(tail, '(');
-
-		let tuple = [];
-		while (true) {
-			tail = tail.trimStart();
-
-			let next = tail.charAt(0);
-			if (next == ')') return [tuple, tail.slice(1)];
-
-			let num;
-			[num, tail] = parseNumber(tail);
-
-			tuple.push(num);
-
-			//consume any whitespace and commas
-			tail = tail.trimStart();
-			tail = stripPrefixOptional(tail, ',');
-		}
-	}
-
-	//Parse a double-quoted string.
-	function parseString(tail) {
-		tail = stripPrefixRequired(tail, '"');
-
-		//TODO: handle escape characters. This is a naive indexOf search so
-		//it will get tripped up on stuff like "aaa\"bbb" and it will think the
-		//string is `aaa\`. I don't know how Director actually escapes quotes in strings.
-
-		let quote = tail.indexOf('"');
-		if (quote == -1) throw { "couldn't find matching double-quote": tail };
-
-		let string = tail.slice(0, quote);
-		tail = tail.slice(quote + 1); //consume the quote too
-
-		return [string, tail];
-	}
-}
-
-function testExport() {
-
+    //changing level size
+    let levelSize = ogLevelFile.parsed.levelProperties.size;
+    levelSize.x = tilesPerRow;
+    levelSize.y = tilesPerColumn;
+    ogLevelFile.parsed.levelProperties.size = levelSize;
 }
 
 function exportLevel() {
+    
     //generate the text file
-    const file = new File(['ahgirewiuhgiesratnhojiktersjohkjeaoih'], `${levelSave.levelName}.txt`, {type: 'text/plain'});
+    const file = new File(parseMyLevel(), `${levelSave.levelName}.txt`, {type: 'text/plain'});
     //download text file
     console.log("downloading" + ' "' + file.name + '"');
     /* const link = document.createElement('a')
@@ -244,4 +136,8 @@ function exportLevel() {
   
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url) */
-  }
+}
+
+levelExportButton.addEventListener('click', () => {
+    console.log("exporting level!!!!")
+})

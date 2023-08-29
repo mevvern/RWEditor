@@ -29,22 +29,33 @@ function del() {
 }
 
 function paste() {
-	if (drawSel) {
-		placeSelection();
-	}
-	selArray = levelSave.clipBoard;
-	selStartX = 0;
-	selStartY = 0;
-	selEndX = levelSave.clipBoard[0].length;
-	selEndY = levelSave.clipBoard[0][0].length;
-	drawSel = true;
-	selBox = true;
-	console.log('pasted the selection');
-	drawVisLevel();
+	if (selArray.length > 0) {
+        if (toolChoice != 'boxSelect') {
+            changeTool('boxSelect');
+        }
+        if (drawSel) {
+            placeSelection();
+        }
+        selArray = levelSave.clipBoard;
+        selStartX = 0;
+        selStartY = 0;
+        selEndX = levelSave.clipBoard[0].length;
+        selEndY = levelSave.clipBoard[0][0].length;
+        drawSel = true;
+        selBox = true;
+        console.log('pasted the selection');
+        drawVisLevel();
+    }
 }
 
 function undo() {
-	console.log('undid the previous action');
+    if (currentOperation > 0) {
+        undoArray[currentOperation - 1].forEach((tile) => {
+            levelSave.levelArray[tile.layer][tile.component][tile.x].splice(tile.y, 1, tile.type);
+            drawVisValues(tile.x, tile.y);
+        });
+        currentOperation--
+    }
 }
 
 function zoom(event) {
@@ -102,6 +113,18 @@ document.addEventListener('keydown', (event) => {
 				event.preventDefault();
 				loadLevelSettings();
 			break
+            case 'z':
+				event.preventDefault();
+				undo();
+			break
+            case 'y':
+				event.preventDefault();
+				redo();
+			break
+            case 'v':
+				event.preventDefault();
+				paste();
+			break
 		}
 	}
 	if (toolChoice === 'boxSelect') {
@@ -111,17 +134,9 @@ document.addEventListener('keydown', (event) => {
 					event.preventDefault();
 					copy();
 				break
-				case 'v':
-					event.preventDefault();
-					paste();
-				break
 				case 'x':
 					event.preventDefault();
 					cut();
-				break
-				case 'z':
-					event.preventDefault();
-					undo();
 				break
 			}
 		} else {

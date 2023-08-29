@@ -40,7 +40,7 @@ editorSave.toolsHiddenSetting = 'false';			//weird fake booleans because you can
 editorSave.settingsHiddenSetting = 'true';
 let colorToChange = "backgroundColor";
 let mouseCoordSize = {"width" : 0, "height" : 0};
-editorSave.showGrid = true;						//whether or not to show the grid
+editorSave.showGrid = true;						    //whether or not to show the grid
 editorSave.showCoords = false;
 let previewChoice = true;							//whether or not to show the preview at the current mouse tile
 
@@ -51,6 +51,8 @@ let layerChoice = 0;						//stores the current work layer
 let slopeChoice = 2;
 editorSave.autoSlope = false;
 let doingMouseThing = false;				//true if a mousedown event was fired on the editor's canvas, used to prevent unrelated mouseup events from affecting the ui
+let currentOperation = 0;                   //used for defining what level edits should be contained inside an "operation", for undo purposes...
+const undoArray = [];
 
 //selection
 let selBox = false;							//whether or not to show the selection box
@@ -64,7 +66,7 @@ let selEndX = 0;							//selection ending coords
 let selEndY = 0;
 let mouseOffsetX = 0;						//the offset of the mouse from the selection starting corner when clicking on the inside of the selection to move it
 let mouseOffsetY = 0;
-let selArray;														//array that stores the current selection. structured similar to the levels array but without layers, and only as many components as the source selection
+let selArray = [];														//array that stores the current selection. structured similar to the levels array but without layers, and only as many components as the source selection
 levelSave.clipBoard = [];
 
 //DOM elements
@@ -228,6 +230,8 @@ function loadLevelSettings() {
 		if (confirm('Do you really want to load the saved level?\nThis will delete the current level')) {
 			levelSave = JSON.parse(localStorage.getItem('levelSettings'));
 			handleNameChange(levelSave.levelName);
+            undoArray = [];
+            currentOperation = 0;
 			drawVisLevel();
 			console.log('loaded the level :3');
 
@@ -909,7 +913,7 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			drawRect('rgba(200, 200, 255, 0.5)', x, y, tileSize);
 		break
 		case 30:
-			drawFromAtlas(13, x, y)
+			drawFromAtlas(13, x, y, tileSize)
 		break
 		case 200005:
 		break
@@ -1027,9 +1031,24 @@ function chooseComponent(tile) {
 	return layerComponentChoice;
 }
 
-function addValue(layer, layerComponentChoice, x, y, tileType) {			//autoChoice is true if using the layer component of the global tileChoice or false if using the component of the block-scoped tileType
-	//console.log("added tile", tileType, "at layer", layer, ", x", x, ", y", y) //for debug
-	//making sure tiles that should only be on the first layer cannot get outside of the first layer
+function addValue(layer, layerComponentChoice, x, y, tileType) {
+    function didAlreadyEditTile() {
+        return (levelSave.levelArray[layer][layerComponentChoice][x][y] === tileType)
+    }
+
+    if (undoArray.length - 1 > currentOperation) {
+        undoArray.length = currentOperation + 1;
+    }
+    //just to prevent the array from getting too too big and using too much memory
+    if (undoArray.length > 100000) {
+        undoArray.shift();
+        currentOperation = undoArray.length - 1;
+    }
+    if (didAlreadyEditTile() != true) {
+        undoArray[currentOperation].push({ 'layer': layer, "component": layerComponentChoice, "type": levelSave.levelArray[layer][layerComponentChoice][x][y], 'x': x, 'y': y});
+    }
+
+    //making sure tiles that should only be on the first layer cannot get outside of the first layer
     if ((layerComponentChoice === 2 || layerComponentChoice === 3) && layer != 0) {
         //console.log("not today. . .")
         console.log(`can't place "${tileMap.numericalIdToName(tileType)}" at layer ${layer + 1}, coords (${x}, ${y})`);
@@ -1531,18 +1550,22 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 		case 0:
 			switch (toolChoice) {
 				case 'paint':
-					addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, tileChoice);
+					undoArray.push([]);
+                    addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, tileChoice);
 					screen.addEventListener('mousemove', paintFn);
 				break
 				case 'eraser':
-					addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, 0);
+					undoArray.push([]);
+                    addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, 0);
 					screen.addEventListener('mousemove', eraseFn);
 				break
 				case 'boxSelect':
-					if (visArray[layerChoice] === 1) {
+                    if (visArray[layerChoice] === 1) {
 						if (drawSel && !mouseInsideSel) {
-							placeSelection();
-							selStartX = 0;
+							undoArray.push([]);
+                            placeSelection();
+							currentOperation++;
+                            selStartX = 0;
 							selStartY = 0;
 							selEndX = 0;
 							selEndY = 0;
@@ -1565,7 +1588,8 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 				break
 				case 'boxFill':
 				case 'eraseAll':
-					selBox = true;
+					undoArray.push([]);
+                    selBox = true;
 					boxFn();
 					if (toolChoice === 'boxFill') {
                         addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, tileChoice);
@@ -1628,13 +1652,14 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 		if (event.button === 0) {
 			switch (toolChoice) {
 				case 'boxFill':
-					if (visArray[layerChoice] === 1) {
+                    if (visArray[layerChoice] === 1) {
 						for (let x = selStartX; x < selEndX; x++) {
 							for (let y = selStartY; y < selEndY; y++) {
 								addValue(layerChoice, chooseComponent(tileChoice), x, y, tileChoice);
 							}
 						}
 					}
+                    currentOperation++;
 					selBox = false;
 					selStartX = 0;
 					selStartY = 0;
@@ -1644,14 +1669,15 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 				case 'boxSelect':
 					console.log(startTileX, selEndX);
 					if (!drawSel && selEndX + selEndY > 0) {
-						addToSelArray();
+                        addToSelArray();
 						clearSelection();
 						drawSel = true;
+                        currentOperation++;
 					}
 				break
 				case 'eraseAll':
 					if (visArray[layerChoice] === 1) {
-						levelSave.levelArray[layerChoice].forEach(layerComponent => {
+                        levelSave.levelArray[layerChoice].forEach(layerComponent => {
 							for (let x = selStartX; x < selEndX; x++) {
 								for (let y = selStartY; y < selEndY; y++) {
 									layerComponent[x].splice(y, 1, 0);
@@ -1659,12 +1685,19 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 							}
 						});
 					}
+                    currentOperation++;
 					selBox = false;
 					selStartX = 0;
 					selStartY = 0;
 					selEndX = 0;
 					selEndY = 0;
-				break 
+				break
+                case 'paint':
+                    currentOperation++; 
+                break
+                case 'eraser':
+                    currentOperation++; 
+                break
 				case 'ruler':
 					selBox = false;
 					selStartX = 0;

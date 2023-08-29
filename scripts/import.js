@@ -271,13 +271,27 @@ function importLevel() {
 						tile.forEach((layer, layerIndex) => {
 							layer.forEach((value, componentIndex) => {
 								//componentIndex of 0 is main value, 1 is stackables
-								if (componentIndex === 0) {
-                                    if (value != 7) {
-                                        addValue(layerIndex, chooseComponent(tileMap.import(value, componentIndex)), x, y, tileMap.import(value, componentIndex));
+								
+                                if (componentIndex === 0) {
+                                    let component = chooseComponent(tileMap.import(value, componentIndex));
+                                    if ((component === 2 || component === 3) && layer != 0) {
+                                        return
+                                    } else if (value != 7) {
+                                        levelSave.levelArray[layerIndex][component][x].splice(y, 1, tileMap.import(value, componentIndex));
                                     } 
 								} else if (value[0]) {
                                     value.forEach((stackable) => {
-										addValue(layerIndex, chooseComponent(tileMap.import(stackable, componentIndex)), x, y, tileMap.import(stackable, componentIndex));
+										let currentTile = levelSave.levelArray[layerIndex][chooseComponent(tileMap.import(value, componentIndex))][x][y];
+                                        let tileToPlace = tileMap.import(stackable, componentIndex);
+                                        let component = chooseComponent(tileMap.import(value, componentIndex));
+                                        if ((component === 2 || component === 3) && layer != 0) {
+                                            return
+                                        } else if (currentTile === 7 && tileToPlace === 8 || currentTile === 8 && tileToPlace === 7) {
+                                            levelSave.levelArray[layerIndex][0][x].splice(y, 1, 9)
+                                        } else {
+                                            levelSave.levelArray[layerIndex][chooseComponent(tileMap.import(stackable, componentIndex))][x].splice(y, 1, tileMap.import(stackable, componentIndex));
+                                        }
+                                        //addValue(layerIndex, chooseComponent(tileMap.import(stackable, componentIndex)), x, y, tileMap.import(stackable, componentIndex));
 									})
 								}
 							})

@@ -52,7 +52,7 @@ let slopeChoice = 2;
 editorSave.autoSlope = false;
 let doingMouseThing = false;				//true if a mousedown event was fired on the editor's canvas, used to prevent unrelated mouseup events from affecting the ui
 let currentOperation = 0;                   //used for defining what level edits should be contained inside an "operation", for undo purposes...
-const undoArray = [];
+let undoArray = [];
 
 //selection
 let selBox = false;							//whether or not to show the selection box
@@ -1045,7 +1045,7 @@ function addValue(layer, layerComponentChoice, x, y, tileType) {
         currentOperation = undoArray.length - 1;
     }
     if (didAlreadyEditTile() != true) {
-        undoArray[currentOperation].push({ 'layer': layer, "component": layerComponentChoice, "type": levelSave.levelArray[layer][layerComponentChoice][x][y], 'x': x, 'y': y});
+        undoArray[currentOperation].push({ 'layer': layer, "component": layerComponentChoice, "oldType": levelSave.levelArray[layer][layerComponentChoice][x][y], "newType": tileType, 'x': x, 'y': y});
     }
 
     //making sure tiles that should only be on the first layer cannot get outside of the first layer

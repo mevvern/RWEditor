@@ -48,10 +48,22 @@ function paste() {
     }
 }
 
+function redo() {
+    console.log(currentOperation, undoArray.length)
+    if (currentOperation < undoArray.length) {
+        undoArray[currentOperation].forEach((tile) => {
+            levelSave.levelArray[tile.layer][tile.component][tile.x].splice(tile.y, 1, tile.newType);
+            drawVisValues(tile.x, tile.y);
+        });
+        currentOperation++
+    }
+}
+
 function undo() {
+    console.log(currentOperation, undoArray.length)
     if (currentOperation > 0) {
         undoArray[currentOperation - 1].forEach((tile) => {
-            levelSave.levelArray[tile.layer][tile.component][tile.x].splice(tile.y, 1, tile.type);
+            levelSave.levelArray[tile.layer][tile.component][tile.x].splice(tile.y, 1, tile.oldType);
             drawVisValues(tile.x, tile.y);
         });
         currentOperation--

@@ -19,7 +19,7 @@ A rain world level editor remade from the ground up with javascript and html/css
 
 # How to use the editor
 ## General
-* To get a blank level, refresh the page
+To get a blank level, refresh the page
 
 ## Tools
 ### paint
@@ -74,21 +74,17 @@ Sets the size of the level. can currently only be changed in multiples of screen
 idk what this does it just appeared here one day after i had a bad dream
 
 ## Shortcuts
-### save 
-* ctrl-s
-
-to save a level to browser storage. There is only one save slot currently
-### load
-* ctrl+L
-
-to load a level from browser storage. this will permanently delete whatever you didn't save, so be careful!
 ### copy
-* ctrl-c
+ctrl-c
 ### paste
-* ctrl-v
+ctrl-v
 ### cut
-* ctrl-x
+ctrl-x
+### undo
+ctrl-z
+### redo
+ctrl-y
 ### delete
-* del
+del
 ### place selection
-* enter
+enter or click outside the selection

@@ -1,19 +1,19 @@
 function parseOriginalLevel(projectFileString) {
 	let parsedLevel = parse(projectFileString);
-    if (! parsedLevel[0].water) {
-        console.log("water line did not exist!");
-        parsedLevel[0].water = ogLevelFile.parsed.water;
-    }
-    if (! parsedLevel[0].props) {
-        console.log("props line did not exist!");
-        parsedLevel[0].props = ogLevelFile.parsed.props;
-    }
-    /* if (parsedLevel[1] && parsedLevel[1].length > 1) {   //the original level editor adds random junk onto the end of a bunch of project files
-        console.log("leftovers =>" + parsedLevel[1]);       //this bit logs that junk to the console if it exists
-    } */
+	if (! parsedLevel[0].water) {
+		console.log("water line did not exist!");
+		parsedLevel[0].water = ogLevelFile.parsed.water;
+	}
+	if (! parsedLevel[0].props) {
+		console.log("props line did not exist!");
+		parsedLevel[0].props = ogLevelFile.parsed.props;
+	}
+	/* if (parsedLevel[1] && parsedLevel[1].length > 1) {   //the original level editor adds random junk onto the end of a bunch of project files
+		console.log("leftovers =>" + parsedLevel[1]);       //this bit logs that junk to the console if it exists
+	} */
 	return parsedLevel[0]
 	
-    /// Utilities ///
+	/// Utilities ///
 	function looksNumeric(char) {
 		//need to nullcheck because (null >= '0' && null <= '9') == true, lmaoooo thanks js
 		return char != null && ((char >= '0' && char <= '9') || char == '-' || char == '.')
@@ -62,10 +62,10 @@ function parseOriginalLevel(projectFileString) {
 		[cameras, tail] = parseExpr(tail.trimStart());
 
 		let water;
-        [water, tail] = parseExpr(tail.trimStart());
+		[water, tail] = parseExpr(tail.trimStart());
 
 		let props;
-        [props, tail] = parseExpr(tail.trimStart());
+		[props, tail] = parseExpr(tail.trimStart());
 
 		return [{
 			"geometry": geometry,
@@ -85,21 +85,21 @@ function parseOriginalLevel(projectFileString) {
 
 		let next = tail.charAt(0);
 		if (next == '[') {
-            return parseObject(tail)
-        } else if (looksNumeric(next)) {
-            return parseNumber(tail);
-        } else if (next == '"') {
-            return parseString(tail);
-        } else if (tail.startsWith("point")) {
-            return parsePoint(tail);
-        } else if (tail.startsWith("rect")) {
-            return parseRect(tail);
-        } else if (tail.startsWith("color")) {
-            return parseColor(tail);
-        } else {
-            return [null, ''];
-        }
-    }
+			return parseObject(tail)
+		} else if (looksNumeric(next)) {
+			return parseNumber(tail);
+		} else if (next == '"') {
+			return parseString(tail);
+		} else if (tail.startsWith("point")) {
+			return parsePoint(tail);
+		} else if (tail.startsWith("rect")) {
+			return parseRect(tail);
+		} else if (tail.startsWith("color")) {
+			return parseColor(tail);
+		} else {
+			return [null, ''];
+		}
+	}
 
 	function parseObject(tail) {
 		tail = stripPrefixRequired(tail, '[');
@@ -116,9 +116,9 @@ function parseOriginalLevel(projectFileString) {
 			} else if (next == '#') {
 				//Named property. First, read the property name.
 				if (Array.isArray(object)) {
-                    object = {};
-                }
-                //(parseKey munches the # and : characters)
+					object = {};
+				}
+				//(parseKey munches the # and : characters)
 				let key;
 				[key, tail] = parseKey(tail);
 
@@ -150,12 +150,15 @@ function parseOriginalLevel(projectFileString) {
 		while (looksNumeric(tail.charAt(i))) i++;
 
 		if (i == 0) throw { "doesn't look numeric": tail };
-
 		let numberUnparsed = tail.slice(0, i);
 		let numberParsed = parseFloat(numberUnparsed);
 		tail = tail.slice(i);
 
-		return [numberParsed, tail];
+		if (numberUnparsed.includes(".")) {
+			return [{"value": numberParsed, "type": "float"}, tail];
+		} else {
+			return [numberParsed, tail];
+		}
 	}
 
 	//Parses the key of a lingo object, delimited on the left with # and the right with :.
@@ -183,7 +186,6 @@ function parseOriginalLevel(projectFileString) {
 
 	function parseRect(tail) {
 		tail = stripPrefixRequired(tail, "rect");
-
 		let tuple;
 		[tuple, tail] = parseTuple(tail);
 
@@ -197,7 +199,7 @@ function parseOriginalLevel(projectFileString) {
 		let tuple;
 		[tuple, tail] = parseTuple(tail);
 
-		return [{ "red": tuple[0], "green": tuple[1], "blue": tuple[2], "type": "color"}, tail];
+		return [{ "r": tuple[0], "g": tuple[1], "b": tuple[2], "type": "color"}, tail];
 	}
 
 	//TODO: You could maybe feed this right back into parseObject; have it take
@@ -242,19 +244,19 @@ function parseOriginalLevel(projectFileString) {
 }
 
 function importLevel() {
-    const file = levelTxtSelect.files[0]
+	const file = levelTxtSelect.files[0]
 	if (file) {
-        const reader = new FileReader();
+		const reader = new FileReader();
 		reader.readAsText(file, "UTF-8");
 		reader.onload = function (event) {
 			if (typeof(event.target.result) === 'string' && event.target.result.slice(0, 4) === '[[[[' && event.target.result.includes(']]]]]')) {
-                console.log(`loading level "${file.name}"...`);
-                //parse the level's weird lingo stuff into a js object (thank you quat i love you)
-                ogLevelFile.string = event.target.result;
+				console.log(`loading level "${file.name}"...`);
+				//parse the level's weird lingo stuff into a js object (thank you quat i love you)
+				ogLevelFile.string = event.target.result;
 				ogLevelFile.parsed = parseOriginalLevel(ogLevelFile.string);
 				//get the name
-                handleNameChange(file.name.slice(0, file.name.lastIndexOf('.txt')));
-                //get the level size
+				handleNameChange(file.name.slice(0, file.name.lastIndexOf('.txt')));
+				//get the level size
 				levelSave.tilesPerRow = ogLevelFile.parsed.levelProperties.size.x;
 				levelSave.tilesPerColumn = ogLevelFile.parsed.levelProperties.size.y;
 				//get the play area (aka buffer tiles)
@@ -263,43 +265,43 @@ function importLevel() {
 				levelSave.playEndX = levelSave.tilesPerRow - ogLevelFile.parsed.levelProperties.extraTiles[2];
 				levelSave.playEndY = levelSave.tilesPerColumn - ogLevelFile.parsed.levelProperties.extraTiles[3];
 				//mapping the data from the original file to this editor's format
-                prevAutoSlope = editorSave.autoSlope;
-                editorSave.autoSlope = false;
-                initLevelArray();
+				prevAutoSlope = editorSave.autoSlope;
+				editorSave.autoSlope = false;
+				initLevelArray();
 				ogLevelFile.parsed.geometry.forEach((column, x) => {
 					column.forEach((tile, y) => {
 						tile.forEach((layer, layerIndex) => {
 							layer.forEach((value, componentIndex) => {
 								//componentIndex of 0 is main value, 1 is stackables
 								
-                                if (componentIndex === 0) {
-                                    let component = chooseComponent(tileMap.import(value, componentIndex));
-                                    if ((component === 2 || component === 3) && layer != 0) {
-                                        return
-                                    } else if (value != 7) {
-                                        levelSave.levelArray[layerIndex][component][x].splice(y, 1, tileMap.import(value, componentIndex));
-                                    } 
+								if (componentIndex === 0) {
+									let component = chooseComponent(tileMap.import(value, componentIndex));
+									if ((component === 2 || component === 3) && layer != 0) {
+										return
+									} else if (value != 7) {
+										levelSave.levelArray[layerIndex][component][x].splice(y, 1, tileMap.import(value, componentIndex));
+									} 
 								} else if (value[0]) {
-                                    value.forEach((stackable) => {
+									value.forEach((stackable) => {
 										let currentTile = levelSave.levelArray[layerIndex][chooseComponent(tileMap.import(value, componentIndex))][x][y];
-                                        let tileToPlace = tileMap.import(stackable, componentIndex);
-                                        let component = chooseComponent(tileMap.import(value, componentIndex));
-                                        if ((component === 2 || component === 3) && layer != 0) {
-                                            return
-                                        } else if (currentTile === 7 && tileToPlace === 8 || currentTile === 8 && tileToPlace === 7) {
-                                            levelSave.levelArray[layerIndex][0][x].splice(y, 1, 9)
-                                        } else {
-                                            levelSave.levelArray[layerIndex][chooseComponent(tileMap.import(stackable, componentIndex))][x].splice(y, 1, tileMap.import(stackable, componentIndex));
-                                        }
-                                        //addValue(layerIndex, chooseComponent(tileMap.import(stackable, componentIndex)), x, y, tileMap.import(stackable, componentIndex));
+										let tileToPlace = tileMap.import(stackable, componentIndex);
+										let component = chooseComponent(tileMap.import(value, componentIndex));
+										if ((component === 2 || component === 3) && layer != 0) {
+											return
+										} else if (currentTile === 7 && tileToPlace === 8 || currentTile === 8 && tileToPlace === 7) {
+											levelSave.levelArray[layerIndex][0][x].splice(y, 1, 9)
+										} else {
+											levelSave.levelArray[layerIndex][chooseComponent(tileMap.import(stackable, componentIndex))][x].splice(y, 1, tileMap.import(stackable, componentIndex));
+										}
+										//addValue(layerIndex, chooseComponent(tileMap.import(stackable, componentIndex)), x, y, tileMap.import(stackable, componentIndex));
 									})
 								}
 							})
 						})
 					})
 				})
-                drawVisLevel();
-                editorSave.autoSlope = prevAutoSlope;
+				drawVisLevel();
+				editorSave.autoSlope = prevAutoSlope;
 			} else {
 				alert('try a valid level file next time :3');
 			}

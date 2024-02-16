@@ -23,9 +23,10 @@ let baseTileSize = 24;						//base size of each tile in pixels
 let tileSize = zoomLevel + baseTileSize;	//the final tile size in pixels with zoom taken into account
 let panX = 25;								//stores the x position in pixels that the user has moved the display to
 let panY = 52;								//same, but for the y axis
-editorSave.backgroundColor = '#ffffff';
+editorSave.pageBackgroundColor = '#ffffff'
+editorSave.levelBackgroundColor = '#ffffff';
 editorSave.gridColor = '#c8c8c8';
-editorSave.playColor =	'#ff7f7f';			//color of the play area's border
+editorSave.playBorderColor = '#ff7f7f';			//color of the play area's border
 editorSave.selBoxColor = '#c0ad06';							//color of the selection box
 editorSave.selBodyColor = "#88a1d8"
 editorSave.levelBorderColor = '#7f7fff';
@@ -110,74 +111,78 @@ let mouseXInsideLevel = false;
 let mouseYInsideLevel = false;
 
 function initMainCanvas() {								//sets the size of the main canvas based on some vars
-    screen.width = window.visualViewport.width;
+	screen.width = window.visualViewport.width;
 	screen.height = window.visualViewport.height;
 }
 
 function strictEquals(obj1, obj2) {
-    if (JSON.stringify(obj1) === JSON.stringify(obj2)) {
-        return true
-    } else {
-        return false
-    }
+	if (JSON.stringify(obj1) === JSON.stringify(obj2)) {
+		return true
+	} else {
+		return false
+	}
 }
 
 function initOgLevelFile() {
-    fetch("./template project.json").then((res) => {
-        return res.json();
-    }).then((data) => {
-        ogLevelFile.string = data.fileStr;
-        ogLevelFile.parsed = parseOriginalLevel(ogLevelFile.string)
-    });
+	fetch("./template project.json").then((res) => {
+		return res.json();
+	}).then((data) => {
+		ogLevelFile.string = data.fileStr;
+		ogLevelFile.parsed = parseOriginalLevel(ogLevelFile.string)
+	});
 }
 
 function arrLooseEquals(arr1, arr2) {                   //loose in the sense that it doesn't care about the order of the elements
-    let boolean = true;
-    if (Array.isArray(arr1) && Array.isArray(arr2)) {
-        if (arr1.length === arr1.length) {
-            arr1.forEach((value) => {
-                if (!arr2.includes(value)) {
-                    boolean = false;
-                }
-            })
-        } else {
-            return false;
-        }
-        return boolean;
-    } else {
-        throw new Error("arrLooseEquals only accepts arrays")
-    }
+	let boolean = true;
+	if (Array.isArray(arr1) && Array.isArray(arr2)) {
+		if (arr1.length === arr1.length) {
+			arr1.forEach((value) => {
+				if (!arr2.includes(value)) {
+					boolean = false;
+				}
+			})
+		} else {
+			return false;
+		}
+		return boolean;
+	} else {
+		throw new Error("arrLooseEquals only accepts arrays")
+	}
+}
+
+function coordsInsideLevel(x, y) {
+	return x >= 0 && x < levelSave.tilesPerRow && y >= 0 && y < levelSave.tilesPerColumn;
 }
 
 function looseEquals(obj1, obj2) {          //loose in the sense that it only cares that a key exists, rather than the values being the same
-    let keys1 = Object.keys(obj1);
-    let keys2 = Object.keys(obj2);
-    let boolean = true;
-    if (keys2.length === keys1.length) {
-        keys1.forEach((key) => {
-            if (!keys2.includes(key)) {
-                boolean = false;
-            }
-        })
-    } else {
-        return false;
-    }
-    return boolean;
+	let keys1 = Object.keys(obj1);
+	let keys2 = Object.keys(obj2);
+	let boolean = true;
+	if (keys2.length === keys1.length) {
+		keys1.forEach((key) => {
+			if (!keys2.includes(key)) {
+				boolean = false;
+			}
+		})
+	} else {
+		return false;
+	}
+	return boolean;
 }
 
 function initHtmlElements() {
-    changeToolboxState('tools', editorSave.toolsHiddenSetting);
-    changeToolboxState('settings', editorSave.settingsHiddenSetting);
-    editorColorPicker.value = editorSave.backgroundColor;
-    editorSettingsButtons.forEach(button => {						//event listener for the editor settings
-        if (button.id != 'resetView') {
-            if (editorSave[button.id]) {
-                button.setAttribute('selected', "true");
-            } else {
-                button.setAttribute('selected', "false");
-            }
-        }
-    });
+	changeToolboxState('tools', editorSave.toolsHiddenSetting);
+	changeToolboxState('settings', editorSave.settingsHiddenSetting);
+	editorColorPicker.value = editorSave.levelBackgroundColor;
+	editorSettingsButtons.forEach(button => {						//event listener for the editor settings
+		if (button.id != 'resetView') {
+			if (editorSave[button.id]) {
+				button.setAttribute('selected', "true");
+			} else {
+				button.setAttribute('selected', "false");
+			}
+		}
+	});
 }
 
 function initLevelArray() {					//structure: [root: [layer 1: [0 poles], [1 base geo], [2 items], [3 tunnels]], [layer 2: [0 poles], [1 base geo]], [layer 3: [0 poles], [1 base geo]]
@@ -205,40 +210,35 @@ function saveEditorSettings() {
 
 function loadEditorSettings() {
 	let settings = JSON.parse(localStorage.getItem('editorSettings'))
-    if (settings && looseEquals(settings, editorSave)) {
+	if (settings && looseEquals(settings, editorSave)) {
 		editorSave = settings;
 
 		drawVisLevel();
 	} else {
-        console.log('editor settings nonexistent or didnt match the current setup! resaving the editor settings...')
-        saveEditorSettings();
-    }
+		console.log('editor settings nonexistent or didnt match the current setup! resaving the editor settings...')
+		saveEditorSettings();
+	}
 }
 
 function saveLevelSettings() {
-	if (confirm('Do you really want to save the level?\nThis will delete the previously saved level...')) {
 		localStorage.setItem('levelSettings', JSON.stringify(levelSave));
 		console.log('saved the level');
-	}
 }
 
 function loadLevelSettings() {
 	let settings = JSON.parse(localStorage.getItem('levelSettings'))
-    if (settings === null) {
+	if (settings === null) {
 		alert('cannot load a nonexistent level!!!!')
 	} else if (looseEquals(settings, levelSave)) {
-		if (confirm('Do you really want to load the saved level?\nThis will delete the current level')) {
 			levelSave = JSON.parse(localStorage.getItem('levelSettings'));
 			handleNameChange(levelSave.levelName);
-            undoArray = [];
-            currentOperation = 0;
+			undoArray = [];
+			currentOperation = 0;
 			drawVisLevel();
 			console.log('loaded the level :3');
-
-		} 
 	} else {
-        alert('saved level is corrupt!')
-    }
+		alert('saved level is corrupt!')
+	}
 }
 
 function initAtlas() {							//initializes the atlas with the tileset in 'resources/tiles.png'
@@ -262,26 +262,26 @@ function getGridPos(event) {					//gets the position of the mouse and updates a 
 	let tileX = Math.floor((event.offsetX - panX) / tileSize);
 	let tileY = Math.floor((event.offsetY - panY) / tileSize);
 	let mouseOutsideLeft = tileX < 0
-    let mouseOutsideRight = tileX > levelSave.tilesPerRow - 1
-    let mouseOutsideTop = tileY < 0
-    let mouseOutsideBottom = tileY > levelSave.tilesPerColumn - 1
-    mouseXInsideLevel = !mouseOutsideLeft && !mouseOutsideRight;
+	let mouseOutsideRight = tileX > levelSave.tilesPerRow - 1
+	let mouseOutsideTop = tileY < 0
+	let mouseOutsideBottom = tileY > levelSave.tilesPerColumn - 1
+	mouseXInsideLevel = !mouseOutsideLeft && !mouseOutsideRight;
 	mouseYInsideLevel = !mouseOutsideTop && !mouseOutsideBottom;
-    mouseInsideSel = (tileX >= selStartX) && (tileX < selEndX) && (tileY >= selStartY) && (tileY < selEndY)
+	mouseInsideSel = (tileX >= selStartX) && (tileX < selEndX) && (tileY >= selStartY) && (tileY < selEndY)
 	if (mouseXInsideLevel) {
 		mouseTileX = tileX;
 	} else if (mouseOutsideLeft) {
-        mouseTileX = 0;
-    } else if (mouseOutsideRight) {
-        mouseTileX = levelSave.tilesPerRow - 1;
-    }
+		mouseTileX = 0;
+	} else if (mouseOutsideRight) {
+		mouseTileX = levelSave.tilesPerRow - 1;
+	}
 	if (mouseYInsideLevel) {
 		mouseTileY = tileY;
 	} else if (mouseOutsideTop) {
-        mouseTileY = 0;
-    } else if (mouseOutsideBottom) {
-        mouseTileY = levelSave.tilesPerColumn - 1;
-    }
+		mouseTileY = 0;
+	} else if (mouseOutsideBottom) {
+		mouseTileY = levelSave.tilesPerColumn - 1;
+	}
 	if ((prevX === mouseTileX) && (prevY === mouseTileY)) {
 		mouseTileChanged = false;
 	}
@@ -311,18 +311,18 @@ function chooseCursor() {
 		break
 		case 'playEdit':
 			let x = mouseTileX;
-            let y = mouseTileY;
-            let startX = levelSave.playStartX;
-            let startY = levelSave.playStartY;
-            let endX = levelSave.playEndX;
-            let endY = levelSave.playEndY;
-            if ((x === startX && y === startY) || ((x + 1) === endX && (y + 1) === endY)) {
+			let y = mouseTileY;
+			let startX = levelSave.playStartX;
+			let startY = levelSave.playStartY;
+			let endX = levelSave.playEndX;
+			let endY = levelSave.playEndY;
+			if ((x === startX && y === startY) || ((x + 1) === endX && (y + 1) === endY)) {
 				cursor = 'nwse-resize';
 			} else if ((x === startX && y + 1 === endY) || (x + 1 === endX && y === startY)) {
-                cursor = 'nesw-resize'
-            } else {
-                cursor = 'default'
-            }
+				cursor = 'nesw-resize'
+			} else {
+				cursor = 'default'
+			}
 		break
 		case 'boxSelect':
 			if (isMouseDown || ! mouseInsideSel) {
@@ -330,25 +330,25 @@ function chooseCursor() {
 			} else if (mouseXInsideLevel && mouseYInsideLevel) {
 				cursor = 'move';
 			} else {
-                cursor = 'default';
-            }
+				cursor = 'default';
+			}
 		break
 		case 'cameras':
 			//camera cursors
 		break
-		case 'eraseAll':
+		case 'boxErase':
 			if (mouseXInsideLevel && mouseYInsideLevel) {
 				cursor = 'crosshair';
 			} else {
-                cursor = 'default';
-            }
+				cursor = 'default';
+			}
 		break
 		case 'ruler':
 			if (mouseXInsideLevel && mouseYInsideLevel) {
 				cursor = 'crosshair';
 			} else {
-                cursor = 'default';
-            }
+				cursor = 'default';
+			}
 		break
 		case 'eraser':
 			if (mouseXInsideLevel && mouseYInsideLevel) {
@@ -379,7 +379,11 @@ function drawRect(color, x, y, w, h) {			//draws a rectangle of width w and heig
 }
 
 function clearScreen() {						//clears the screen
-	drawRect(editorSave.backgroundColor, 0, 0, screen.width, screen.height);
+	drawRect(editorSave.pageBackgroundColor, 0, 0, screen.width, screen.height);
+}
+
+function drawLevelBackground() {
+	drawRect(editorSave.levelBackgroundColor, panX, panY, levelSave.tilesPerRow * tileSize, levelSave.tilesPerColumn * tileSize);
 }
 
 function handleLevelsizeChange(event) {
@@ -436,12 +440,12 @@ function handleLevelsizeChange(event) {
 						})
 					})
 				}
-            if (levelSave.playEndX > levelSave.tilesPerRow - 1) {
-                levelSave.playEndX = levelSave.tilesPerRow - 1
-            }
-            if (levelSave.playEndY > levelSave.tilesPerColumn - 1) {
-                levelSave.playEndY = levelSave.tilesPerColumn - 1
-            }
+			if (levelSave.playEndX > levelSave.tilesPerRow - 1) {
+				levelSave.playEndX = levelSave.tilesPerRow - 1
+			}
+			if (levelSave.playEndY > levelSave.tilesPerColumn - 1) {
+				levelSave.playEndY = levelSave.tilesPerColumn - 1
+			}
 			drawVisLevel();
 		break 
 		case false:
@@ -497,14 +501,18 @@ function changeTool(toolId) {
 				toolName = 'ruler'
 				previewChoice = false;
 			break
-			case 'eraseAll':
+			case 'boxErase':
 				toolName = 'box erase';
+				previewChoice = true;
+			break
+			case 'moveView':
+				toolName = 'Move view';
 				previewChoice = false;
 			break
-            case 'moveView':
-                toolName = 'Move view';
-                previewChoice = false;
-            break
+			case 'bucketFill':
+				toolName = 'Bucket fill';
+				previewChoice = true;
+			break
 		}
 		toolIndicator.innerText = toolName;
 		toolButtons.forEach(button => {
@@ -560,16 +568,20 @@ function placeSelection() {
 					if (componentIndex > 1) {
 					} else {
 						if (airReplace) {
-							levelSave.levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+							addValue(layerChoice, componentIndex, x + selStartX, y + selStartY, 0);
+							addValue(layerChoice, componentIndex, x + selStartX, y + selStartY, value);
 						} else if (value != 0) {
-							levelSave.levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+							addValue(layerChoice, componentIndex, x + selStartX, y + selStartY, 0);
+							addValue(layerChoice, componentIndex, x + selStartX, y + selStartY, value);
 						}
 					}
 				} else {
 					if (airReplace) {
-						levelSave.levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+						addValue(layerChoice, componentIndex, x + selStartX, y + selStartY, 0);
+						addValue(layerChoice, componentIndex, x + selStartX, y + selStartY, value);
 					} else if (value != 0) {
-						levelSave.levelArray[layerChoice][componentIndex][x + selStartX].splice(y + selStartY, 1, value);
+						addValue(layerChoice, componentIndex, x + selStartX, y + selStartY, 0);
+						addValue(layerChoice, componentIndex, x + selStartX, y + selStartY, value);
 					}
 				}
 			})
@@ -579,8 +591,8 @@ function placeSelection() {
 
 function drawSelBox() {
 	let color;
-    let width;
-    if (selBox) {
+	let width;
+	if (selBox) {
 		switch (toolChoice) {
 			case 'boxFill':
 				color = editorSave.boxFillColor;
@@ -590,7 +602,7 @@ function drawSelBox() {
 				color = editorSave.selBoxColor;
 				width = 3;
 			break
-			case 'eraseAll':
+			case 'boxErase':
 				color = editorSave.boxDeleteColor;
 				width = 5;
 			break
@@ -608,7 +620,7 @@ function drawLevelOutline() {
 }
 
 function drawPlayAreaOutline() {
-	mainCtx.strokeStyle = editorSave.playColor;
+	mainCtx.strokeStyle = editorSave.playBorderColor;
 	mainCtx.lineWidth = 4;
 	mainCtx.strokeRect((levelSave.playStartX * tileSize) + panX, (levelSave.playStartY * tileSize) + panY, (levelSave.playEndX - levelSave.playStartX) * tileSize, (levelSave.playEndY - levelSave.playStartY) * tileSize);
 }
@@ -686,7 +698,7 @@ function drawTri(x, y, s, color, facing) {				//draws a right triangle with both
 }
 
 function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the chosen location. mode can be 0 for array draw mode or 1 for preview draw mode. 
-    let atlasMod;										//additional modes are for coloring layers differently from each other 
+	let atlasMod;										//additional modes are for coloring layers differently from each other 
 	let color;
 	let batflyColor;
 	const x = (tileX * tileSize) + panX;
@@ -707,11 +719,11 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			batflyColor = color;
 			atlasMod = 0;
 		break
-        case 3:                                         //selection preview draw mode
-            color = editorSave.selBodyColor; 
-            batflyColor = color;
-            atlasMod = tileCount;
-        break
+		case 3:                                         //selection preview draw mode
+			color = editorSave.selBodyColor; 
+			batflyColor = color;
+			atlasMod = tileCount;
+		break
 		case undefined:									//preview draw mode
 			color = editorSave.previewColor;
 			batflyColor = color;
@@ -725,52 +737,52 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 		break
 		case 2:
 			if (mode === undefined && editorSave.autoSlope) {
-                const adjWallArray = [[], [], []]
-                const adjWallTotal = [];
-                for (let x = 0; x < 3; x++) {
-                    for (let y = 0; y < 3; y++) {
-                        if (! (tileY - 1 < 0 || tileY - 1 > levelSave.tilesPerColumn || tileX - 1 < 0 || tileX > levelSave.tilesPerRow)) {
-                            adjWallArray[x].push(levelSave.levelArray[layerChoice][1][tileX + x - 1][tileY + y - 1]);
-                        } else {
-                            adjWallArray[x].push(0);
-                        }
-                    }
-                }
-                for (let xCoord = 0; xCoord < 3; xCoord++) {
-                    for (let yCoord = 0; yCoord < 3; yCoord++) {
-                        function eq(pair) {
-                            return strictEquals([xCoord, yCoord], pair)
-                        }
-                        if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
-                            if (eq([0, 1])) {
-                                adjWallTotal.push(1)
-                            } else if (eq([1, 0])) {
-                                adjWallTotal.push(2)
-                            } else if (eq([2, 1])) {
-                                adjWallTotal.push(3)
-                            } else if (eq([1, 2])) {
-                                adjWallTotal.push(4)
-                            }
-                        }
-                    }
-                }
-                if (adjWallTotal.length === 2 && adjWallArray[1][1] === 0) {
-                    function eq(pair) {
-                        return arrLooseEquals(adjWallTotal, pair)
-                    }
-                    if (eq([1, 4])) {
-                        drawTri(x, y, tileSize, color, 'dl');
-                    } else if (eq([1, 2])) {
-                        drawTri(x, y, tileSize, color, 'ul');
-                    } else if (eq([2, 3])) {
-                        drawTri(x, y, tileSize, color, 'ur');
-                    } else if (eq([3, 4])) {
-                        drawTri(x, y, tileSize, color, 'dr');
-                    }
-                }
-            } else {
-                drawTri(x, y, tileSize, color, 'dl');
-            }
+				const adjWallArray = [[], [], []]
+				const adjWallTotal = [];
+				for (let x = 0; x < 3; x++) {
+					for (let y = 0; y < 3; y++) {
+						if (! (tileY - 1 < 0 || tileY - 1 > levelSave.tilesPerColumn || tileX - 1 < 0 || tileX > levelSave.tilesPerRow)) {
+							adjWallArray[x].push(levelSave.levelArray[layerChoice][1][tileX + x - 1][tileY + y - 1]);
+						} else {
+							adjWallArray[x].push(0);
+						}
+					}
+				}
+				for (let xCoord = 0; xCoord < 3; xCoord++) {
+					for (let yCoord = 0; yCoord < 3; yCoord++) {
+						function eq(pair) {
+							return strictEquals([xCoord, yCoord], pair)
+						}
+						if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
+							if (eq([0, 1])) {
+								adjWallTotal.push(1)
+							} else if (eq([1, 0])) {
+								adjWallTotal.push(2)
+							} else if (eq([2, 1])) {
+								adjWallTotal.push(3)
+							} else if (eq([1, 2])) {
+								adjWallTotal.push(4)
+							}
+						}
+					}
+				}
+				if (adjWallTotal.length === 2 && adjWallArray[1][1] === 0) {
+					function eq(pair) {
+						return arrLooseEquals(adjWallTotal, pair)
+					}
+					if (eq([1, 4])) {
+						drawTri(x, y, tileSize, color, 'dl');
+					} else if (eq([1, 2])) {
+						drawTri(x, y, tileSize, color, 'ul');
+					} else if (eq([2, 3])) {
+						drawTri(x, y, tileSize, color, 'ur');
+					} else if (eq([3, 4])) {
+						drawTri(x, y, tileSize, color, 'dr');
+					}
+				}
+			} else {
+				drawTri(x, y, tileSize, color, 'dl');
+			}
 		break
 		case 3:
 			drawTri(x, y, tileSize, color, 'ul');		//up-left slope
@@ -798,7 +810,7 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			drawRect(color, x, y, tileSize, tileSize / 3);				//semisolid platform
 		break
 		case 11:
-			drawRect(editorSave.backgroundColor, x, y, tileSize);					//special case for the eraser tool preview
+			drawRect(editorSave.levelBackgroundColor, x, y, tileSize);					//special case for the eraser tool preview
 		break
 		case 12:
 			drawRect('gray', x + tileSize * (3 / 8), y + tileSize * (3 / 8), tileSize / 4);				//shortcut path
@@ -807,71 +819,71 @@ function drawValue(value, tileX, tileY, mode) {			//draws the chosen tile at the
 			let adjPathArray = [[], [], []]
 			let adjWallArray = [[], [], []]
 			let adjWallTotal = 0;
-            let adjPathTotal = 0;
+			let adjPathTotal = 0;
 			let entranceDir;
 			let pathPos = [0, 0];
-            let oppositeTile;
+			let oppositeTile;
 			for (let x = 0; x < 3; x++) {
 				for (let y = 0; y < 3; y++) {
 					if (! (tileY - 1 < 0 || tileY - 1 > levelSave.tilesPerColumn || tileX - 1 < 0 || tileX > levelSave.tilesPerRow)) {
-                        adjPathArray[x].push(levelSave.levelArray[0][3][tileX + x - 1][tileY + y - 1]);
-					    adjWallArray[x].push(levelSave.levelArray[0][1][tileX + x - 1][tileY + y - 1]);
-                    } else {
-                        adjPathArray[x].push(0);
-					    adjWallArray[x].push(0);
-                    }
+						adjPathArray[x].push(levelSave.levelArray[0][3][tileX + x - 1][tileY + y - 1]);
+						adjWallArray[x].push(levelSave.levelArray[0][1][tileX + x - 1][tileY + y - 1]);
+					} else {
+						adjPathArray[x].push(0);
+						adjWallArray[x].push(0);
+					}
 				}
 			}
 			for (let xCoord = 0; xCoord < 3; xCoord++) {
 				for (let yCoord = 0; yCoord < 3; yCoord++) {
 					if (! (xCoord === 1 && yCoord === 1)) {
-                        function eq(a) {
-                            return strictEquals([xCoord, yCoord], a);
-                        }
-                        if ((eq([0, 1]) || eq([1, 0]) || eq([2, 1]) || eq([1, 2])) && adjPathArray[xCoord][yCoord]) {
-                            pathPos = [xCoord, yCoord];
-                            adjPathTotal++
+						function eq(a) {
+							return strictEquals([xCoord, yCoord], a);
 						}
-                        if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
-                            adjWallTotal++;
-                        }
+						if ((eq([0, 1]) || eq([1, 0]) || eq([2, 1]) || eq([1, 2])) && adjPathArray[xCoord][yCoord]) {
+							pathPos = [xCoord, yCoord];
+							adjPathTotal++
+						}
+						if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
+							adjWallTotal++;
+						}
 					}
 				}
 			}
 			drawRect(color, x, y, tileSize);
-            if (strictEquals(pathPos, [1, 0])) {
-                oppositeTile = adjWallArray[1][2];
-                entranceDir = 1;
-            } else if (strictEquals(pathPos, [1, 2])) {
-                oppositeTile = adjWallArray[1][0];
-                entranceDir = 2;
-            } else if (strictEquals(pathPos, [0, 1])) {
-                oppositeTile = adjWallArray[2][1];
-                entranceDir = 3;
-            } else if (strictEquals(pathPos, [2, 1])) {
-                oppositeTile = adjWallArray[0][1];
-                entranceDir = 4;
-            } else {
-                entranceDir = null;
-            }
-            if (entranceDir && adjPathTotal === 1 && adjWallTotal === 7 && oppositeTile === 0 || oppositeTile === 10) {
-                switch (entranceDir) {
-                    case 1:
-                        drawTri(x, y, tileSize, 'gray', 'ct');
-                    break
-                    case 2:
-                        drawTri(x, y, tileSize, 'gray', 'cb');
-                    break
-                    case 3:
-                        drawTri(x, y, tileSize, 'gray', 'cl');
-                    break
-                    case 4:
-                        drawTri(x, y, tileSize, 'gray', 'cr');
-                    break
-                }
-            } else {
-                drawFromAtlas(3 + atlasMod, x, y, tileSize);
-            }
+			if (strictEquals(pathPos, [1, 0])) {
+				oppositeTile = adjWallArray[1][2];
+				entranceDir = 1;
+			} else if (strictEquals(pathPos, [1, 2])) {
+				oppositeTile = adjWallArray[1][0];
+				entranceDir = 2;
+			} else if (strictEquals(pathPos, [0, 1])) {
+				oppositeTile = adjWallArray[2][1];
+				entranceDir = 3;
+			} else if (strictEquals(pathPos, [2, 1])) {
+				oppositeTile = adjWallArray[0][1];
+				entranceDir = 4;
+			} else {
+				entranceDir = null;
+			}
+			if (entranceDir && adjPathTotal === 1 && adjWallTotal === 7 && oppositeTile === 0 || oppositeTile === 10) {
+				switch (entranceDir) {
+					case 1:
+						drawTri(x, y, tileSize, 'gray', 'ct');
+					break
+					case 2:
+						drawTri(x, y, tileSize, 'gray', 'cb');
+					break
+					case 3:
+						drawTri(x, y, tileSize, 'gray', 'cl');
+					break
+					case 4:
+						drawTri(x, y, tileSize, 'gray', 'cr');
+					break
+				}
+			} else {
+				drawFromAtlas(3 + atlasMod, x, y, tileSize);
+			}
 			
 		break
 		case 14:
@@ -977,6 +989,7 @@ function drawLayerValues(layer) {				//draws the supplied layer
 
 function drawVisLevel() {						//draws only the layers which are set to visible
 	clearScreen();
+	drawLevelBackground();
 	for (let i = layerCount - 1; i > -1; i--) {
 		if (visArray[i] === 1) {
 			drawLayerValues(i);
@@ -1000,8 +1013,8 @@ function chooseComponent(tile) {
 		case 4:		//slope
 		case 5:		//slope
 		case 6:		//cool slugcat
-        case 10:	//semisolid platform
-        case 13:	//shortcut entrance
+		case 10:	//semisolid platform
+		case 13:	//shortcut entrance
 		case 18:	//batfly hive
 		case 29:	//invisible wall
 		case 20005: //cracked terrain
@@ -1032,174 +1045,174 @@ function chooseComponent(tile) {
 }
 
 function addValue(layer, layerComponentChoice, x, y, tileType) {
-    function didAlreadyEditTile() {
-        return (levelSave.levelArray[layer][layerComponentChoice][x][y] === tileType)
-    }
+	function didAlreadyEditTile() {
+		return (levelSave.levelArray[layer][layerComponentChoice][x][y] === tileType)
+	}
 
-    if (undoArray.length - 1 > currentOperation) {
-        undoArray.length = currentOperation + 1;
-    }
-    //just to prevent the array from getting too too big and using too much memory
-    if (undoArray.length > 100000) {
-        undoArray.shift();
-        currentOperation = undoArray.length - 1;
-    }
-    if (didAlreadyEditTile() != true) {
-        undoArray[currentOperation].push({ 'layer': layer, "component": layerComponentChoice, "oldType": levelSave.levelArray[layer][layerComponentChoice][x][y], "newType": tileType, 'x': x, 'y': y});
-    }
+	if (undoArray.length - 1 > currentOperation) {
+		undoArray.length = currentOperation + 1;
+	}
+	//just to prevent the array from getting too too big and using too much memory
+	if (undoArray.length > 10000) {
+		undoArray.shift();
+		currentOperation = undoArray.length - 1;
+	}
+	if (didAlreadyEditTile() != true) {
+		undoArray[currentOperation].push({ 'layer': layer, "component": layerComponentChoice, "oldType": levelSave.levelArray[layer][layerComponentChoice][x][y], "newType": tileType, 'x': x, 'y': y});
+	}
 
-    //making sure tiles that should only be on the first layer cannot get outside of the first layer
-    if ((layerComponentChoice === 2 || layerComponentChoice === 3) && layer != 0) {
-        //console.log("not today. . .")
-        console.log(`can't place "${tileMap.numericalIdToName(tileType)}" at layer ${layer + 1}, coords (${x}, ${y})`);
-        return
+	//making sure tiles that should only be on the first layer cannot get outside of the first layer
+	if ((layerComponentChoice === 2 || layerComponentChoice === 3) && layer != 0) {
+		//console.log("not today. . .")
+		console.log(`can't place "${tileMap.numericalIdToName(tileType)}" at layer ${layer + 1}, coords (${x}, ${y})`);
+		return
 	}
 	if (visArray[layer] === 1) {
-        switch(tileType) {
-            default:
-                levelSave.levelArray[layer][layerComponentChoice][x].splice(y, 1, tileType);
-            break
-            case 2:
-                if (editorSave.autoSlope) {
-                    const adjWallArray = [[], [], []]
-                    const adjWallTotal = [];
-                    for (let xCoord = 0; xCoord < 3; xCoord++) {
-                        for (let yCoord = 0; yCoord < 3; yCoord++) {
-                            if (! (y - 1 < 0 || y - 1 > levelSave.tilesPerColumn || x - 1 < 0 || x > levelSave.tilesPerRow)) {
-                                adjWallArray[xCoord].push(levelSave.levelArray[layerChoice][1][x + xCoord - 1][y + yCoord - 1]);
-                            } else {
-                                adjWallArray[xCoord].push(0);
-                            }
-                        }
-                    }
-                    for (let xCoord = 0; xCoord < 3; xCoord++) {
-                        for (let yCoord = 0; yCoord < 3; yCoord++) {
-                            function eq(pair) {
-                                return strictEquals([xCoord, yCoord], pair)
-                            }
-                            if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
-                                if (eq([0, 1])) {
-                                    adjWallTotal.push(1)
-                                } else if (eq([1, 0])) {
-                                    adjWallTotal.push(2)
-                                } else if (eq([2, 1])) {
-                                    adjWallTotal.push(3)
-                                } else if (eq([1, 2])) {
-                                    adjWallTotal.push(4)
-                                }
-                            }
-                        }
-                    }
-                    if (adjWallTotal.length === 2 && adjWallArray[1][1] === 0) {
-                        function eq(pair) {
-                            return arrLooseEquals(adjWallTotal, pair)
-                        }
-                        if (eq([1, 4])) {
-                            levelSave.levelArray[layer][1][x].splice(y, 1, 2);
-                        } else if (eq([1, 2])) {
-                            levelSave.levelArray[layer][1][x].splice(y, 1, 3);
-                        } else if (eq([2, 3])) {
-                            levelSave.levelArray[layer][1][x].splice(y, 1, 4);
-                        } else if (eq([3, 4])) {
-                            levelSave.levelArray[layer][1][x].splice(y, 1, 5);
-                        }
-                    }
-                } else {
-                    levelSave.levelArray[layer][1][x].splice(y, 1, 2);
-                }
-            break
-            case 7:
-            case 8:
-            case 9:
-                let curTile = levelSave.levelArray[layer][0][x][y];
-                if (curTile != 8 && curTile != 7 && curTile != 9) {
-                    levelSave.levelArray[layer][layerComponentChoice][x].splice(y, 1, tileType);
-                } else if ((curTile === 7 && tileType === 8) || (curTile === 8 && tileType === 7)) {
-                    levelSave.levelArray[layer][0][x].splice(y, 1, 9);
-                }
-            break
-        }			
-    }
+		switch(tileType) {
+			default:
+				levelSave.levelArray[layer][layerComponentChoice][x].splice(y, 1, tileType);
+			break
+			case 2:
+				if (editorSave.autoSlope) {
+					const adjWallArray = [[], [], []]
+					const adjWallTotal = [];
+					for (let xCoord = 0; xCoord < 3; xCoord++) {
+						for (let yCoord = 0; yCoord < 3; yCoord++) {
+							if (! (y - 1 < 0 || y - 1 > levelSave.tilesPerColumn || x - 1 < 0 || x > levelSave.tilesPerRow)) {
+								adjWallArray[xCoord].push(levelSave.levelArray[layerChoice][1][x + xCoord - 1][y + yCoord - 1]);
+							} else {
+								adjWallArray[xCoord].push(0);
+							}
+						}
+					}
+					for (let xCoord = 0; xCoord < 3; xCoord++) {
+						for (let yCoord = 0; yCoord < 3; yCoord++) {
+							function eq(pair) {
+								return strictEquals([xCoord, yCoord], pair)
+							}
+							if (adjWallArray[xCoord][yCoord] === 1 || adjWallArray[xCoord][yCoord] === 29) {
+								if (eq([0, 1])) {
+									adjWallTotal.push(1)
+								} else if (eq([1, 0])) {
+									adjWallTotal.push(2)
+								} else if (eq([2, 1])) {
+									adjWallTotal.push(3)
+								} else if (eq([1, 2])) {
+									adjWallTotal.push(4)
+								}
+							}
+						}
+					}
+					if (adjWallTotal.length === 2 && adjWallArray[1][1] === 0) {
+						function eq(pair) {
+							return arrLooseEquals(adjWallTotal, pair)
+						}
+						if (eq([1, 4])) {
+							levelSave.levelArray[layer][1][x].splice(y, 1, 2);
+						} else if (eq([1, 2])) {
+							levelSave.levelArray[layer][1][x].splice(y, 1, 3);
+						} else if (eq([2, 3])) {
+							levelSave.levelArray[layer][1][x].splice(y, 1, 4);
+						} else if (eq([3, 4])) {
+							levelSave.levelArray[layer][1][x].splice(y, 1, 5);
+						}
+					}
+				} else {
+					levelSave.levelArray[layer][1][x].splice(y, 1, 2);
+				}
+			break
+			case 7:
+			case 8:
+			case 9:
+				let curTile = levelSave.levelArray[layer][0][x][y];
+				if (curTile != 8 && curTile != 7 && curTile != 9) {
+					levelSave.levelArray[layer][layerComponentChoice][x].splice(y, 1, tileType);
+				} else if ((curTile === 7 && tileType === 8) || (curTile === 8 && tileType === 7)) {
+					levelSave.levelArray[layer][0][x].splice(y, 1, 9);
+				}
+			break
+		}			
+	}
 }
 
 function playEdit() {
-    if (mouseTileChanged) {
-        let x =  mouseTileX;
-        let y =  mouseTileY;
-        let startX = levelSave.playStartX;
-        let startY = levelSave.playStartY;
-        let endX = levelSave.playEndX;
-        let endY = levelSave.playEndY;
-        switch (startCorner) {
-            case "tl":
-                //top left corner
-                if (endY <= (y + 1)) {
-                    console.log('limiting height!')
-                    levelSave.playStartY = levelSave.playEndY - 2
-                }
-                else {
-                    levelSave.playStartY = mouseTileY;
-                }
-                if (endX <= (x + 1)) {
-                    console.log('limiting width!')
-                    levelSave.playStartX = levelSave.playEndX - 2
-                }
-                else {
-                    levelSave.playStartX = mouseTileX;
-                }
-            break
-            case "tr":
-                //top right corner
-                if (endY <= (y + 1)) {
-                    console.log('limiting height!')
-                    levelSave.playStartY = levelSave.playEndY - 2
-                }
-                else {
-                    levelSave.playStartY = mouseTileY;
-                }
-                if (startX >= (x - 1)) {
-                    console.log('limiting width!')
-                    levelSave.playEndX = levelSave.playStartX + 2
-                }
-                else {
-                    levelSave.playEndX = mouseTileX + 1;
-                }
-            break
-            case "bl":
-                //bottom left corner
-                if (startY >= (y - 1)) {
-                    console.log('limiting height!')
-                    levelSave.playEndY = levelSave.playStartY + 2
-                }
-                else {
-                    levelSave.playEndY = mouseTileY + 1;
-                }
-                if (endX <= (x + 1)) {
-                    console.log('limiting width!')
-                    levelSave.playStartX = levelSave.playEndX - 2
-                }
-                else {
-                    levelSave.playStartX = mouseTileX;
-                }
-            break
-            case "br":
-                //bottom right corner
-                if (startY >= (y - 1)) {
-                    console.log('limiting height!')
-                    levelSave.playEndY = levelSave.playStartY + 2
-                }
-                else {
-                    levelSave.playEndY = mouseTileY + 1;
-                }
-                if (startX >= (x - 1)) {
-                    console.log('limiting width!')
-                    levelSave.playEndX = levelSave.playStartX + 2
-                }
-                else {
-                    levelSave.playEndX = mouseTileX + 1;
-                }
-            break
-        }
+	if (mouseTileChanged) {
+		let x =  mouseTileX;
+		let y =  mouseTileY;
+		let startX = levelSave.playStartX;
+		let startY = levelSave.playStartY;
+		let endX = levelSave.playEndX;
+		let endY = levelSave.playEndY;
+		switch (startCorner) {
+			case "tl":
+				//top left corner
+				if (endY <= (y + 1)) {
+					console.log('limiting height!')
+					levelSave.playStartY = levelSave.playEndY - 2
+				}
+				else {
+					levelSave.playStartY = mouseTileY;
+				}
+				if (endX <= (x + 1)) {
+					console.log('limiting width!')
+					levelSave.playStartX = levelSave.playEndX - 2
+				}
+				else {
+					levelSave.playStartX = mouseTileX;
+				}
+			break
+			case "tr":
+				//top right corner
+				if (endY <= (y + 1)) {
+					console.log('limiting height!')
+					levelSave.playStartY = levelSave.playEndY - 2
+				}
+				else {
+					levelSave.playStartY = mouseTileY;
+				}
+				if (startX >= (x - 1)) {
+					console.log('limiting width!')
+					levelSave.playEndX = levelSave.playStartX + 2
+				}
+				else {
+					levelSave.playEndX = mouseTileX + 1;
+				}
+			break
+			case "bl":
+				//bottom left corner
+				if (startY >= (y - 1)) {
+					console.log('limiting height!')
+					levelSave.playEndY = levelSave.playStartY + 2
+				}
+				else {
+					levelSave.playEndY = mouseTileY + 1;
+				}
+				if (endX <= (x + 1)) {
+					console.log('limiting width!')
+					levelSave.playStartX = levelSave.playEndX - 2
+				}
+				else {
+					levelSave.playStartX = mouseTileX;
+				}
+			break
+			case "br":
+				//bottom right corner
+				if (startY >= (y - 1)) {
+					console.log('limiting height!')
+					levelSave.playEndY = levelSave.playStartY + 2
+				}
+				else {
+					levelSave.playEndY = mouseTileY + 1;
+				}
+				if (startX >= (x - 1)) {
+					console.log('limiting width!')
+					levelSave.playEndX = levelSave.playStartX + 2
+				}
+				else {
+					levelSave.playEndX = mouseTileX + 1;
+				}
+			break
+		}
 		drawVisLevel();
 	}
 }
@@ -1262,6 +1275,25 @@ function paintFn() {
 	drawVisValues(mouseTileX, mouseTileY);
 }
 
+function fillFn(layer, layerComponent, initX, initY, fillType) {
+	const typeToReplace = levelSave.levelArray[layer][layerComponent][initX][initY]
+	
+	function isValidTile(x, y, type) {
+		return coordsInsideLevel(x, y) && levelSave.levelArray[layer][layerComponent][x][y] === type;
+	}
+	
+	function recursiveFill(x, y) {
+		if (isValidTile(x, y, typeToReplace)) {
+			addValue(layer, layerComponent, x, y, fillType);
+			recursiveFill(x - 1, y);
+			recursiveFill(x + 1, y);
+			recursiveFill(x, y - 1);
+			recursiveFill(x, y + 1);
+		}
+	}
+	recursiveFill(initX, initY);
+}
+
 function eraseFn() {
 	if (mouseTileChanged) {
 		addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, 0);
@@ -1277,31 +1309,31 @@ function pan(event) {
 }
 
 function drawMouseCoords() {
-    if (editorSave.showCoords) {
-        let tileNames = "";
-        levelSave.levelArray[layerChoice].forEach((component) => {
-            if (component[mouseTileX][mouseTileY] != 0) {
-                tileNames = tileNames + tileMap.numericalIdToName(component[mouseTileX][mouseTileY]) + ", ";
-            }
-        })
-        mouseCoordSize.height = mouseCoordSize.actualBoundingBoxAscent + mouseCoordSize.actualBoundingBoxDescent;
-        let textSize = new Point(Math.ceil(mouseCoordSize.width / tileSize), Math.ceil(mouseCoordSize.height / tileSize));
-        if (prevMouseX + textSize.x < levelSave.tilesPerRow && prevMouseY - textSize.y >= 0) { 
-            for (let x = 0; x < textSize.x; x++) {
-                for (let y = 0; y < textSize.y; y++) {
-                    drawVisValues(prevMouseX + x + 1, prevMouseY - y - 1);
-                }   
-            }  
-            preview(); 
-        } else {
-            drawVisLevel();
-            preview();
-        }
-        mainCtx.fillStyle = 'red'
-        mainCtx.font = '15px sans-serif'
-        mouseCoordSize = mainCtx.measureText(tileNames + `(${mouseTileX}, ${mouseTileY})`)
-        mainCtx.fillText(tileNames + `(${mouseTileX}, ${mouseTileY})`, (mouseTileX + 1) * tileSize + panX, (mouseTileY) * tileSize + panY - 3)
-    }
+	if (editorSave.showCoords) {
+		let tileNames = "";
+		levelSave.levelArray[layerChoice].forEach((component) => {
+			if (component[mouseTileX][mouseTileY] != 0) {
+				tileNames = tileNames + tileMap.numericalIdToName(component[mouseTileX][mouseTileY]) + ", ";
+			}
+		})
+		mouseCoordSize.height = mouseCoordSize.actualBoundingBoxAscent + mouseCoordSize.actualBoundingBoxDescent;
+		let textSize = new Point(Math.ceil(mouseCoordSize.width / tileSize), Math.ceil(mouseCoordSize.height / tileSize));
+		if (prevMouseX + textSize.x < levelSave.tilesPerRow && prevMouseY - textSize.y >= 0) { 
+			for (let x = 0; x < textSize.x; x++) {
+				for (let y = 0; y < textSize.y; y++) {
+					drawVisValues(prevMouseX + x + 1, prevMouseY - y - 1);
+				}   
+			}  
+			preview(); 
+		} else {
+			drawVisLevel();
+			preview();
+		}
+		mainCtx.fillStyle = 'red'
+		mainCtx.font = '15px sans-serif'
+		mouseCoordSize = mainCtx.measureText(tileNames + `(${mouseTileX}, ${mouseTileY})`)
+		mainCtx.fillText(tileNames + `(${mouseTileX}, ${mouseTileY})`, (mouseTileX + 1) * tileSize + panX, (mouseTileY) * tileSize + panY - 3)
+	}
 }
 
 function preview() {
@@ -1310,7 +1342,7 @@ function preview() {
 		if (mouseTileChanged) {
 			drawVisValues(prevMouseX, prevMouseY);
 		}
-		if (toolChoice === 'eraser') {
+		if (toolChoice === 'eraser' || toolChoice === 'boxErase') {
 			drawValue(22, mouseTileX, mouseTileY)
 		}
 		else {
@@ -1320,19 +1352,19 @@ function preview() {
 }
 
 window.addEventListener('load', () => {
-    initMainCanvas();
+	initMainCanvas();
 
-    initOgLevelFile();
+	initOgLevelFile();
 
-    initLevelArray();
+	initLevelArray();
 
-    loadEditorSettings();
+	loadEditorSettings();
 
-    initAtlas();
+	initAtlas();
 
-    initHtmlElements();
+	initHtmlElements();
 
-    drawVisLevel();
+	drawVisLevel();
 })
 
 window.addEventListener('resize', () => {
@@ -1341,61 +1373,31 @@ window.addEventListener('resize', () => {
 })
 
 editorColorSelect.addEventListener('change', () => {
-    switch (editorColorSelect.value) {
-        case "levelBorder":
-            colorToChange = "levelBorderColor";
-        break
-        case "background":
-            colorToChange = "backgroundColor";
-        break
-        case "playBorder":
-            colorToChange = "playColor";
-        break
-        case "grid":
-            colorToChange = "gridColor";
-        break
-        case "selBox":
-            colorToChange = "selBoxColor";
-        break
-        case "selBody":
-            colorToChange = "selBodyColor";
-        break
-        case "layer1":
-            colorToChange = "layer1Color";
-        break
-        case "layer2":
-            colorToChange = "layer2Color";
-        break
-        case "layer3":
-            colorToChange = "layer3Color";
-        break
-        case "preview":
-            colorToChange = "previewColor";
-        break
-
-    }
-    editorColorPicker.value = editorSave[colorToChange];
+	colorToChange = editorColorSelect.value;
+	console.log(editorSave[colorToChange])
+	editorColorPicker.value = editorSave[colorToChange];
 })
 
 editorColorPicker.addEventListener('change', () => {
-    if (colorToChange) {
-        editorSave[colorToChange] = editorColorPicker.value;
-        drawVisLevel();
-    }
+	if (colorToChange) {
+		editorSave[colorToChange] = editorColorPicker.value;
+		drawVisLevel();
+	}
 })
 
 editorColorReset.addEventListener('mousedown', () => {
-    editorSave.backgroundColor = '#ffffff';
-    editorSave.gridColor = '#c8c8c8';
-    editorSave.playColor =	'#ff7f7f';
-    editorSave.selBoxColor = '#c0ad06';
-    editorSave.selBodyColor = "#88a1d8";
-    editorSave.levelBorderColor = '#7f7fff';
-    editorSave.layer1Color = '#000000';
-    editorSave.layer2Color = '#c8ffc8';
-    editorSave.layer3Color = '#e2a0a0';
-    editorSave.previewColor = '#969696';
-    drawVisLevel();
+	editorSave.levelBackgroundColor = '#ffffff';
+	editorSave.pageBackgroundColor = '#ffffff'
+	editorSave.gridColor = '#c8c8c8';
+	editorSave.playBorderColor = '#ff7f7f';
+	editorSave.selBoxColor = '#c0ad06';
+	editorSave.selBodyColor = "#88a1d8";
+	editorSave.levelBorderColor = '#7f7fff';
+	editorSave.layer1Color = '#000000';
+	editorSave.layer2Color = '#c8ffc8';
+	editorSave.layer3Color = '#e2a0a0';
+	editorSave.previewColor = '#969696';
+	drawVisLevel();
 })
 
 levelSizeForm.addEventListener('submit', handleLevelsizeChange);
@@ -1500,14 +1502,14 @@ editorSettingsButtons.forEach(button => {						//event listener for the editor s
 				console.log('reset the view');
 			break
 			default:
-                if (editorSave[button.id]) {
+				if (editorSave[button.id]) {
 					button.setAttribute('selected', false);
 					editorSave[button.id] = false;
 				} else {
 					button.setAttribute('selected', true);
 					editorSave[button.id] = true;
 				}
-        }
+		}
 		saveEditorSettings();
 		drawVisLevel();
 	});
@@ -1521,10 +1523,10 @@ toolButtons.forEach(button => {
 
 screen.addEventListener('mousemove', (event) => {
 	getGridPos(event);                                   //calculates a bunch of values based on current mouse position to use elsewhere
-    chooseCursor();
-    if (mouseTileChanged) {
-        preview();
-        drawMouseCoords();
+	chooseCursor();
+	if (mouseTileChanged) {
+		preview();
+		drawMouseCoords();
 	}
 });
 
@@ -1539,9 +1541,9 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 	switch (toolChoice) {
 		case 'boxFill':
 		case 'boxSelect':
-		case 'eraseAll':
+		case 'boxErase':
 		case 'ruler':
-        case 'playEdit':
+		case 'playEdit':
 			startTileX = mouseTileX;
 			startTileY = mouseTileY;
 		break
@@ -1551,21 +1553,27 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 			switch (toolChoice) {
 				case 'paint':
 					undoArray.push([]);
-                    addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, tileChoice);
+					addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, tileChoice);
 					screen.addEventListener('mousemove', paintFn);
 				break
 				case 'eraser':
 					undoArray.push([]);
-                    addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, 0);
+					addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, 0);
 					screen.addEventListener('mousemove', eraseFn);
 				break
+				case 'bucketFill':
+					undoArray.push([]);
+					console.log('fillen');
+					fillFn(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, tileChoice);
+					currentOperation++;
+				break
 				case 'boxSelect':
-                    if (visArray[layerChoice] === 1) {
+					if (visArray[layerChoice] === 1) {
 						if (drawSel && !mouseInsideSel) {
 							undoArray.push([]);
-                            placeSelection();
+							placeSelection();
 							currentOperation++;
-                            selStartX = 0;
+							selStartX = 0;
 							selStartY = 0;
 							selEndX = 0;
 							selEndY = 0;
@@ -1578,6 +1586,7 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 						if (mouseInsideSel) {
 							mouseOffsetX = mouseTileX - selStartX;
 							mouseOffsetY = mouseTileY - selStartY;
+							clearSelection();
 							screen.addEventListener('mousemove', moveSel);
 						}
 					} else {
@@ -1587,48 +1596,48 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 					}
 				break
 				case 'boxFill':
-				case 'eraseAll':
+				case 'boxErase':
 					undoArray.push([]);
-                    selBox = true;
+					selBox = true;
 					boxFn();
 					if (toolChoice === 'boxFill') {
-                        addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, tileChoice);
-                    }
-                    screen.addEventListener('mousemove', boxFn);
+						addValue(layerChoice, chooseComponent(tileChoice), mouseTileX, mouseTileY, tileChoice);
+					}
+					screen.addEventListener('mousemove', boxFn);
 				break
 				case 'playEdit':
 					globalThis.startCorner = undefined;
-                    let x =  mouseTileX;
-                    let y =  mouseTileY;
-                    let startX = levelSave.playStartX;
-                    let startY = levelSave.playStartY;
-                    let endX = levelSave.playEndX;
-                    let endY = levelSave.playEndY;
-                    if (x === startX && y === startY) {
-                        //top left corner
-                        startCorner = "tl";
-                    } else if (x + 1 === endX && y === startY) {
-                        //top right corner
-                        startCorner = "tr";
-                    } else if (x === startX && y + 1 === endY) {
-                        //bottom left corner
-                        startCorner = "bl";
-                    } else if (x + 1 === endX && y + 1 === endY) {
-                        //bottom right corner
-                        startCorner = "br";
-                    }
-                    if (startCorner) {
-                        screen.addEventListener('mousemove', playEdit);
-                    }
+					let x =  mouseTileX;
+					let y =  mouseTileY;
+					let startX = levelSave.playStartX;
+					let startY = levelSave.playStartY;
+					let endX = levelSave.playEndX;
+					let endY = levelSave.playEndY;
+					if (x === startX && y === startY) {
+						//top left corner
+						startCorner = "tl";
+					} else if (x + 1 === endX && y === startY) {
+						//top right corner
+						startCorner = "tr";
+					} else if (x === startX && y + 1 === endY) {
+						//bottom left corner
+						startCorner = "bl";
+					} else if (x + 1 === endX && y + 1 === endY) {
+						//bottom right corner
+						startCorner = "br";
+					}
+					if (startCorner) {
+						screen.addEventListener('mousemove', playEdit);
+					}
 				break
 				case 'ruler':
 					selBox = false;
 					rulerFn();
 					screen.addEventListener('mousemove', rulerFn);
 				break
-                case 'moveView':
-                    screen.addEventListener('mousemove', pan);
-                break
+				case 'moveView':
+					screen.addEventListener('mousemove', pan);
+				break
 			}
 		break
 		case 1:
@@ -1636,6 +1645,8 @@ screen.addEventListener('mousedown', (event) => {	   //adds a mousemove event li
 		break
 	}
 });
+
+
 
 document.addEventListener('mouseup', (event) => {			//removes the mousemove event listener when the user is done doing the thing
 	isMouseDown = false;
@@ -1652,14 +1663,14 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 		if (event.button === 0) {
 			switch (toolChoice) {
 				case 'boxFill':
-                    if (visArray[layerChoice] === 1) {
+					if (visArray[layerChoice] === 1) {
 						for (let x = selStartX; x < selEndX; x++) {
 							for (let y = selStartY; y < selEndY; y++) {
 								addValue(layerChoice, chooseComponent(tileChoice), x, y, tileChoice);
 							}
 						}
 					}
-                    currentOperation++;
+					currentOperation++;
 					selBox = false;
 					selStartX = 0;
 					selStartY = 0;
@@ -1669,15 +1680,14 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 				case 'boxSelect':
 					console.log(startTileX, selEndX);
 					if (!drawSel && selEndX + selEndY > 0) {
-                        addToSelArray();
-						clearSelection();
+						addToSelArray();
 						drawSel = true;
-                        currentOperation++;
+						currentOperation++;
 					}
 				break
-				case 'eraseAll':
+				case 'boxErase':
 					if (visArray[layerChoice] === 1) {
-                        levelSave.levelArray[layerChoice].forEach(layerComponent => {
+						levelSave.levelArray[layerChoice].forEach(layerComponent => {
 							for (let x = selStartX; x < selEndX; x++) {
 								for (let y = selStartY; y < selEndY; y++) {
 									layerComponent[x].splice(y, 1, 0);
@@ -1685,19 +1695,19 @@ document.addEventListener('mouseup', (event) => {			//removes the mousemove even
 							}
 						});
 					}
-                    currentOperation++;
+					currentOperation++;
 					selBox = false;
 					selStartX = 0;
 					selStartY = 0;
 					selEndX = 0;
 					selEndY = 0;
 				break
-                case 'paint':
-                    currentOperation++; 
-                break
-                case 'eraser':
-                    currentOperation++; 
-                break
+				case 'paint':
+					currentOperation++; 
+				break
+				case 'eraser':
+					currentOperation++; 
+				break
 				case 'ruler':
 					selBox = false;
 					selStartX = 0;

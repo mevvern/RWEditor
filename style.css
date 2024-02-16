@@ -26,7 +26,7 @@ p {
 	display: flex;
 	flex-direction: row;
 	justify-content: flex-start;
-	gap: 4px;
+	gap: 0.5vmin;
 	flex-wrap: wrap;
 }
 
@@ -36,19 +36,23 @@ p {
 	justify-content: space-around;
 }
 
-input[type="number"] {
-	width: 40px;
+input[type="submit"] {
+	width: auto;
+}
+
+input[type="text"] {
+	width: 5vmin;
 }
 
 [customTitle] {
 	position: relative;
-  }
-  [customTitle]:after {
+	}
+	[customTitle]:after {
 	content: attr(customTitle);
 	pointer-events: none;
 	color: #FFFFFF;
 	background-color: rgba(0, 0, 0, 0.9);
-	padding: 3px 5px 7px;
+	padding: 3px 0.5vmin 7px;
 	white-space: nowrap;
 	z-index: 99999;
 	visibility: hidden;
@@ -57,22 +61,22 @@ input[type="number"] {
 	bottom: 120%;
 	border-radius: 4px 4px 4px 4px;
 	font-size: 0.875rem;
-	box-shadow: rgba(0, 0, 0, 0.15) 1.95px 1.95px 2.6px;
-  }
-  [customTitle]:hover:after {
+	box-shadow: rgba(0, 0, 0, 0.15) 1.90.5vmin 1.90.5vmin 2.6px;
+	}
+	[customTitle]:hover:after {
 	opacity: 1;
 	transition: all 0.3s;
 	visibility: visible;
-  }
+	}
 
 button {
 	padding: 0px;
 	cursor: pointer;
-	font-size: 3vh;
-	border: 5px solid #666666;
-	border-radius: 9px;
-	width: 6vh;
-	height: 5vh;
+	font-size: 3vmin;
+	border: 0.5vmin solid #666666;
+	border-radius: 1vmin;
+	width: 6vmin;
+	height: 5vmin;
 	outline: none;
 	background-color: rgb(187, 187, 187);
 	text-align: center;
@@ -82,105 +86,108 @@ button {
 	font-family: sans-serif;
 	padding: 0px;
 	cursor: pointer;
-	font-size: 1.5rem;
-	border: 5px solid #666666;
-	border-radius: 9px;
+	font-size: 1vmin;
+	border: 0.5vmin solid #666666;
+	border-radius: 1vmin;
 	outline: none;
 	background-color: rgb(187, 187, 187);
 	text-align: center;
 }
 
 #importLabel:hover {
-	border: 5px solid #d6ae28
+	border: 0.5vmin solid #d6ae28
 }
 
 button > img {
-	width: 4vh;
+	width: 4vmin;
 }
 
 button:hover {
-	border: 5px solid #d6ae28
+	border: 0.5vmin solid #d6ae28
 }
 
 button[selected="true"] {
-	border: 5px solid #b401cc
+	border: 0.5vmin solid #b401cc
 }
 
 button[selected="true"]:hover {
-	border: 5px solid #8201cc
+	border: 0.5vmin solid #8201cc
 }
 
 button[selected="false"] {
-	border: 5px solid #666666
+	border: 0.5vmin solid #666666
 }
 
 button[selected="false"]:hover {
-	border: 5px solid #d6ae28
+	border: 0.5vmin solid #d6ae28
 }
 
 .toolBox {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-evenly;
-	padding: 10px;
+	padding: 1vmin;
 	margin: 0px;
-	padding: 8px;
-	outline: 8px solid black;
-	border-radius: 8px;
+	padding: 0.8vmin;
+	outline: 0.8vmin solid black;
+	border-radius: 0.1vmin;
 	gap: 0px;
-	width: 21vh;
+	width: 20vmin;
 	height: auto;
 	position: fixed;
 	top: 10px;
 	background-color: #ac87b8c4;
 }
 
-hr {
-	border: none;
-	height: 2px;
-	background-color: rgb(95, 95, 95);
-	width: 19vh;
+label {
+		font-size: 1.5vmin;
 }
 
+hr {
+	border: none;
+	height: 0.2vmin;
+	background-color: rgb(95, 95, 95);
+	width: 19vmin;
+}
 
 [hidden="true"] {
 	display: none;
 }
 
 .collapseButton {
-	width: auto;
+		width: auto;
 	height: auto;
 }
 
 #settings { 
 	height: auto;
-	right:10px;
+	right: 1vmin;
 }
 
 #settingsCollapse {
 	position: fixed;
-	right: 10px;
-	bottom: 10px;
+	right: 1vmin;
+	bottom: 0.5vmin;
 }
 
 #tools { 
-	left: 10px;
+	left: 1vmin;
 }
 
 #toolCollapse {
 	position: fixed;
-	left: 10px;
-	bottom: 10px;
+	left: 1vmin;
+	bottom: 0.5vmin;
 }
 
 
 .levelSettings {
-	height: 40vh;
+	height: 40vmin;
 	align-items: top;
 }
 
 .editorSettings {
-	height: 40vh;
+	height: 40vmin;
 	align-items: top;
 }
 
@@ -191,22 +198,22 @@ hr {
 }
 
 .header {
-	font-size: 1.5rem;
+	font-size: 2vmin;
 	color: black;
-	margin-top: 3px;
-	margin-bottom: 6px;
+	margin-top: 0.3vmin;
+	margin-bottom: 0.6vmin;
 }
 
 .subHeader {
-	font-size: 1rem;
+	font-size: 1.5vmin;
 	color: rgb(87, 87, 87);
-	margin-top: 3px;
-	margin-bottom: 6px;
+	margin-top: 0.3vmin;
+	margin-bottom: 0.6vmin;
 }
 
 .toolSet {
 	display: flex;
 	flex-direction: column;
-	padding-bottom: 5px;
+	padding-bottom: 0.5vmin;
 	padding-top: 0px;
 }

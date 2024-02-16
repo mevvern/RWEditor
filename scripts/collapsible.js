@@ -8,29 +8,29 @@ const settingsCollapse = document.getElementById('settingsCollapseButton');
 
 function changeToolboxState(whichTool, state) {
 	let toolElement
-    switch (whichTool) {
-        case "settings":
-            toolElement = settingsToolBox;
-            buttonElement = settingsCollapse;
-        break
-        case "tools":
-            toolElement = toolToolBox;
-            buttonElement = toolCollapse;
-        break
-        default:
-            throw "that toolbox doesn't exist"
-    }
-    if (state === 'false') {
-        toolElement.setAttribute('hidden', 'false');
-        buttonElement.setAttribute('title', 'Collapse the settings');
-        buttonElement.innerText = 'Collapse ' + whichTool;
-    } else if (state === 'true'){
-        toolElement.setAttribute('hidden', 'true');
-        buttonElement.setAttribute('title', 'Expand the settings');
-        buttonElement.innerText = 'Expand ' + whichTool;
-    } else {
-        throw new Error("you must choose a state")
-    }
+	switch (whichTool) {
+		case "settings":
+			toolElement = settingsToolBox;
+			buttonElement = settingsCollapse;
+		break
+		case "tools":
+			toolElement = toolToolBox;
+			buttonElement = toolCollapse;
+		break
+		default:
+			throw "that toolbox doesn't exist"
+	}
+	if (state === 'false') {
+		toolElement.setAttribute('hidden', 'false');
+		buttonElement.setAttribute('title', 'Collapse the settings');
+		buttonElement.innerText = 'Collapse ' + whichTool;
+	} else if (state === 'true'){
+		toolElement.setAttribute('hidden', 'true');
+		buttonElement.setAttribute('title', 'Expand the settings');
+		buttonElement.innerText = 'Expand ' + whichTool;
+	} else {
+		throw new Error("you must choose a state")
+	}
 	
 }
 

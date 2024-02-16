@@ -30,44 +30,44 @@ function del() {
 
 function paste() {
 	if (selArray.length > 0) {
-        if (toolChoice != 'boxSelect') {
-            changeTool('boxSelect');
-        }
-        if (drawSel) {
-            placeSelection();
-        }
-        selArray = levelSave.clipBoard;
-        selStartX = 0;
-        selStartY = 0;
-        selEndX = levelSave.clipBoard[0].length;
-        selEndY = levelSave.clipBoard[0][0].length;
-        drawSel = true;
-        selBox = true;
-        console.log('pasted the selection');
-        drawVisLevel();
-    }
+		if (toolChoice != 'boxSelect') {
+			changeTool('boxSelect');
+		}
+		if (drawSel) {
+			placeSelection();
+		}
+		selArray = levelSave.clipBoard;
+		selStartX = 0;
+		selStartY = 0;
+		selEndX = levelSave.clipBoard[0].length;
+		selEndY = levelSave.clipBoard[0][0].length;
+		drawSel = true;
+		selBox = true;
+		console.log('pasted the selection');
+		drawVisLevel();
+	}
 }
 
 function redo() {
-    console.log(currentOperation, undoArray.length)
-    if (currentOperation < undoArray.length) {
-        undoArray[currentOperation].forEach((tile) => {
-            levelSave.levelArray[tile.layer][tile.component][tile.x].splice(tile.y, 1, tile.newType);
-            drawVisValues(tile.x, tile.y);
-        });
-        currentOperation++
-    }
+	console.log(currentOperation, undoArray.length)
+	if (currentOperation < undoArray.length) {
+		undoArray[currentOperation].forEach((tile) => {
+			levelSave.levelArray[tile.layer][tile.component][tile.x].splice(tile.y, 1, tile.newType);
+			drawVisValues(tile.x, tile.y);
+		});
+		currentOperation++
+	}
 }
 
 function undo() {
-    console.log(currentOperation, undoArray.length)
-    if (currentOperation > 0) {
-        undoArray[currentOperation - 1].forEach((tile) => {
-            levelSave.levelArray[tile.layer][tile.component][tile.x].splice(tile.y, 1, tile.oldType);
-            drawVisValues(tile.x, tile.y);
-        });
-        currentOperation--
-    }
+	console.log(currentOperation, undoArray.length)
+	if (currentOperation > 0) {
+		undoArray[currentOperation - 1].forEach((tile) => {
+			levelSave.levelArray[tile.layer][tile.component][tile.x].splice(tile.y, 1, tile.oldType);
+			drawVisValues(tile.x, tile.y);
+		});
+		currentOperation--
+	}
 }
 
 function zoom(event) {
@@ -78,7 +78,7 @@ function zoom(event) {
 			zoomLevel = -baseTileSize + 1;
 			console.log('ur zoom is too small :3!!!!');
 		}
-        tileSize = (zoomLevel + baseTileSize);
+		tileSize = (zoomLevel + baseTileSize);
 		drawVisLevel();
 	}
 }
@@ -88,7 +88,7 @@ screen.addEventListener('wheel', zoom);
 document.addEventListener('keydown', (event) => {
 	if (event.key === ' ') {
 		if (!editorSave.autoSlope) {
-            switch (tileChoice) {				//manual slope
+			switch (tileChoice) {				//manual slope
 				case 2:
 				case 3:
 				case 4:
@@ -114,6 +114,8 @@ document.addEventListener('keydown', (event) => {
 				tileChoice = 7;
 		}
 		preview();
+	} else if (event.key === 'm') {
+		screen.addEventListener('mousemove', pan);
 	}
 	if (event.ctrlKey) {
 		switch (event.key) {
@@ -125,15 +127,15 @@ document.addEventListener('keydown', (event) => {
 				event.preventDefault();
 				loadLevelSettings();
 			break
-            case 'z':
+			case 'z':
 				event.preventDefault();
 				undo();
 			break
-            case 'y':
+			case 'y':
 				event.preventDefault();
 				redo();
 			break
-            case 'v':
+			case 'v':
 				event.preventDefault();
 				paste();
 			break
@@ -166,3 +168,9 @@ document.addEventListener('keydown', (event) => {
 		}
 	}
 });
+
+document.addEventListener('keyup', (event) => {
+	if (event.key === 'm') {
+		screen.removeEventListener('mousemove', pan);
+	}
+})

@@ -2,106 +2,65 @@
 <html lang="en" dir="ltr">
 	<head    
 		<meta charset="utf-8">
-		<title>New Level</title>
-		<link rel="icon" type="image/png" sizes="32x32" href="resources/icons/favicon-32x32.png?">
-		<link rel="icon" type="image/png" sizes="16x16" href="resources/icons/favicon-16x16.png?">
-		<link rel="shortcut icon" href="resources/icons/favicon.ico?">
-		<!-- some version numbers just to make sure the browser gets a new version if it exists -->
-		<link href="style.css?v8" rel="stylesheet">
-		<link type="text/plain" href="template project.txt"></link>
-		<script src="scripts/classes.js?v8" defer></script>
-		<script src="scripts/main.js?v8" defer></script>
-		<script src="scripts/tileMap.js?v8" defer></script>
-		<script src="scripts/collapsible.js?v8" defer></script>
-		<script src="scripts/shortcuts.js?v8" defer></script>
-		<script src="scripts/import.js?v8" defer></script>
-		<script src="scripts/export.js?v8" defer></script>
+		<title>Untitled Level</title>
+		<link rel="icon" type="image/png" sizes="32x32" href="resources/favicons/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="resources/favicons/favicon-16x16.png">
+		<link rel="shortcut icon" href="resources/favicons/favicon.ico">
+		<link href="style.css?v0" rel="stylesheet">
+		<link type="text/plain" href="resources/default projects/template project.json"></link>
+		<script defer>
+			(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='https://mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
+		</script>
+		<script type="module" src="./modules/main.mjs"></script>
+		<script type="module" src="./modules/ui.mjs"></script>
 	</head>
-	<body>
-		<canvas id="editorCanvas"></canvas>
-		<div id="tools" class="toolBox" hidden="false">
-			<div class="toolSet" id="tiles">
-				<div class="toolHeader">   
+	<body selectable="false">
+		<div id="allTools" class="toolBox" style="left: 10px" hidden="false">
+			<div class="toolSet" id="tiles" hidden="true" showDivider="false">
+				<div class="toolHeader">
 					<p class="header">tiles</p>
 					<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-					<p class="subHeader" id="tileSelection">wall</p>
+					<p class="subHeader">wall</p>
 				</div>
-				<div class="buttons">
-					<button class="tileButton" selected="true" id="wall" customTitle="Wall"><img src="resources/wallIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="slope" customTitle="Slope. Press space to change the slope's facing"><img src="resources/slopeIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="invisible wall" customTitle="Invisible Wall"><img src="resources/invisWallIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="horizontal pole" customTitle="Horizontal pole"><img src="resources/hPoleIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="vertical pole" customTitle="Vertical pole"><img src="resources/vPoleIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="cross pole" customTitle="Crossed pole"><img src="resources/crossPoleIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="semisolid platform" customTitle="Semisolid platform"><img src="resources/semisolidIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="batfly hive" customTitle="Batfly hive"><img src="resources/hiveIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="cool scug 0:" customTitle="cool scug :0"><img src="resources/coolScugIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="shortcut entrance" customTitle="Shortcut entrance"><img src="resources/entranceIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="shortcut path" customTitle="Shortcut path"><img src="resources/pathIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="room transition" customTitle="Room exit/entrance"><img src="resources/roomExitIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="creature den" customTitle="Creature den"><img src="resources/dragonDenIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="creature shortcut" customTitle="Creature shortcut (aka whack-a-mole entrance)"><img src="resources/whackamoleIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="scavenger hole" customTitle="Scavenger entrance/exit"><img src="resources/scavHoleIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="garbage worm den" customTitle="Garbage worm den"><img src="resources/garbageWormIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="waterfall" customTitle="Waterfall"><img src="resources/waterfallIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="worm grass" customTitle="Worm grass"><img src="resources/wormGrassIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="forbid batfly chains" customTitle="Forbid batfly chains from forming wherever this is placed"><img src="resources/noFliesIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="spear" customTitle="Spear spawn location"><img src="resources/spearIcon.png" draggable="false"></button>
-					<button class="tileButton" selected="false" id="rock" customTitle="Rock spawn location"><img src="resources/rockIcon.png" draggable="false"></button>
+				<div class="buttons" id="tileButtons">
 				</div>
+				<hr>
 			</div>
-			<hr>
-			<div class="toolSet" id="tools">
+			<div class="toolSet" id="tools" hidden="true" showDivider="false">
 				<div class="toolHeader">   
 					<p class="header">tools</p>
 					<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
-					<p class="subHeader" id="toolSelection">paint</p>
+					<p class="subHeader">paint</p>
 				</div>
-				<div class="buttons">
-					<button class="toolButton" selected="true" id="paint" customTitle="Paint"><img src="resources/paintIcon.png" alt="paint"></button>
-					<button class="toolButton" selected="false" id="boxFill" customTitle="Box fill"><img src="resources/boxfillIcon.png" alt="box fill"></button>
-					<button class="toolButton" selected="false" id="bucketFill" customTitle="Bucket fill"><img src="resources/bucketFillIcon.png" alt="bucket fill"></button>
-					<button class="toolButton" selected="false" id="eraser" customTitle="Erase"><img src="resources/eraseIcon.png" alt="erase"></button>
-					<button class="toolButton" selected="false" id="boxErase" customTitle="Box erase"><img src="resources/boxEraseIcon.png" alt="box erase"></button>
-					<button class="toolButton" selected="false" id="moveView" customTitle="Move view"><img src="resources/selMoveIcon.png" alt="All-Scroll"></button>
-					<!-- <button class="toolButton" selected="false" id="boxSelect" customTitle="Select"><img src="resources/selectionIcon.png" alt="selection"></button> -->
-					<button class="toolButton" selected="false" id="ruler" customTitle="Ruler">📏</button>
-					<button class="toolButton" selected="false" id="cameras" customTitle="Create and position cameras">📷</button>
-					<button class="toolButton" selected="false" id="playEdit" customTitle="Edit the play area">✏</button>
+				<div class="buttons" id="toolButtons">
 				</div>
+				<hr>
 			</div>
-			<hr>
-			<div class="toolSet" id="workLayers">
+			<div class="toolSet" id="layers" hidden="false" showDivider="true">
 				<div class="toolHeader">
 					<p class="header">work layer selection</p>
 				</div>
-				<div class="toolHeader">
-					<p class="subHeader" id="layerSelection">selected layer: 1</p>
+				<div class="buttons" id="layerSel" showDivider="true"> 
+					<button selected="true" id="sel0" number="0" title="Select work layer 1">1</button>
+					<button selected="false" id="sel1" number="1" title="Select work layer 2">2</button>
+					<button selected="false" id="sel2" number="2" title="Select work layer 3">3</button>
 				</div>
-				<div class="buttons"> 
-					<button class="layerSelButton" selected="true" id="layer1" title="Select work layer 1">1</button>
-					<button class="layerSelButton" selected="false" id="layer2" title="Select work layer 2">2</button>
-					<button class="layerSelButton" selected="false" id="layer3" title="Select work layer 3">3</button>
-				</div>
-			</div>
-			<hr>
-			<div class="toolSet" id="layerVis">
+				<hr>
 				<div class="toolHeader">
 					<p class="header">layer visibility</p>
 				</div>
-				<div class="buttons" style="width: 19vmin; padding-top: 2vmin;">
-					<button class="layerVisIndicator" selected="true" id="layer1" title="Make layer 1 invisible">1</button>
-					<button class="layerVisIndicator" selected="true" id="layer2" title="Make layer 2 invisible">2</button>
-					<button class="layerVisIndicator" selected="true" id="layer3" title="Make layer 3 invisible">3</button>
+				<div class="buttons" id="layerVis">
+					<button selected="true" id="vis0" number="0" title="Make layer 1 invisible">1</button>
+					<button selected="true" id="vis1" number="1" title="Make layer 2 invisible">2</button>
+					<button selected="true" id="vis2" number="2" title="Make layer 3 invisible">3</button>
 				</div>
 			</div>
 		</div>
-		<div id="toolCollapse">
-			<button class="collapseButton" id="toolCollapseButton" selected="false" title="Collapse the toolbox" style="font-size: 15px; width: auto; height: 30px;">collapse tools</button>
+		<div>
+			<button class="collapseButton" id="toolCollapseButton" selected="false" title="Collapse the toolbox">hide tools</button>
 		</div>
-		<!-- regulare settings menu -->
-		<div id="settings" class="toolBox" hidden="true" style="height: 90vmin;">
-			<a href="https://github.com/mevvern/RWEditor/blob/main/README.md" target="_blank">how do i use this editor?</a>
+		<div id="allSettings" class="toolBox" style="right: 10px;" hidden="false">
+			<a href="https://github.com/mevvern/RWEditor/blob/main/README.md" target="_blank">check here for how to use this app!!!</a>
 			<hr>
 			<div class="toolSet" id="importExportLevel">
 				<label for="importLevel" id="importLabel" style="font-size: 2vmin; width: auto; height: auto;">Import level</label>
@@ -109,65 +68,39 @@
 				<button id="exportLevel" style="font-size: 2vmin; width: auto; height: auto;">Export level</button>
 			</div>
 			<hr>
-			<div class="toolSet" id="editorSettings">
+			<div class="toolSet" id="modes">
 				<div class="toolHeader">
-					<p class="header">editor settings</p>
+					<p class="header">mode select</p>
 				</div>
-				<div class="buttons">
-					<button class="editorButton" id="resetView" selected="false" title="Reset the editor's view" style="font-size: 0.9vw;">reset<br>view</button>
-					<button class="editorButton" id="showGrid" title="Hide the grid" style="font-size: 0.9vw;">show<br>grid</button>
-					<button class="editorButton" id="autoSlope" selected="false" title="if selected, automatically place the right direction of slope" style="font-size: 0.9vw;">auto<br>slope</button>
-					<button class="editorButton" id="airReplace" selected="false" title="if selected, will replace underlaying tiles with air that is in the selection" style="font-size: 0.9vw;">replace<br>air</button>
-					<button class="editorButton" id="showCoords" selected="false" title="show coordinates of the current tile at the mouse's position" style="font-size: 0.9vw;">show<br>coords</button>
+				<div class="buttons" id="modeButtons">
+					<button selected="true" id="geometry" title="Geometry mode">Geometry</button>
+					<button selected="false" id="texture" title="Texture mode">Texture</button>
+					<button selected="false" id="prop" title="Props mode">Props</button>
+					<button selected="false" id="effect" title="Effect mode">Effects</button>
+					<button selected="false" id="light" title="Lightmap editor">Lightmap</button>
+					<button selected="false" id="palette" title="Edit palettes">Palettes</button>
+					<button selected="false" id="render" title="Initiate a render">Render</button>
 				</div>
-			</div>
-			<hr>
-			<div class="toolSet" id="colorSettingsBox" style="justify-content: center;">
-				<div class="toolHeader">
-					<p class="subHeader">editor colors</p>
-				</div>
-				<select id="editorColorSelector" style="width: 100px;">
-					<option value="levelBackgroundColor">Level background</option>
-					<option value="pageBackgroundColor">Page background</option>
-					<option value="levelBorderColor">Level border</option>
-					<option value="playBorderColor">Play area border</option>
-					<option value="gridColor">Grid color</option>
-					<option value="selBoxColor">Selection box</option>
-					<option value="selBodyColor">Selection body</option>
-					<option value="layer1Color">Layer 1</option>
-					<option value="layer2Color">Layer 2</option>
-					<option value="layer3Color">Layer 3</option>
-					<option value="previewColor">Preview</option>
-				</select>
-				<br>
-				<input type="color" id="editorColorPicker" style="width: 100px;">
-				<br>
-				<button id="editorColorReset" style="width: 100px; font-size: 1.5vh;">Reset colors to default</button>
-			</div>
-			<hr>
-			<div class="toolSet" id="levelSettings">
-				<div class="toolHeader">
-					<p class="header">level settings</p>
-				</div>
-				<form id="levelSizeForm" action="" method="GET" onsubmit="return false">
-					<label for="screensWide">Width:</label>
-					<input type="text" pattern="[0-9]*\.?[0-9]*" id="screensWide" name="screensWide" title="Enter the width of the level in screens" required><br>
-					<label for="screensTall">Height:</label>
-					<input type="text" pattern="[0-9]*\.?[0-9]*" id="screensTall" name="screensTall" title="Enter the height of the level in screens" required><br><br>
-					<input type="submit" id="levelSizeSubmit" value="Change level size">
-				</form>
 				<hr>
-				<form id="levelNameForm" action="" method="GET" onsubmit="return false">
-					<label for="levelName">Name of the level:</label>
-					<input id="levelName" value="New Level" style="width: 100px;"><br><br>
-					<input type="submit" id="levelNameSubmit" value="Change level name">
-				</form>
+				<div class="toolHeader">
+					<p class="header">mode settings</p>
+				</div>
+				<div class="buttons" id="modeSettings">
+
+				</div>
+			</div>
+			<hr>
+			<div class="toolSet" id="name">
+				<div class="toolHeader">
+					<p class="header">Level Name</p>
+				</div>
+				<input id="levelName" title="level name" type="text" value="Untitled Level" selectable="true" style="width: auto;">
 			</div>
 		</div>
-		<div id="settingsCollapse">
-				<button class="collapseButton" id="settingsCollapseButton" selected="false" title="Collapse the toolbox" style="font-size: 15px;">expand settings</button>
+		<div>
+				<button class="collapseButton" id="settingsCollapseButton" selected="false" title="Collapse the settings">hide settings</button>
 		</div>
-		<!-- <div class="toolSet" id="saves">
-			<iframe id="saveWindow" src="saves.html"></iframe>
-		</div> -->
+		<div>
+				<img src="./resources/buttonIcons/adobe director 12 trial.png" alt="You have 12 days left on your Adobe® Director 12 free trial." style="position: fixed; right: 1px; bottom: 1px;">
+		</div>
 	</body>

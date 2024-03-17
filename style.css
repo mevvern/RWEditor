@@ -126,7 +126,6 @@ button[selected="false"]:hover {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-evenly;
-	padding: 1vmin;
 	margin: 0px;
 	padding: 0.8vmin;
 	outline: 0.8vmin solid black;
@@ -150,36 +149,21 @@ hr {
 	width: 19vmin;
 }
 
-[hidden="true"] {
-	display: none;
-}
-
 .collapseButton {
-		width: auto;
-	height: auto;
-}
-
-#settings { 
-	height: auto;
-	right: 1vmin;
-}
-
-#settingsCollapse {
+	width: auto;
+	height: 30px;
+	font-size: 15px;
 	position: fixed;
-	right: 1vmin;
-	bottom: 0.5vmin;
+	bottom: 10px;
 }
 
-#tools { 
-	left: 1vmin;
+#toolCollapseButton {
+	left: 10px;
 }
 
-#toolCollapse {
-	position: fixed;
-	left: 1vmin;
-	bottom: 0.5vmin;
+#settingsCollapseButton {
+	right: 10px;
 }
-
 
 .levelSettings {
 	height: 40vmin;
@@ -216,4 +200,34 @@ hr {
 	flex-direction: column;
 	padding-bottom: 0.5vmin;
 	padding-top: 0px;
+	height: auto;
+}
+
+#allModes {
+	width: auto;
+	height: 40px;
+	left: 50%;
+	bottom: 10px;
+}
+
+#modeButtons button {
+	font-size: 1rem;
+	height: 40px;
+	width: 20vmin;
+}
+
+#modeSettings button {
+	font-size: 1rem;
+}
+
+[hidden="true"] {
+	display: none;
+}
+
+[showDivider="false"] hr {
+	display: none;
+}
+
+[selectable="false"] {
+	user-select: none;
 }

@@ -2,14 +2,14 @@ import * as PIXI from "./lib/pixi.mjs"; //dont ask me why i did this. i do not w
 import {vec2, vec3, vec4, Area, Layer, LINGO} from "./utils.mjs";
 import {level} from "./main.mjs";
 import {editor} from "./main.mjs";
-import {RenderLayerWithAllSprites, RenderLayerWith1Sprite} from "./renderLayer.mjs"
-
-globalThis.pixiApp = new PIXI.Application({background : "#7788af", resizeTo : window});
-globalThis.__PIXI_APP__ = pixiApp; //for the pixijs visualisation extension
-globalThis.DEFAULT_TEXTURE = PIXI.Texture.from("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURQAAAPcA/dbgUjsAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAWSURBVBjTYwADQRCgB5NuFjEwMDAAANtyBqXVH2kBAAAAAElFTkSuQmCC")
+import {RenderLayerWith1Sprite} from "./renderLayer.mjs"
 
 export class RenderContext {
 	constructor(levelSize, tileSize) {
+		if (levelSize.x * tileSize > app.renderer.gl.MAX_TEXTURE_SIZE || levelSize.y * tileSize > app.renderer.gl.MAX_TEXTURE_SIZE) {
+			//throw new RangeError("level size cannot exceed gl.MAX_TEXTURE_SIZE of " + app.renderer.gl.MAX_TEXTURE_SIZE);
+		}
+
 		this.#levelTileSize = levelSize;
 		this.#defaultTileSize = tileSize;
 		this.#currentTileSize = tileSize;
@@ -18,11 +18,23 @@ export class RenderContext {
 		this.layers = [];
 		this.setTileCount = 0;
 
-		this.textures = {default : DEFAULT_TEXTURE, WHITE : PIXI.Texture.WHITE};
+		this.textures = {DEFAULT : DEFAULT_TEXTURE, WHITE : WHITE, INVISIBLE : INVISIBLE};
 
 		this.#initView();
 
 		this.#initWholeThing();
+
+		this.clearRenders = () => {
+			for (const layer of this.layers) {
+				layer.clearRenderTextures();
+			}
+		}
+
+		this.renderAll = () => {
+			for (const layer of this.layers) {
+				layer.renderAll();
+			}
+		}
 
 		/**
 		 * 
@@ -40,8 +52,34 @@ export class RenderContext {
 				} else {
 					throw new Error("desired texture \"" + textureId + "\" does not exist!");
 				}
+
+			} else if (pos instanceof Area) {
+				const sortedTiles = [];
+
+				for (const tile of pos) {
+					if (!(sortedTiles[tile.pos.z] instanceof Array)) {
+						sortedTiles[tile.pos.z] = [];
+					}
+					tile.texture = this.textures[tile.texture];
+
+					const layer = this.layers[tile.pos.z];
+
+					layer.at(tile.pos).texture = tile.texture
+
+					sortedTiles[tile.pos.z].push(tile);
+					this.setTileCount++
+				}
+
+				for (const [index, layer] of sortedTiles.entries()) {
+					if (layer) {
+						const renderLayer = this.layers[index]
+
+						renderLayer.updateTile(layer)
+					}
+				}
+
 			} else {
-				throw new Error("pos must be a vec3!!!");
+				throw new Error("pos must be a vec3 or an Area!!!");
 			}
 		}
 	}
@@ -64,8 +102,8 @@ export class RenderContext {
 	}
 
 	#initView = () => {
-		document.body.appendChild(pixiApp.view);
-		pixiApp.stage.addChild(this.#levelBody);
+		document.body.appendChild(app.view);
+		app.stage.addChild(this.#levelBody);
 	}
 
 	#initLevelBody = () => {
@@ -75,11 +113,9 @@ export class RenderContext {
 		this.layers = [];
 
 		for (let i = 0; i < 30; i++) {
-			const layer = new RenderLayerWithAllSprites(this.#levelTileSize, this.#defaultTileSize);
+			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, this.#defaultTileSize);
 			layer.pivot.set(layer.width / 2, layer.height / 2);
-			layer.tiles.iterate((tile) => {
-				tile.tint = [i / 30, i / 30, i / 30];
-			})
+			layer.tileSprite.tint = [i / 30, i / 30, i / 30];
 			//layer.updateLayer();
 			//layer.alpha = 0.1
 			this.layers.unshift(layer);

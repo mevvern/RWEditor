@@ -208,7 +208,7 @@ ui.clearButtons = () => {
 }
 
 ui.initListeners = () => {
-	const canvas = pixiApp.view;
+	const canvas = app.view;
 	const modeButtons = document.querySelectorAll("#modeButtons > button");
 	const levelName = document.querySelector("#levelName");
 	const toolVisButton = document.querySelector("#toolCollapseButton");

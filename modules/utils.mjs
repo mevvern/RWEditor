@@ -134,8 +134,8 @@ export class Layer extends Array{
 		}
 
 		/**
+		 * iterate over every item in the layer. passes arguments to the callback: (item, position)
 		 * @param {Function} callback
-		 * @function iterate over each value in the Layer
 		 */
 		this.iterate = (callback) => {
 			for (const [x, column] of this.entries()) {

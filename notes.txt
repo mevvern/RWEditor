@@ -1,5 +1,15 @@
-rendercontext should start out with 30 layers, where each layer contains levelsize.x * levelsize.y tiles...
+material types:
 
-each Tile layer has a container above it to hold the tile preview or props for that layer
-rendercontext should have render modes that decide which group of the texture data to show, and which of those Tile layers to render
--geometry: 
+tiling : tiles with no varieties
+
+randomised tiling : tiles with varieties
+
+connected tiling : tiles change their sprite based on the tile that occupies neighbor spaces
+
+connected randomised tiling : tiles change their sprite based on neighbor spaces but can also choose a randomised sprite variety if the state of neighbors allows it
+
+ransomised sprites : doesn't follow a grid as well as the others, instead the region occupied by the tile has randomised sprites put in it
+
+subtexture : the tiles don't have any tiling texture, instead they act as a positive mask for a texture that takes up the whole screen
+
+signs : a randomised sprite taken from a sign texture. set to the Effect color. gradients can allow the Effect color to fade in and out with the regular lit/half lit/shadow depth color shit.

@@ -1,4 +1,3 @@
-import * as PIXI from "./lib/pixi.mjs"
 import {LingoParse, LingoStringify} from "./lingo.mjs";
 
 export class vec2 {

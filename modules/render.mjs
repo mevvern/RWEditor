@@ -1,19 +1,17 @@
 import * as PIXI from "./lib/pixi.mjs"; //dont ask me why i did this. i do not want to answer
+import * as projection from "./lib/pixi-projection.mjs"
 import {vec2, vec3, vec4, Area, Layer, LINGO} from "./utils.mjs";
 import {level} from "./main.mjs";
 import {editor} from "./main.mjs";
 import {RenderLayerWith1Sprite} from "./renderLayer.mjs"
 
 export class RenderContext {
-	constructor(levelSize, tileSize) {
-		if (levelSize.x * tileSize > app.renderer.gl.MAX_TEXTURE_SIZE || levelSize.y * tileSize > app.renderer.gl.MAX_TEXTURE_SIZE) {
-			//throw new RangeError("level size cannot exceed gl.MAX_TEXTURE_SIZE of " + app.renderer.gl.MAX_TEXTURE_SIZE);
-		}
-
+	constructor(levelSize) {
 		this.#levelTileSize = levelSize;
-		this.#defaultTileSize = tileSize;
-		this.#currentTileSize = tileSize;
+
 		this.#levelPixelSize = new vec2(this.#currentTileSize * this.#levelTileSize.x, this.#currentTileSize * this.#levelTileSize.y);
+
+		this.#screenCenter = new vec2(window.screen.availWidth / 2, window.screen.availHeight / 2);
 
 		this.layers = [];
 		this.setTileCount = 0;
@@ -93,6 +91,7 @@ export class RenderContext {
 	#initWholeThing = () => {
 		this.#initGrid();
 		this.#initLevelBody();
+		this.#initCamera();
 		this.#initPreview();
 
 		this.#updateViewPos();
@@ -103,7 +102,7 @@ export class RenderContext {
 
 	#initView = () => {
 		document.body.appendChild(app.view);
-		app.stage.addChild(this.#levelBody);
+		app.stage.addChild(this.#camera);
 	}
 
 	#initLevelBody = () => {
@@ -114,10 +113,17 @@ export class RenderContext {
 
 		for (let i = 0; i < 30; i++) {
 			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, this.#defaultTileSize);
-			layer.pivot.set(layer.width / 2, layer.height / 2);
+
+			layer.position3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2, (29 - i) * 10);
+
+			//layer.pivot3d.set(-layer.width / 2, -layer.height / 2);
+			//layer.pivot.set(-layer.width / 2, -layer.height / 2);
+
+			layer.pivot3d.set(0);
+			layer.pivot.set(0);
+
 			layer.tileSprite.tint = [i / 30, i / 30, i / 30];
-			//layer.updateLayer();
-			//layer.alpha = 0.1
+
 			this.layers.unshift(layer);
 			this.#levelBody.addChild(layer);
 		}
@@ -126,8 +132,19 @@ export class RenderContext {
 		for (const layer of this.layers) {
 			//layer.pivot.set(layer.width * this.layerOrigin.x, layer.height * this.layerOrigin.y)
 		}
-
 		this.#levelBody.addChild(this.#grid);
+
+		//this.#levelBody.pivot3d.set(-this.#levelBody.width / 2, -this.#levelBody.height / 2);
+		//this.#levelBody.pivot.set(-this.#levelBody.width / 2, -this.#levelBody.height / 2);
+
+		//this.#levelBody.pivot3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2);
+		//this.#levelBody.pivot.set(-this.#defaultTileSize * this.#levelTileSize.x, -this.#defaultTileSize * this.#levelTileSize.y);
+	}
+
+	#initCamera = () => {
+		this.#camera.setPlanes(5000, 0.1, 1000, false); //focus plane, near plane, far plane, orthographic boolean
+		this.#camera.position.set(this.#screenCenter);
+		this.#camera.addChild(this.#levelBody);
 	}
 
 	#initPreview = () => {
@@ -205,14 +222,16 @@ export class RenderContext {
 	}
 
 	#levelToScreen = (pos) => {		//takes a levelspace coordinate and returns the associated screenspace coordinate
-		
 		//to turn that into screenspace pixel coords, the scale and position of the view will need to be taken into account
 		let screenPos = new vec3(0, 0, pos.z);
 
-		const scaleFac = this.#defaultTileSize / this.#currentTileSize
-
-		screenPos.x = (pos.x / scaleFac) + this.#levelOrigin.x;
-		screenPos.y = (pos.y / scaleFac) + this.#levelOrigin.y;
+		const scaleFac = this.#defaultTileSize / this.#currentTileSize;
+		
+		screenPos.x = (this.#viewPos.x + this.#screenCenter.x) - (this.#levelPixelSize.x / 2);
+		screenPos.y = (this.#viewPos.y + this.#screenCenter.y) - (this.#levelPixelSize.y / 2);
+		
+		//screenPos.x = (((this.#viewPos.x * scaleFac) - (this.#levelPixelSize.x * 0.5)) + pos.x) / scaleFac;
+		//screenPos.y = (((this.#viewPos.y * scaleFac) - (this.#levelPixelSize.y * 0.5)) + pos.y) / scaleFac;
 
 		return screenPos;
 	}
@@ -246,24 +265,31 @@ export class RenderContext {
 	//------------------updators-------------------------------------------------------------------------------------------
 
 	#updateViewPos = () => {
-		this.#levelBody.position.set(this.#viewPos);
+		const scaleFac = this.#defaultTileSize / this.#currentTileSize
 
-		this.#levelOrigin.x = this.#viewPos.x - (this.#levelPixelSize.x / 2);
-		this.#levelOrigin.y = this.#viewPos.y - (this.#levelPixelSize.y / 2);
+		this.#levelBody.position3d.set(this.#viewPos.x * scaleFac, this.#viewPos.y * scaleFac, 0);
+
+		this.#levelOrigin = this.#levelToScreen(new vec2());
+
+		console.log("level origin", this.#levelOrigin);
 
 		this.#updateMouseScreenPos();
 	}
 
 	#updateViewSize = () => {
+		if (this.#viewSize < -this.#defaultTileSize + 2) {
+			this.#viewSize = -this.#defaultTileSize + 1;
+		}
+
+		const scaleFac = this.#defaultTileSize / this.#currentTileSize
+
 		this.#currentTileSize = this.#defaultTileSize + this.#viewSize;
 		this.#levelPixelSize = new vec2(this.#currentTileSize * this.#levelTileSize.x, this.#currentTileSize * this.#levelTileSize.y);
-		this.#levelBody.width = this.#levelPixelSize.x;
-		this.#levelBody.height = this.#levelPixelSize.y;
+		this.#levelBody.scale.set(this.currentTileSize / this.#defaultTileSize);
 
+		this.#levelOrigin = this.#levelToScreen(new vec2());
 
-		this.#levelOrigin.x = this.#viewPos.x - (this.#levelPixelSize.x / 2);
-		this.#levelOrigin.y = this.#viewPos.y - (this.#levelPixelSize.y / 2);
-
+		this.#updateViewPos();
 		this.#updateMouseScreenPos();
 	}
 
@@ -298,24 +324,24 @@ export class RenderContext {
 	}
 
 	#updateViewAngle = () => {
-		let x = Math.cos(Math.PI * this.#viewAngle); ////RADIANS!!!!!!!
+		console.log("viewangle is unused")
+		/* let x = Math.cos(Math.PI * this.#viewAngle); ////RADIANS!!!!!!!
 		let y = Math.sin(Math.PI * this.#viewAngle);
 		x *= this.viewAngleMagnitude; 
 		y *= this.viewAngleMagnitude;
 
 		for (const [depth, layer] of this.layers.entries()) {
 			layer.position.set(x * depth, y * depth);
-		}
+		} */
 	}
 
 	#updateViewAngleMagnitude = () => {
+		console.log("viewangle magnitude is unused");
 		this.#updateViewAngle();
 	}
 
 	#updateSkewAngle = () => {
-		for (const layer of this.layers) {
-			layer.skew.set(0.1, 0);
-		}
+		console.log("skewangle is unused");
 		/* let x = Math.cos(Math.PI * this.#skewAngle); ////RADIANS!!!!!!!
 		let y = Math.sin(Math.PI * this.#skewAngle);
 		x *= this.#skewMagnitude; 
@@ -332,14 +358,16 @@ export class RenderContext {
 	}
 
 	#updateSkewMagnitude = () => {
+		console.log("skewmagnitude is unused");
 		//this.#updateSkewAngle();
 	}
 
 	#updateViewDistanceMagnitude = () => {
-		for (const [depth, layer] of this.layers.entries()) {
+		console.log("viewdistance is unused");
+		/* for (const [depth, layer] of this.layers.entries()) {
 			const depthMod = depth * this.#depthMagnitude
 			layer.scale.set(((100 - depthMod) / 100));
-		}
+		} */
 	}
 
 	#updateMouseScreenPos = () => {
@@ -372,15 +400,15 @@ export class RenderContext {
 	#mouseLevelPos = new vec3()					//the position of the mouse cursor in level space
 	#levelOrigin = new vec2();					//the position of the top left corner of the level in screen space
 
-	#previewAlignToGrid = "coarse";			//the level to which the preview should be aligned to the grid
+	#previewAlignToGrid = "none";			//the level to which the preview should be aligned to the grid
 	#previewVisible = true;
 	
-	#viewPos = new vec2(1000, 500);				//position of the view in screen space. the origin of the level is in its center
+	#viewPos = new vec2();				//position of the view in screen space. the origin of the level is in its center
 	#viewSize = 0;								//change in size of each tile from the default tile size of 20
 	#layerVisibility = [1, 1, 1];	//visibility of each "ui" layer
 	#levelPixelSize;							//current size of the level in pixels
-	#currentTileSize;							//current size of each tile in pixels
-	#viewAngle = 0.5;							//the current "viewing angle" of the level in pi radians. in reality, it's the direction to move each layer to give a fake viewing angle
+	#currentTileSize = DEFAULT_TILE_SIZE;				//current size of each tile in pixels
+	#viewAngle = 0.5;										//the current "viewing angle" of the level in pi radians. in reality, it's the direction to move each layer to give a fake viewing angle
 	#viewAngleMagnitude = 0;			//the distance which each layer will move when offset by the angle	
 	#depthMagnitude = 0.4;				//how "far" the layers should be from each other. max is 3.333. in reality this controls how much each layer gets scaled down to provide a fake perspective effect
 	#skewAngle = 1;								//the angle with which to skew the vertices of the level. RADIANS!!!!
@@ -388,12 +416,14 @@ export class RenderContext {
 
 	#previewTexId;								//id of the texture which should be assigned to the preview indicator
 	
-	#levelTileSize = new vec2();	//size of the level in tiles
-	#defaultTileSize;							//default size of each tile
-	#currentMode = "geometry"			//current viewing mode of the renderer
-	#texInits = {}								//the texture init files taken from the original editor. parsed from a lingo object to a javascript object
+	#levelTileSize = new vec2();					//size of the level in tiles
+	#screenCenter;												//stores the center of the screen at init
+	#defaultTileSize = DEFAULT_TILE_SIZE; //the default tile size in pixels
+	#currentMode = "geometry"							//current viewing mode of the renderer
+	#texInits = {}												//the texture init files taken from the original editor. parsed from a lingo object to a javascript object
 
-	#levelBody = new PIXI.Container();
+	#levelBody = new projection.Container3d();
+	#camera = new projection.Camera3d();
 	#preview = [];
 	#grid = new PIXI.TilingSprite();
 	
@@ -530,8 +560,8 @@ export class RenderContext {
 		return this.#previewAlignToGrid;
 	}
 
-	set previewAlignToGrid(bool) {
-		this.#previewAlignToGrid = bool;
+	set previewAlignToGrid(alignmentChoice) {
+		this.#previewAlignToGrid = alignmentChoice;
 		this.#updatePreviewAlignment();
 	}
 

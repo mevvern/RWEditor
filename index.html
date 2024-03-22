@@ -11,8 +11,8 @@
 		<script defer>
 			(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='https://mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 		</script>
-		<script type="module" src="./modules/main.mjs"></script>
-		<script type="module" src="./modules/ui.mjs"></script>
+		<script type="module" src="./modules/main.mjs" defer></script>
+		
 	</head>
 	<body selectable="false">
 		<div id="allTools" class="toolBox" style="left: 10px" hidden="false">

@@ -1,17 +1,15 @@
-import * as PIXI from "./lib/pixi.mjs"
+import * as PIXI from "./lib/pixi.mjs";
+import * as projection from "./lib/pixi-projection.mjs"
 import {Layer} from "./utils.mjs";
 
-export class RenderLayerWith1Sprite extends PIXI.Container {
+export class RenderLayerWith1Sprite extends projection.Container3d {
 	/**
 	 * 
 	 * @param {vec2} levelSize 
-	 * @param {number} tileSize 
 	*/
-	constructor(levelSize, tileSize) {
+	constructor(levelSize) {
 		//calls the constructor of the parent class, PIXI.Container in this case
 		super();
-
-		this.#defaultTileSize = tileSize;
 
 		//Layer object which contains 1 pixi sprite per x,y. has methods for accessing and iterating over each sprite
 		this.tiles = new Layer(levelSize, TileData)
@@ -26,7 +24,7 @@ export class RenderLayerWith1Sprite extends PIXI.Container {
 		this.previewContainer = new PreviewContainer();
 
 		//the RenderTexture object which renderContainer will be rendered to
-		this.renderTextures = [PIXI.RenderTexture.create({width : levelSize.x * tileSize, height : levelSize.y * tileSize}), PIXI.RenderTexture.create({width : levelSize.x * tileSize, height : levelSize.y * tileSize})]
+		this.renderTextures = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize})]
 
 		//the sprite which will use the rendered texture as its texture. it is to be placed underneath the tile sprites
 		this.finalRender = new FinalRender(this.renderTexture1);
@@ -34,19 +32,19 @@ export class RenderLayerWith1Sprite extends PIXI.Container {
 		//the container which will contain the rendered layer, as well as the tiles over top of that. the whole container will be rendered to a texture when tile(s) needs to be updated
 		this.renderContainer = new RenderContainer();
 
-		//to the renderContainer, this adds the finalRender sprite, and then the tile sprites on top of that
+		//to the renderContainer, this adds the finalRender sprite, and then the tile sprite on top of that
 		this.renderContainer.addChild(this.finalRender, this.tileSprite);
 
 		//to this, which is the RenderLayer container, adds renderContainer, and then props container,and then preview container
 		this.addChild(this.renderContainer, this.propContainer, this.previewContainer);
 
-		this.finalRender.width = levelSize.x * tileSize;
-		this.finalRender.height = levelSize.y * tileSize;
+		this.finalRender.width = levelSize.x * this.#defaultTileSize;
+		this.finalRender.height = levelSize.y * this.#defaultTileSize;
 
 		
 		this.tileSprite.texture = DEFAULT_TEXTURE;
-		this.tileSprite.width = tileSize;
-		this.tileSprite.height = tileSize;
+		this.tileSprite.width = this.#defaultTileSize;
+		this.tileSprite.height = this.#defaultTileSize;
 		this.tileSprite.visible = false;
 
 		/***********************************************
@@ -181,7 +179,7 @@ export class RenderLayerWith1Sprite extends PIXI.Container {
 
 	#bufferIndex = 1;
 	#renderedIndex = 0;
-	#defaultTileSize = 20;
+	#defaultTileSize = DEFAULT_TILE_SIZE;
 }
 
 class TileData {

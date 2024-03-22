@@ -9,7 +9,7 @@ export class PropMode extends Mode {
 		this.tools = {};
 		this.tileSet = ["ass", "load", "of", "props"],
 		this.currentTile = "wall"
-		this.modeSettings = [new ModeSetting("prop alignment", "cycle", ["coarse", "fine", "none"])];
+		this.modeSettings = [new ModeSetting("prop alignment", "cycle", ["none", "coarse", "fine"])];
 		this.name = "prop"
 		this.propAlignment = "coarse"
 		

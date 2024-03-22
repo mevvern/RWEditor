@@ -271,8 +271,6 @@ export class RenderContext {
 
 		this.#levelOrigin = this.#levelToScreen(new vec2());
 
-		console.log("level origin", this.#levelOrigin);
-
 		this.#updateMouseScreenPos();
 	}
 

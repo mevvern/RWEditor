@@ -10,7 +10,7 @@ uniform sampler2D uIntensityBuffer;
 
 varying vec2 vTextureCoord;
 
-struct params {
+struct Params {
 	vec2 facs
 	mat3 solids;
 }
@@ -24,10 +24,13 @@ uint rng(uint x) {
   return x;
 }
 
-//returns a vec3. x contains the amount of adjacent "grown" pixels, y contains the adjacent intensity values, and z contains the number of adjacent solid pixels in the base texture.
-params sampleSurroundings(void) {
+//returns a Params struct
+//fac.x is a factor saying how many grown pixels are adjacent
+//fac.y is a factor saying how strong the intensity map is in the surroundings
+//solids contains the number and location of adjacent solid pixels in the base texture
+Params sampleSurroundings(void) {
 	
-	params growthParams = params(vec2(), mat3());
+	Params growthParams = Params(vec2(), mat3());
 
 	for (int xOffset = -1; xOffset < 2; xOffset++) {
 		for (int yOffset = -1; yOffset < 2; yOffset++) {
@@ -52,6 +55,7 @@ params sampleSurroundings(void) {
 
 	return growthParams;
 }
+
 
 void main(void) {
 	vec4 baseColor = vec4 texture2D(uBaseBuffer, vTextureCoord);

@@ -2,7 +2,6 @@ import {vec2, vec3, vec4} from "./utils.mjs";
 import {level, renderContext} from "./main.mjs";
 import {ui} from "./ui.mjs";
 
-import {Mode} from "./modes/modes.mjs";
 import {GeometryMode} from "./modes/geometry.mjs";
 import {TextureMode} from "./modes/texture.mjs";
 import {PropMode} from "./modes/prop.mjs";
@@ -115,7 +114,7 @@ export class Editor {
 
 		//button events-=-=================-==-=--=-=-=-=-=-=-=-
 
-		this.tileButtonPress = (id, option) => {
+		this.tileButtonsPress = (id, option) => {
 			if ("tileButtonPress" in this.currentMode) {
 				this.currentMode.tileButtonPress(id, option);
 				console.log("tilebuttonpress captured by current mode");
@@ -127,7 +126,7 @@ export class Editor {
 		}
 
 				//---------------------------------//
-		this.toolButtonPress = (id) => {
+		this.toolButtonsPress = (id) => {
 			if ("toolButtonPress" in this.currentMode) {
 				this.currentMode.tileButtonPress(id);
 				console.log("toolbuttonpress captured by current mode");
@@ -162,31 +161,33 @@ export class Editor {
 		}
 
 				//---------------------------------//
-		this.modeButtonPress = (id) => {
+		this.modeButtonsPress = (id) => {
 			this.currentMode = id;
-			console.log("mode switched to: " + id + " | tool: " + this.currentMode.currentTool + " | tile: " + this.currentMode.currentTile);
+			console.log("mode switched to: " + id + ", tool: " + this.currentMode.currentTool + ", tile: " + this.currentMode.currentTile);
 
-			ui.clearButtons();
+			ui.clearUi();
+			ui.showLayers(false);
 
 			if (this.currentMode.tileSet[0]) {
-				ui.createTileButtons(this.currentMode.tileSet);
+				ui.generateButtonSet(this.currentMode.tileSet, "tileButtons", this.currentMode.currentTile);
 			}
 
 			if (this.currentMode.toolSet[0]) {
-				ui.createToolButtons(this.currentMode.toolSet);
+				ui.generateButtonSet(this.currentMode.toolSet, "toolButtons", this.currentMode.currentTile);
 			}
 
 			if (this.currentMode.modeSettings[0]) {
-				ui.createModeSettingsButtons(this.currentMode.modeSettings);
+				ui.generateButtonSet(this.currentMode.modeSettings, "modeSettings");
+				this.currentMode.resetModeSettings();
 			}
 
 			if (this.currentMode.layers.layersUsed === true) {
-				ui.enableLayers();
+				ui.showLayers(true);
 			}
 		}
 
-		this.modeSettingsButtonPress = (id) => {
-			this.currentMode.modeButtonPress(id, ...options)
+		this.modeSettingsPress = (id, option) => {
+			this.currentMode.modeSettingsPress(id, option);
 			console.log("mode setting button pressed: " + id);
 		}
 
@@ -281,11 +282,10 @@ class ModeSet {
 	constructor() {
 		this.geometry = new GeometryMode();
 		this.texture = new TextureMode();
-		this.effect = new Mode();
-		this.light = new Mode();
+		this.effect = new GeometryMode();
+		this.light = new GeometryMode();
 		this.prop = new PropMode();
-		this.palette = new Mode();
-		this.render = new Mode();
-
+		this.palette = new GeometryMode();
+		this.render = new GeometryMode();
 	}
 }

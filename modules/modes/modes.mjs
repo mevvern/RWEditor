@@ -10,6 +10,7 @@ export class Mode {
 		this.capturedKeypresses = {};
 		this.modeSettingsPress = null;
 		this.layers = {};
+		this.resetModeSettings = () => {};
 
 		if (layersUsed === true) {
 			this.layers.layersUsed = true;

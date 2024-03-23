@@ -46,8 +46,9 @@ input[type="text"] {
 
 [customTitle] {
 	position: relative;
-	}
-	[customTitle]:after {
+}
+	
+[customTitle]:after {
 	content: attr(customTitle);
 	pointer-events: none;
 	color: #FFFFFF;
@@ -62,12 +63,13 @@ input[type="text"] {
 	border-radius: 4px 4px 4px 4px;
 	font-size: 0.875rem;
 	box-shadow: rgba(0, 0, 0, 0.15) 1.90.5vmin 1.90.5vmin 2.6px;
-	}
-	[customTitle]:hover:after {
+}
+	
+[customTitle]:hover:after {
 	opacity: 1;
 	transition: all 0.3s;
 	visibility: visible;
-	}
+}
 
 button {
 	padding: 0px;

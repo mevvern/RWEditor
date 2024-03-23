@@ -1,16 +1,46 @@
 import { renderContext } from "../main.mjs";
-import {Mode, ModeSetting} from "./modes.mjs";
+import {Mode} from "./modes.mjs";
+import {ButtonOptions} from "../ui.mjs";
 //import {level} from "../main.mjs";
 
 export class GeometryMode extends Mode {
 	constructor() {
 		super(true);
-		this.toolSet = ["paint", "select", "bucket", "move view"];
+
+		this.toolSet = [
+			"paint",
+			"select",
+			"bucket",
+			"move view"
+		];
+
 		this.currentTool = "move view";
+
 		this.tools = {};
-		this.tileSet = ["air", "wall", "invisible wall", ["slope", "slope BL", "slope TL", "slope TR", "slope BR"], ["pole", "pole V", "pole H"], "cross pole", "semisolid platform", "batfly hive", "cool scug", ["shortcut entrance", "shortcut entrance unlinked", "shortcut entrance B", "shortcut entrance T", "shortcut entrance L", "shortcut entrance R"], "shortcut path", "room transition", "creature den","creature shortcut", "scavenger den", "garbage worm den", "waterfall", "worm grass", "spear", "rock"],
+
+		this.tileSet = [
+			"air",
+			"wall",
+			"invisible wall",
+			new ButtonOptions("slope", "cycle", "image", ["slope BL", "slope TL", "slope TR", "slope BR"]),
+			new ButtonOptions("pole", "cycle", "image", ["pole V", "pole H"]),
+			"cross pole", "semisolid platform",
+			"batfly hive", "cool scug",
+			"shortcut entrance", //["shortcut entrance unlinked", "shortcut entrance B", "shortcut entrance T", "shortcut entrance L", "shortcut entrance R"]
+			"shortcut path",
+		  "room transition",
+			"creature den",
+			"creature shortcut",
+			"scavenger den",
+			"garbage worm den",
+			"waterfall",
+			"worm grass",
+			"spear",
+			"rock"
+		];
+
 		this.currentTile = "wall"
-		this.modeSettings = [new ModeSetting("automatic slopes", "toggle"), new ModeSetting("test cycler", "cycle", [0, 1, 2, 3]), new ModeSetting("test oneshot", "oneshot")];
+		this.ButtonOptionss = [new ButtonOptions("automatic slopes", "toggle", "auto\nslopes"), new ButtonOptions("test cycler", "cycle", null, [0, 1, 2, 3]), new ButtonOptions("test oneshot", "oneshot")];
 		this.name = "geometry"
 		this.autoSlope = false
 		this.slopeChoice = "slope BL";
@@ -42,7 +72,7 @@ export class GeometryMode extends Mode {
 		}
 
 		//capturing methods
-		this.modeSettingsPress = (id, ...options) => {
+		this.ButtonOptionssPress = (id, ...options) => {
 			switch(id) {
 				case "automatic slopes":
 					this.autoSlope = options[0];

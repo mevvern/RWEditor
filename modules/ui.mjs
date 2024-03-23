@@ -2,211 +2,6 @@ import {editor} from "./main.mjs";
 
 export const ui = {};
 
-const tiles = document.querySelector("#tiles"); //div that contains all tile related elements
-const tools = document.querySelector("#tools");	//ditto for tools
-const layers = document.querySelector("#layers"); //ditto for layers
-const modeSettings = document.querySelector("#modeSettings"); //ditto for mode settings
-const allTools = document.querySelector("#allTools"); //div that makes up the entire left shelf (tools in a collective sense)
-const allSettings = document.querySelector("#allSettings"); //div that makes up the entire right shelf (settings, etc)
-
-const tileButtons = [];
-const toolButtons = [];
-
-ui.createTileButtons = (ids) => {
-	const buttonBox = tiles.querySelector("#tileButtons");
-
-	//unhide the div
-	tiles.setAttribute("hidden", "false");
-
-	//iterate over each provided id
-	for (const id of ids) {
-		let button;
-		if (id instanceof Array) {		//cycler button
-			button = createButton(id[0]);
-
-			button.options = id.slice(1);
-			button.optionIndex = 0;
-
-			button.addEventListener("mousedown", (event) => {
-				event.stopPropagation();
-				
-				const button = event.currentTarget
-
-				console.log(button.options[button.optionIndex]);
-
-				//send the event to the editor with button id and option
-				editor.tileButtonPress(button.id, button.options[button.optionIndex]);
-
-				//increment option index by 1 or set it back to 0
-				if (button.optionIndex < button.options.length - 1) {
-					button.optionIndex++;
-				} else {
-					button.optionIndex = 0;
-				}
-
-				//reset all the buttons to selected=false
-				for (const button of tileButtons) {
-					button.setAttribute("selected", "false");
-				}
-
-				//set the desired button to selected=true
-				event.currentTarget.setAttribute("selected", "true");
-			})
-		} else {											//normal button
-			button = createButton(id);
-
-			//attach the event listener to the button
-			button.addEventListener("mousedown", (event) => {
-				event.stopPropagation();
-				editor.tileButtonPress(event.currentTarget.id);
-
-				//reset all the buttons to selected=false
-				for (const button of tileButtons) {
-					button.setAttribute("selected", "false");
-				}
-
-				//set the desired button to selected=true
-				event.currentTarget.setAttribute("selected", "true");
-			})
-		}
-		
-		//add the button to the places where they go
-		buttonBox.appendChild(button);
-		tileButtons.push(button);
-	}
-}
-
-ui.createToolButtons = (ids) => {
-	const buttonBox = tools.querySelector("#toolButtons");
-
-	//unhide the div since if this function is being called then the div will be used
-	tools.setAttribute("hidden", "false");
-	tiles.setAttribute("showDivider", "true");
-
-	//iterate over each provided id and make a button for it
-	for (const [index, id] of ids.entries()) {
-		
-		//create the new button for the given id
-		let button = createButton(id);
-		
-		//if there is a current tool selected, initialize that button to selected
-		if (editor) {
-			if (id === editor.currentMode.currentTool) {
-				button.setAttribute("selected", "false");
-			}
-		} else {
-			if (id === "move view") {
-				button.setAttribute("selected", "false");
-			}
-		}
-		
-		//add the new button to the div, and also the array containing the buttons
-		buttonBox.appendChild(button);
-		toolButtons.push(button);
-		
-		//attach an event listener to the new button
-		button.addEventListener("mousedown", (event) => {
-			event.stopPropagation();
-			editor.toolButtonPress(event.currentTarget.id);
-			
-			//set all buttons selection state to false
-			for (const button of toolButtons) {
-				button.setAttribute("selected", "false");
-			}
-
-			//set the chosen button to be selected
-			event.currentTarget.setAttribute("selected", "true");
-		})
-	}
-}
-
-ui.createModeSettingsButtons = (buttonParamsList) => {
-	const modeSettingsBox = modeSettings;
-
-	for (const buttonParam of buttonParamsList) {
-		const button = createButton(buttonParam.id, false);
-
-		modeSettingsBox.appendChild(button)
-		
-		switch (buttonParam.type) {
-			case "oneshot":
-				button.setAttribute("type", "oneshot");
-				button.innerHTML = buttonParam.id;
-				button.addEventListener("mousdown", (event) => {
-					editor.currentMode.modeSettingsPress(event.currentTarget.id);
-				})
-			break
-			case "cycle":
-				button.innerHTML = buttonParam.cycleOptions[0];
-
-				button.setAttribute("cycleIndex", 0);
-				button.setAttribute("cycleOptions", JSON.stringify(buttonParam.cycleOptions));
-				button.setAttribute("type", "cycle");
-
-
-				button.addEventListener("mousedown", (event) => {
-					const button = event.currentTarget;
-
-					let cycleIndex = parseInt(button.getAttribute("cycleIndex"));
-					let cycleOptions = JSON.parse(button.getAttribute("cycleOptions"));
-
-					if (cycleIndex >= cycleOptions.length - 1) {
-						cycleIndex = 0;
-						editor.currentMode.modeSettingsPress(button.id, cycleOptions[0]);
-						button.innerHTML = cycleOptions[0]
-
-					} else if (cycleIndex < cycleOptions.length - 1) {
-						cycleIndex++
-						editor.currentMode.modeSettingsPress(button.id, cycleOptions[cycleIndex])
-						button.innerHTML = cycleOptions[cycleIndex];
-					} 
-
-					button.setAttribute("cycleIndex", cycleIndex);
-				})
-			break
-			case "toggle":
-				button.setAttribute("type", "toggle");
-				button.innerHTML = buttonParam.id
-				button.addEventListener("mousedown", (event) => {
-					const button = event.currentTarget;
-					if (button.getAttribute("selected") === "true") {
-						editor.currentMode.modeSettingsPress(button.id, false);
-						button.setAttribute("selected", "false");
-					} else {
-						editor.currentMode.modeSettingsPress(button.id, true);
-						button.setAttribute("selected", "true");
-					}
-				})
-			break
-		}
-	}
-}
-
-ui.enableLayers = () => {
-	tools.setAttribute("showDivider", "true");
-	layers.setAttribute("hidden", "false");
-}
-
-ui.clearButtons = () => {
-	layers.setAttribute("hidden", "true")
-
-	for (const button of tiles.querySelectorAll("button")) {
-		button.remove();
-	}
-	//tiles.setAttribute("hidden", "true");
-	
-	for (const button of tools.querySelectorAll("button")) {
-		button.remove();
-	}
-	//tools.setAttribute("hidden", "true");
-
-	for (const button of modeSettings.querySelectorAll("button")) {
-		button.remove();
-	}
-	//modeSettings.setAttribute("hidden", "true");
-
-}
-
 ui.initListeners = () => {
 	const canvas = app.view;
 	const modeButtons = document.querySelectorAll("#modeButtons > button");
@@ -215,6 +10,8 @@ ui.initListeners = () => {
 	const settingsVisButton = document.querySelector("#settingsCollapseButton");
 	const layerVisButtons = layers.querySelectorAll("#layerVis > button");
 	const layerSelButtons = layers.querySelectorAll("#layerSel > button");
+	const allTools = document.querySelector("#allTools");
+	const allSettings = document.querySelector("#allSettings");
 
 	levelName.addEventListener("input" , (event) => {
 		editor.setLevelName(event.target.value);
@@ -319,31 +116,285 @@ ui.initListeners = () => {
 
 	modeButtons.forEach(button => {
 		button.addEventListener("mousedown", (event) => {
-			editor.modeButtonPress(event.currentTarget.id);
+			editor.modeButtonsPress(event.currentTarget.id);
 			modeButtons.forEach(button => {
 				button.setAttribute("selected", "false");
 			})
 			event.currentTarget.setAttribute("selected", "true");
 		})
 	})
-
-	//toolVisButton.dispatchEvent(new MouseEvent("mousedown"));
-	//settingsVisButton.dispatchEvent(new MouseEvent("mousedown"));
 }
 
-function createButton (id, usesIcon) {
-	const button = document.createElement("button");
-	const icon = document.createElement("img");
-	button.setAttribute("id", id);
-	button.setAttribute("customTitle", id);
-	button.setAttribute("selected", "false");
+ui.showLayers = (bool) => {
+	const layerBox = document.getElementById("layers");
 
-	if (!(usesIcon === false)) {
-		icon.setAttribute("src", "../resources/buttonIcons/" + id + ".png");
-		icon.setAttribute("draggable", "false");
+	if (bool === true) {
+		layerBox.setAttribute("hidden", "false");
+
+	} else {
+		layerBox.setAttribute("hidden", "true");
+	}
+}
+
+ui.clearUi = () => {
+	for (const element of document.querySelectorAll("[clearable]")) {
+		element.remove();
 	}
 
-	button.appendChild(icon);
+	ui.showLayers(false);
+}
 
-	return button;
-} 
+/**
+ * @param {Array} buttonList - the array which contains all the button ids and their optional parameters
+ * @param {string} destination - the destination on the page for the list of buttons
+ * @param {string} preselected - the id of the button which should be preselected. nothing will be selected if left out
+ */
+ui.generateButtonSet = (buttonOptionsList, destination, preselected) => {
+	const destinationBox = document.getElementById(destination);
+
+	if (destinationBox) {
+		let oneSelectedFlag = false;
+
+		for (let buttonOptions of buttonOptionsList) {
+			if (typeof buttonOptions === "string") {
+				oneSelectedFlag = true;
+				buttonOptions = new ButtonOptions(buttonOptions, "oneSelected", "image");
+			}
+
+			if (oneSelectedFlag === true && buttonOptions.type === "toggle") {
+				throw new TypeError("a oneSelected button cannot be located alongside a toggle button");
+			}
+
+			const button = createButton(buttonOptions);
+
+			if (button.id === preselected) {
+				button.setAttribute("selected", "true");
+			}
+
+			destinationBox.appendChild(button);
+		}
+	
+	} else {
+		throw new Error("button destination \"" + destination + "\" doesn't exist");
+	}
+}
+
+
+/**
+ * @param {ButtonOptions} buttonOptions
+ * @returns {HTMLButtonElement}
+ */
+function createButton(buttonOptions) {
+	if (buttonOptions instanceof ButtonOptions) {
+		const button = document.createElement("button");
+
+		button.id = buttonOptions.id;
+		button.setAttribute("clearable", "");
+		button.setAttribute("type", buttonOptions.type);
+		button.setAttribute("customTitle", buttonOptions.id);
+
+		if (buttonOptions.type === "cycle") {
+			const cycleOptions = JSON.stringify(buttonOptions.cycleOptions);
+
+			button.setAttribute("cycleOptions", cycleOptions);
+			button.setAttribute("cycleIndex", 0);
+
+			button.innerHTML = buttonOptions.cycleOptions[0];
+
+			button.addEventListener("mousedown", cycleCallback)
+ 		}
+
+		if (buttonOptions.type === "toggle") {
+			button.addEventListener("mousedown", toggleCallback);
+		}
+
+		if (buttonOptions.type === "oneshot") {
+			button.addEventListener("mousedown", oneshotCallback);
+		}
+
+		if (buttonOptions.type === "oneSelected") {
+			button.addEventListener("mousedown", oneSelectedCallback)
+		}
+
+		if (buttonOptions.contents === "image") {
+			button.setAttribute("hasImage", "")
+			button.innerHTML = `<img src="./resources/buttonIcons/${buttonOptions.id}.png"></img>`;
+
+		} else if (button.type != "cycle") {
+			button.innerHTML = buttonOptions.contents;
+		}
+
+		return button;
+
+	} else {
+		throw new TypeError("createButton only accepts instances of ButtonOptions");
+	}
+}
+
+
+//---------------------classes--------------------------------//
+
+export class ButtonOptions {
+	/**
+	 * 
+	 * @param {String} id - the id of the button
+	 * @param {String} type - the type of the button
+	 * @param {String} contents - tells what should be inside the button. defaults to being the string itself. can also be "image" for an image specified by the id of the button, or "id" for the id of the button
+	 * @param {Array} cycleOptions 
+	 */
+	constructor(id, type, contents, cycleOptions) {
+		this.id = id;
+
+		switch (type) {
+			default:
+				this.type = "toggle";
+				console.log("[ButtonOptions] -- defaulted to type toggle for id: " + id);
+			break
+			case "toggle":
+				this.type = "toggle";
+			break
+			case "cycle":
+				if ((!(cycleOptions instanceof Array)) || cycleOptions.length < 2 ) {
+					console.log(cycleOptions.length)
+					throw new Error("[ButtonOptions] [id: " + id +"] -- must provide at least two options to cycle through")
+				} 
+				this.type = "cycle";
+				this.cycleOptions = cycleOptions;
+			break
+			case "oneshot":
+				this.type = "oneshot";
+			break
+			case "oneSelected":
+				this.type = "oneSelected"
+			break
+		}
+
+		switch(contents) {
+			default:
+				this.contents = contents;
+			break
+			case "image":
+				this.contents = "image";
+			break
+			case "id":
+				this.contents = id;
+			break
+		}
+	}
+}
+
+
+
+/**
+ * @param {MouseEvent} event
+ */
+function oneSelectedCyclerCallback (event) {
+	const button = event.currentTarget;
+	const handler = editor[button.parentNode.id + "Press"];
+
+	const cycleOptions = JSON.parse(button.getAttribute("cycleOptions"));
+	const hasImage = button.getAttribute("hasImage");
+	let cycleIndex = parseInt(button.getAttribute("cycleIndex"));
+
+
+	if (button.getAttribute("selected") === "false") {
+		handler(button.id, cycleOptions[cycleIndex]);
+		if (hasImage === null) {
+			button.innerHTML = cycleOptions[cycleIndex];
+		}
+
+		for (const buttonElement of button.parentNode.querySelectorAll("button")) {
+			buttonElement.setAttribute("selected", "false");
+		}
+
+		button.setAttribute("selected", "true");
+
+	} else if (cycleIndex >= cycleOptions.length - 1) {
+		cycleIndex = 0;
+		handler(button.id, cycleOptions[0]);
+		if (hasImage === null) {
+			button.innerHTML = cycleOptions[cycleIndex];
+		}
+
+	} else {
+		cycleIndex++;
+		handler(button.id, cycleOptions[cycleIndex]);
+		if (hasImage === null) {
+			button.innerHTML = cycleOptions[cycleIndex];
+		}
+	} 
+
+	button.setAttribute("cycleIndex", cycleIndex);
+}
+
+function oneSelectedCallback (event) {
+	const button = event.currentTarget
+	const handler = editor[button.parentNode.id + "Press"];
+
+	for (const buttonElement of button.parentNode.querySelectorAll("button")) {
+		buttonElement.setAttribute("selected", "false");
+	}
+
+	button.setAttribute("selected", "true");
+
+	handler(button.id);
+}
+
+/**
+ * @param {MouseEvent} event
+ */
+function oneshotCallback (event) {
+	const button = event.currentTarget
+	const handler = editor[button.parentNode.id + "Press"];
+
+	handler(button.id);
+}
+
+/**
+ * @param {MouseEvent} event
+ */
+function toggleCallback (event) {
+	const button = event.currentTarget
+	const handler = editor[button.parentNode.id + "Press"];
+
+	if (button.getAttribute("boolean") === "true") {
+		button.setAttribute("boolean", "false");
+		button.setAttribute("selected", "false");
+		handler(button.id, false);
+
+	} else {
+		button.setAttribute("boolean", "true");
+		button.setAttribute("selected", "true");
+		handler(button.id, true);
+	}
+}
+
+/**
+ * @param {MouseEvent} event
+ */
+function cycleCallback (event) {
+	const button = event.currentTarget;
+	const handler = editor[button.parentNode.id + "Press"];
+
+	const cycleOptions = JSON.parse(button.getAttribute("cycleOptions"));
+	const hasImage = button.getAttribute("hasImage");
+	let cycleIndex = parseInt(button.getAttribute("cycleIndex"));
+
+
+	if (cycleIndex >= cycleOptions.length - 1) {
+		cycleIndex = 0;
+		handler(button.id, cycleOptions[0]);
+		if (hasImage === null) {
+			button.innerHTML = cycleOptions[cycleIndex];
+		}
+
+	} else {
+		cycleIndex++;
+		handler(button.id, cycleOptions[cycleIndex]);
+		if (hasImage === null) {
+			button.innerHTML = cycleOptions[cycleIndex];
+		}
+	} 
+
+	button.setAttribute("cycleIndex", cycleIndex);
+}

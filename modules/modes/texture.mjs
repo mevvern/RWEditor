@@ -1,5 +1,5 @@
 import {Mode} from "./modes.mjs";
-import {ModeSetting} from "./modes.mjs";
+import {ButtonOptions} from "../ui.mjs";
 
 export class TextureMode extends Mode {
 	constructor() {
@@ -7,9 +7,31 @@ export class TextureMode extends Mode {
 		this.toolSet = ["paint", "select", "bucket", "move view"];
 		this.currentTool = "move view";
 		this.tools = {};
-		this.tileSet = ["a lot dw abt it", "a", "b", "c", "d"],
-		this.currentTile = null
-		this.modeSettings = [new ModeSetting("brush size", "cycler", 1, 2, 3, 4, 5), new ModeSetting("cause a ruckus", "oneshot")];
+		this.tileSet = [
+			"standard",
+			"concrete",
+			"rain stone",
+			"bricks",
+			"bigMetal",
+			"tiny signs",
+			"scaffolding",
+			"dense pipes",
+			new ButtonOptions("super structure", "cycle", "image", ["superStructure", "superStructure2"]),
+			"tiledStone",
+			"chaoticStone",
+			"small pipes",
+			"trash",
+			"largeTrash",
+			"3dBrick",
+			"randomMachines",
+			"dirt",
+			"ceramic tile",
+			"temple stone",
+			"circuits",
+			"ridge"
+		];
+		this.currentTile = "standard"
+		this.modeSettings = [new ButtonOptions("brush size", "cycle", null, [1, 2, 3, 4, 5]), new ButtonOptions("cause a ruckus", "oneshot")];
 		this.name = "texture"
 		
 		//tools for REAL

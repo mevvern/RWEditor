@@ -1,15 +1,16 @@
-import {Mode, ModeSetting} from "./modes.mjs";
+import {Mode} from "./modes.mjs";
+import {ButtonOptions} from "../ui.mjs";
 import {renderContext} from "../main.mjs";
 
 export class PropMode extends Mode {
 	constructor() {
 		super(true);
-		this.toolSet = ["select", "move view"];
+		this.toolSet = ["select", "move view", "paint"];
 		this.currentTool = "move view";
 		this.tools = {};
 		this.tileSet = ["ass", "load", "of", "props"],
-		this.currentTile = "wall"
-		this.modeSettings = [new ModeSetting("prop alignment", "cycle", ["none", "coarse", "fine"])];
+		this.currentTile = "ass"
+		this.modeSettings = [new ButtonOptions("prop alignment", "cycle", null, ["none", "coarse", "fine"])];
 		this.name = "prop"
 		this.propAlignment = "coarse"
 		

@@ -212,7 +212,7 @@ function createButton(buttonOptions) {
 
 			button.innerHTML = buttonOptions.cycleOptions[0];
 
-			button.addEventListener("mousedown", oneSelectedCallback);
+			button.addEventListener("mousedown", oneSelectedCycleCallback);
  		}
 
 		if (buttonOptions.type === "toggle") {

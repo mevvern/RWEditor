@@ -1,6 +1,6 @@
 import {vec2, vec3, vec4, Area} from "./utils.mjs";
 import {level, renderContext} from "./main.mjs";
-import {ui} from "./ui.mjs";
+import {ButtonOptions, ui} from "./ui.mjs";
 
 import {GeometryMode} from "./modes/geometry.mjs";
 import {TextureMode} from "./modes/texture.mjs";
@@ -181,7 +181,8 @@ export class Editor {
 			}
 
 			if (this.currentMode.modeSettings[0]) {
-				ui.generateButtonSet(this.currentMode.modeSettings, "modeSettings");
+				const modeButtons = this.#defaultModeButtons.concat(this.currentMode.modeSettings);
+				ui.generateButtonSet(modeButtons, "modeSettings");
 				this.currentMode.resetModeSettings();
 			}
 
@@ -256,6 +257,10 @@ export class Editor {
 
 	//private properties
 	#currentMode = "geometry";
+	#defaultModeButtons = [
+		new ButtonOptions("grid visibility", "toggle", "grid\nvis"), 
+		new ButtonOptions("show shadows", "toggle", "shadows")
+	];
 
 	//setters and getters
 

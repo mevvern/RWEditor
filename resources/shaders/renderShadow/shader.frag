@@ -9,10 +9,22 @@ uniform vec4 outputFrame;
 uniform sampler2D uSampler;
 uniform sampler2D uShadowMap;
 
+uniform float uShadowAngle;
+
+#define pi 3.14159265358
+
 void main(void) {
+	//offset for shadowmap sampling to prevent fighting at the lit sides of objects
+	vec2 shadowOffset = vec2(
+		float(cos(uShadowAngle * float(pi))),
+		float(sin(uShadowAngle * float(pi)))
+	);
+
+	shadowOffset *= vec2(0.002);
+
 	vec2 filterCoord = ((vTextureCoord * inputSize.xy)) / outputFrame.zw;
 
-	vec4 shadowColor = texture2D(uShadowMap, filterCoord);
+	vec4 shadowColor = texture2D(uShadowMap, filterCoord + shadowOffset);
 	vec4 baseColor = texture2D(uSampler, vTextureCoord);
 
 	//gl_FragColor = vec4(filterCoord1.x, filterCoord1.y, 1.0, 1);

@@ -114,7 +114,7 @@ export class RenderContext {
 		this.layers = [];
 
 		for (let i = 0; i < 30; i++) {
-			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(1.87, 0.001));
+			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(1.81, 0.001));
 
 			layer.position3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2, (29 - i) * 10);
 
@@ -423,6 +423,12 @@ export class RenderContext {
 		}
 	}
 
+	#updateShadowRendering = () => {
+		for (const layer of this.layers) {
+			layer.filters[0].enabled = this.#useShadows;
+		}
+	}
+
 	//----------------------private properties------------------------//
 
 	#mouseScreenPos = new vec3();				//the position of the mouse cursor in screen space
@@ -613,6 +619,10 @@ export class RenderContext {
 //-----------------------------//
 	set useShadows(bool) {
 		this.#useShadows = bool;
+		this.#updateShadowRendering();
+		if (bool === true) {
+			this.#updateShadowMap(0);
+		}
 	}
 }
 

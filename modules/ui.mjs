@@ -378,15 +378,16 @@ function toggleCallback (event) {
 	const button = event.currentTarget
 	const handler = editor[button.parentNode.id + "Press"];
 
-	if (button.getAttribute("boolean") === "true") {
+	if (button.getAttribute("boolean") === "false") {
+		button.setAttribute("boolean", "true");
+		button.setAttribute("selected", "true");
+		handler(button.id, true);
+
+	} else {
 		button.setAttribute("boolean", "false");
 		button.setAttribute("selected", "false");
 		handler(button.id, false);
 
-	} else {
-		button.setAttribute("boolean", "true");
-		button.setAttribute("selected", "true");
-		handler(button.id, true);
 	}
 }
 

@@ -154,7 +154,7 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			tileSprite.visible = false;
 		}
 		
-		this.getShadowMap = (offset) => {
+		this.getShadowMap = () => {
 			const renderTarget = this.shadowMaps[1];
 
 			this.#generateShadowSprite.texture = this.baseRenderTextures[this.#renderedIndex];

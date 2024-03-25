@@ -195,6 +195,9 @@ export class Editor {
 				renderContext.gridVisibility = option;
 			}
 			
+			if (id === "show shadows") {
+				renderContext.useShadows = option;
+			}
 			this.currentMode.modeSettingsPress(id, option);
 			console.log("mode setting button pressed: " + id);
 		}

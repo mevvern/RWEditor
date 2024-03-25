@@ -42,7 +42,7 @@ export class GeometryMode extends Mode {
 		];
 
 		this.currentTile = "wall"
-		this.modeSettings = [new ButtonOptions("grid visibility", "toggle", "grid\nvis"), new ButtonOptions("automatic slopes", "toggle", "auto\nslopes"), new ButtonOptions("test cycler", "cycle", null, [0, 1, 2, 3]), new ButtonOptions("test oneshot", "oneshot")];
+		this.modeSettings = [new ButtonOptions("show shadows", "toggle", "shadows") ,new ButtonOptions("grid visibility", "toggle", "grid\nvis"), new ButtonOptions("automatic slopes", "toggle", "auto\nslopes"), new ButtonOptions("test cycler", "cycle", null, [0, 1, 2, 3]), new ButtonOptions("test oneshot", "oneshot")];
 		this.name = "geometry"
 		this.autoSlope = false
 		this.slopeChoice = "slope BL";
@@ -82,6 +82,7 @@ export class GeometryMode extends Mode {
 					console.log(this.autoSlope);
 					renderContext.previewAlignToGrid = this.autoSlope;
 				break
+				
 			}
 		}
 

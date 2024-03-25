@@ -283,15 +283,17 @@ export class RenderContext {
 	}
 
 	#updateShadowMap = (highestLayer) => {
-		if (typeof highestLayer === "number") {
-			const range = new vec2(highestLayer + 1, 29);
-
-			for (let layerNumber = range.x; layerNumber <= range.y; layerNumber++) {
-
-				if (layerNumber != 0) {
-					const map = this.layers[layerNumber - 1].getShadowMap();
-					this.testSprite.texture = map;
-					this.layers[layerNumber].shadowMap = map;
+		if (this.#useShadows) {
+			if (typeof highestLayer === "number") {
+				const range = new vec2(highestLayer + 1, 29);
+	
+				for (let layerNumber = range.x; layerNumber <= range.y; layerNumber++) {
+	
+					if (layerNumber != 0) {
+						const map = this.layers[layerNumber - 1].getShadowMap();
+						this.testSprite.texture = map;
+						this.layers[layerNumber].shadowMap = map;
+					}
 				}
 			}
 		}
@@ -429,6 +431,7 @@ export class RenderContext {
 
 	#previewAlignToGrid = "none";			//the level to which the preview should be aligned to the grid
 	#previewVisible = true;
+	#useShadows = true;
 	
 	#viewPos = new vec2();				//position of the view in screen space. the origin of the level is in its center
 	#viewSize = 0;								//change in size of each tile from the default tile size of 20
@@ -605,6 +608,11 @@ export class RenderContext {
 //-----------------------------//
 	set gridVisibility(bool) {
 		this.#grid.visible = bool;
+	}
+
+//-----------------------------//
+	set useShadows(bool) {
+		this.#useShadows = bool;
 	}
 }
 

@@ -3,7 +3,7 @@ import * as PIXI from "./lib/pixi.mjs"
 globalThis.app = new PIXI.Application({background : "#7788af", resizeTo : window});
 globalThis.__PIXI_APP__ = app;
 
-import {vec2, vec3, vec4} from "./utils.mjs"
+import {prng, vec2, vec3, vec4} from "./utils.mjs"
 import {Level} from "./level.mjs"
 import {Editor} from "./editor.mjs"
 import {RenderContext} from "./render.mjs"
@@ -11,6 +11,7 @@ import {ui} from "./ui.mjs"
 import {Area} from "./utils.mjs"
 
 globalThis.DEFAULT_TILE_SIZE = 20;
+
 const initialLevelSize = new vec2(72, 43);
 
 globalThis.DEFAULT_TEXTURE = PIXI.Texture.from("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURQAAAPcA/dbgUjsAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAWSURBVBjTYwADQRCgB5NuFjEwMDAAANtyBqXVH2kBAAAAAElFTkSuQmCC");
@@ -31,65 +32,4 @@ export const renderContext = new RenderContext(initialLevelSize);
 
 ui.initListeners();
 
-app.view.addEventListener("mousedown", (event) => {
-	switch (event.button) {
-		case 0:
-				const start = Date.now();
-
-				const tiles = [];
-
-				for (let i = 0; i < 2; i++) {
-					for (let y = 0; y < initialLevelSize.y; y++) {
-						for (let z = 0; z < 30; z++) {
-							const pos = new vec3(i * (initialLevelSize.x - 1), y, z);
-							if (y % 2 === 1) {
-								tiles.push({pos : pos, texture : "WHITE"});
-							} else {
-								tiles.push({pos : pos, texture : "DEFAULT"});
-							}
-						}
-					}
-				}
-
-				for (let i = 0; i < 2; i++) {
-					for (let x = 0; x < initialLevelSize.x; x++) {
-						for (let z = 0; z < 30; z++) {
-							const pos = new vec3(x, i * (initialLevelSize.y - 1), z);
-							if (x % 2 === 1) {
-								tiles.push({pos : pos, texture : "WHITE"});
-							} else {
-								tiles.push({pos : pos, texture : "DEFAULT"});
-							}
-						}
-					}
-				}
-
-				for (let x = 0; x < initialLevelSize.x; x++) {
-					for (let y = 0; y < initialLevelSize.y; y++) {
-						if (Math.random() > 0.75) {
-							for (let z = 19; z < 30; z++) {
-								const pos = new vec3(x, y, z);
-								tiles.push({pos : pos, texture : "WHITE"});
-							}
-						}
-					}
-				}
-
-				renderContext.setTile(new Area(tiles))
-
-				console.log(renderContext.setTileCount + " tiles rendered in " + (Date.now() - start) / 1000 + " seconds");
-
-				renderContext.setTileCount = 0;
-
-		break
-		case 1:
-			//renderContext.clearRenders();
-		break
-		case 2:
-			renderContext.renderAll();
-	}
-})
-
-app.view.addEventListener("contextmenu", (event) => {
-	event.preventDefault();
-})
+editor.initEditor();

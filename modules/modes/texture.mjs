@@ -16,7 +16,7 @@ export class TextureMode extends Mode {
 			"tiny signs",
 			"scaffolding",
 			"dense pipes",
-			new ButtonOptions("super structure", "cycle", "image", ["superStructure", "superStructure2"]),
+			new ButtonOptions("super structure", "oneSelectedCycle", "image", ["superStructure", "superStructure2"], {textures : ["superStructure", "superStructure2"]}),
 			"tiledStone",
 			"chaoticStone",
 			"small pipes",

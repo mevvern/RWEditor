@@ -1,10 +1,11 @@
-import {vec2, vec3, vec4} from "./utils.mjs";
+import {vec2, vec3, vec4, Area} from "./utils.mjs";
 import {level, renderContext} from "./main.mjs";
 import {ui} from "./ui.mjs";
 
 import {GeometryMode} from "./modes/geometry.mjs";
 import {TextureMode} from "./modes/texture.mjs";
 import {PropMode} from "./modes/prop.mjs";
+import {Mode} from "./modes/modes.mjs";
 
 export class Editor {
 	constructor() {
@@ -40,7 +41,7 @@ export class Editor {
 
 			mouse.pos.x = event.clientX;
 			mouse.pos.y = event.clientY;
-			mouse.pos.z = this.currentMode.layers.workLayer * 10;
+			mouse.pos.z = this.currentMode.layers.workLayer;
 
 			mouse.movement.x = event.movementX;
 			mouse.movement.y = event.movementY;
@@ -165,6 +166,9 @@ export class Editor {
 			this.currentMode = id;
 			console.log("mode switched to: " + id + ", tool: " + this.currentMode.currentTool + ", tile: " + this.currentMode.currentTile);
 
+			renderContext.previewAlignToGrid = "coarse";
+			renderContext.previewVisible = this.currentMode.needsPreview;
+
 			ui.clearUi();
 			ui.showLayers(false);
 
@@ -173,7 +177,7 @@ export class Editor {
 			}
 
 			if (this.currentMode.toolSet[0]) {
-				ui.generateButtonSet(this.currentMode.toolSet, "toolButtons", this.currentMode.currentTile);
+				ui.generateButtonSet(this.currentMode.toolSet, "toolButtons", this.currentMode.currentTool);
 			}
 
 			if (this.currentMode.modeSettings[0]) {
@@ -187,6 +191,10 @@ export class Editor {
 		}
 
 		this.modeSettingsPress = (id, option) => {
+			if (id === "grid visibility") {
+				renderContext.gridVisibility = option;
+			}
+			
 			this.currentMode.modeSettingsPress(id, option);
 			console.log("mode setting button pressed: " + id);
 		}
@@ -195,6 +203,11 @@ export class Editor {
 
 		this.keyPress = (event) => {
 			const key = event.key;
+			if (key === "m") {
+				console.log("shadowmaps");
+				renderContext.shadowMapTest();
+			}
+
 			if (key !== "Control") {
 				if (event.ctrlKey) {
 					switch (key) {
@@ -227,13 +240,13 @@ export class Editor {
 		this.setLevelName = (name) => {
 			level.name = name;
 		}
+
+		this.initEditor = () => {
+			this.modeButtonsPress(this.#currentMode);
+		}
 	}
 
 	//private methods
-	#initEditor = () => {
-		this.modeButtonPress(this.#currentMode);
-	}
-
 	#updatePreview = () => {
 		renderContext.previewPos = this.mouse.tile;
 	}
@@ -243,10 +256,9 @@ export class Editor {
 
 	//setters and getters
 
-	/** 
-	 * @param {Mode} currentMode - getter which will return the current Mode Object
-	*/
-
+	/**
+	 * @returns {Mode}
+	 */
 	get currentMode() {
 		return this.modes[this.#currentMode];
 	}

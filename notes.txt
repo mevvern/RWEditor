@@ -12,4 +12,13 @@ ransomised sprites : doesn't follow a grid as well as the others, instead the re
 
 subtexture : the tiles don't have any tiling texture, instead they act as a positive mask for a texture that takes up the whole screen
 
+prop types:
+
 signs : a randomised sprite taken from a sign texture. set to the Effect color. gradients can allow the Effect color to fade in and out with the regular lit/half lit/shadow depth color shit.
+
+
+each layer has 3 textures:
+
+base: 
+shadow: 
+decal:

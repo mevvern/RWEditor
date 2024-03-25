@@ -1,4 +1,4 @@
-import { renderContext } from "../main.mjs";
+import {renderContext, level} from "../main.mjs";
 import {Mode} from "./modes.mjs";
 import {ButtonOptions} from "../ui.mjs";
 //import {level} from "../main.mjs";
@@ -14,7 +14,7 @@ export class GeometryMode extends Mode {
 			"move view"
 		];
 
-		this.currentTool = "move view";
+		this.currentTool = "paint";
 
 		this.tools = {};
 
@@ -22,11 +22,13 @@ export class GeometryMode extends Mode {
 			"air",
 			"wall",
 			"invisible wall",
-			new ButtonOptions("slope", "cycle", "image", ["slope BL", "slope TL", "slope TR", "slope BR"]),
-			new ButtonOptions("pole", "cycle", "image", ["pole V", "pole H"]),
-			"cross pole", "semisolid platform",
-			"batfly hive", "cool scug",
-			"shortcut entrance", //["shortcut entrance unlinked", "shortcut entrance B", "shortcut entrance T", "shortcut entrance L", "shortcut entrance R"]
+			new ButtonOptions("slope", "oneSelectedCycle", "image", ["slope BL", "slope TL", "slope TR", "slope BR"], {textures : ["slope BL", "slope TL", "slope TR", "slope BR"]}),
+			new ButtonOptions("pole", "oneSelectedCycle", "image", ["pole V", "pole H"], {textures : ["pole V", "pole H"]}),
+			"cross pole",
+			"semisolid platform",
+			"batfly hive",
+			"cool scug",
+			new ButtonOptions("shortcut entrance", "oneSelected", "image", null, {textures : ["shortcut entrance unlinked", "shortcut entrance B", "shortcut entrance T", "shortcut entrance L", "shortcut entrance R"]}), 
 			"shortcut path",
 		  "room transition",
 			"creature den",
@@ -40,7 +42,7 @@ export class GeometryMode extends Mode {
 		];
 
 		this.currentTile = "wall"
-		this.ButtonOptionss = [new ButtonOptions("automatic slopes", "toggle", "auto\nslopes"), new ButtonOptions("test cycler", "cycle", null, [0, 1, 2, 3]), new ButtonOptions("test oneshot", "oneshot")];
+		this.modeSettings = [new ButtonOptions("grid visibility", "toggle", "grid\nvis"), new ButtonOptions("automatic slopes", "toggle", "auto\nslopes"), new ButtonOptions("test cycler", "cycle", null, [0, 1, 2, 3]), new ButtonOptions("test oneshot", "oneshot")];
 		this.name = "geometry"
 		this.autoSlope = false
 		this.slopeChoice = "slope BL";
@@ -57,22 +59,23 @@ export class GeometryMode extends Mode {
 				const pos = mouse.tile;
 				if (this.layers.visibility[this.layers.workLayer] === true) {
 					this.tools.paint.previousAction.push(level.tileAt(pos));
-				switch (this.currentTile) {
-					default:
-						level.setGeo(pos, this.currentTile);
-					break
-					case "slope":
-						level.setGeo(pos, this.slopeChoice);
-					break
-					case "pole":
-						level.setGeo(pos, this.poleChoice);
-				}
+					switch (this.currentTile) {
+						default:
+							level.setGeo(pos, this.currentTile);
+						break
+						case "slope":
+							level.setGeo(pos, this.slopeChoice);
+						break
+						case "pole":
+							level.setGeo(pos, this.poleChoice);
+						break
+					}
 				}
 			}
 		}
 
 		//capturing methods
-		this.ButtonOptionssPress = (id, ...options) => {
+		this.modeSettingsPress = (id, ...options) => {
 			switch(id) {
 				case "automatic slopes":
 					this.autoSlope = options[0];
@@ -82,17 +85,17 @@ export class GeometryMode extends Mode {
 			}
 		}
 
-		this.tileButtonPress = (id, option) => {
+		this.tileButtonsPress = (id, option) => {
 			this.currentTile = id;
-			renderContext.preview = id;
+			renderContext.previewTexture = id;
 			if (id === "slope") {
 				this.slopeChoice = option;
-				renderContext.preview = option;
+				renderContext.previewTexture = option;
 			}
 
 			if (id === "pole") {
 				this.poleChoice = option;
-				renderContext.preview = option;
+				renderContext.previewTexture = option;
 			}
 		}
 

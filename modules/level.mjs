@@ -1,4 +1,5 @@
-import {vec2, vec3, vec4, tileAllowed, Layer} from "./utils.mjs";
+import {vec2, vec3, vec4, tileAllowed, Layer, Area, prng} from "./utils.mjs";
+import {renderContext} from "./main.mjs";
 import {tileMap} from "./tileMap.mjs";
 
 export class Level {
@@ -10,7 +11,7 @@ export class Level {
 			//properties=============================================================================
 			this.#size = size;
 			this.#bounds = new vec4(0, 0, size.x - 1, size.y - 1);
-			this.seed = null;
+			this.seed = prng(1);
 			this.tiles = [];
 			this.effect = [];
 			this.prop = [];
@@ -47,22 +48,43 @@ export class Level {
 			}
 
 			//geometry methods---------------------------
-			this.setGeo = (pos, newGeo) => {
-				if (pos instanceof Area) {
-					pos.forEach(position => {
-						
-					})
-				} else {
-					if (pos instanceof vec3) {
-						if (tileAllowed(pos, newGeo)) {
-							this.tiles[pos.z][pos.x][pos.y].geometry = newGeo;
-							renderContext.setGeo(pos, newGeo);
-						}
-					} else {
-						throw new TypeError("position must be an instance of vec3! {x: x, y: y, z: layer}")
-					}
-					
+			this.setGeo = (posList, newGeo) => {
+				if (!(posList instanceof Array)) {
+					posList = [posList];
 				}
+
+				const editList = [];
+
+				for (const pos of posList) {
+					if (tileAllowed(pos, newGeo)) {
+						const tile = this.tileAt(pos);
+
+						if (tile) {
+							tile.geometry = newGeo;
+							if (newGeo.includes("pole")) {
+								const newPos = new vec3(pos.x, pos.y, (pos.z * 10) + 5)
+								const editTile = {};
+
+								editTile.texture = newGeo;
+								editTile.pos = newPos;
+
+								editList.push(editTile);
+							} else {
+								for (let layer = pos.z * 10; layer < (pos.z + 1) * 10; layer++) {
+									const newPos = new vec3(pos.x, pos.y, layer)
+									const editTile = {};
+								
+									editTile.texture = newGeo;
+									editTile.pos = newPos;
+
+									editList.push(editTile);
+								}
+							}
+						}
+					}
+				}
+
+				renderContext.setTile(editList);
 			}
 
 			//texture methods-----------------------------
@@ -91,7 +113,10 @@ export class Level {
 			
 			this.tileAt = (pos) => {
 				if (pos instanceof vec3) {
-					const tile = this.tiles[pos.z][pos.x][pos.y];
+					let tile = this.tiles[pos.z][pos.x][pos.y];
+					if (!tile) {
+						return null;
+					}
 					tile.pos = pos;
 					return tile;
 				}

@@ -7,6 +7,7 @@ export class Mode {
 		this.currentSelection = null;
 		this.modeSettings = []
 		this.name = null;
+		this.needsPreview = true;
 		this.capturedKeypresses = {};
 		this.modeSettingsPress = null;
 		this.layers = {};

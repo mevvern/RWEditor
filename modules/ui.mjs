@@ -204,6 +204,17 @@ function createButton(buttonOptions) {
 			button.addEventListener("mousedown", cycleCallback)
  		}
 
+		if (buttonOptions.type === "oneSelectedCycle") {
+			const cycleOptions = JSON.stringify(buttonOptions.cycleOptions);
+
+			button.setAttribute("cycleOptions", cycleOptions);
+			button.setAttribute("cycleIndex", 0);
+
+			button.innerHTML = buttonOptions.cycleOptions[0];
+
+			button.addEventListener("mousedown", oneSelectedCallback);
+ 		}
+
 		if (buttonOptions.type === "toggle") {
 			button.addEventListener("mousedown", toggleCallback);
 		}
@@ -241,9 +252,11 @@ export class ButtonOptions {
 	 * @param {String} type - the type of the button
 	 * @param {String} contents - tells what should be inside the button. defaults to being the string itself. can also be "image" for an image specified by the id of the button, or "id" for the id of the button
 	 * @param {Array} cycleOptions 
+	 * @param {Object} metaData
 	 */
-	constructor(id, type, contents, cycleOptions) {
+	constructor(id, type, contents, cycleOptions, metaData) {
 		this.id = id;
+		this.metaData = metaData;
 
 		switch (type) {
 			default:
@@ -267,6 +280,14 @@ export class ButtonOptions {
 			case "oneSelected":
 				this.type = "oneSelected"
 			break
+			case "oneSelectedCycle":
+				if ((!(cycleOptions instanceof Array)) || cycleOptions.length < 2 ) {
+					console.log(cycleOptions.length)
+					throw new Error("[ButtonOptions] [id: " + id +"] -- must provide at least two options to cycle through")
+				} 
+				this.type = "oneSelectedCycle";
+				this.cycleOptions = cycleOptions;
+			break
 		}
 
 		switch(contents) {
@@ -288,7 +309,7 @@ export class ButtonOptions {
 /**
  * @param {MouseEvent} event
  */
-function oneSelectedCyclerCallback (event) {
+function oneSelectedCycleCallback (event) {
 	const button = event.currentTarget;
 	const handler = editor[button.parentNode.id + "Press"];
 

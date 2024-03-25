@@ -74,6 +74,50 @@ export class vec4 {
 	}
 }
 
+export function prng(seed) {
+  let random = seed;
+
+	for (let i = 0; i < 10; i++) {
+		random = (1664525 * random + 1013904223) % 4294967296;
+	}
+
+	random /= 4294967296;
+
+  return random;
+}
+
+export async function getShader(id) {
+	const promise = await fetch("./resources/shaders/" + id + "/shader.frag").catch(() => {throw new Error("shader \"" + id + "\" does not exist")});
+	const src = await promise.text();
+	
+	return src;
+}
+
+
+globalThis.getShader =  async function (id) {
+	const promise = await fetch("./resources/shaders/" + id + "/shader.frag").catch(() => {throw new Error("shader \"" + id + "\" does not exist")});
+	const src = await promise.text();
+	
+	return src;
+}
+
+export async function getIterativeShader (id) {
+	let init, iterate;
+	await fetch("./resources/shaders/" + id + "/init.frag").then((response) => {
+		init = response.text();
+
+	}).catch(() => {
+		throw new Error("iterative shaderset \"" + id + "\" does not exist");
+	})
+
+	await fetch("./resources/shaders/" + id + "/init.frag").then((response) => {
+		iterate = response.text();
+
+	}).catch(() => {
+		throw new Error("iterative shaderset \"" + id + "\" does not exist");
+	})
+}
+
 //Area takes in a variety of definitions of an area on the level, and converts that to a list of real tile positions to be iterated over. it can also be used to store a copy of the level data in the defined area
 export class Area extends Array{
 	constructor (tileList) {

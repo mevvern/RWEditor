@@ -4,6 +4,7 @@ import {vec2, vec3, vec4, Area, Layer, LINGO} from "./utils.mjs";
 import {level} from "./main.mjs";
 import {editor} from "./main.mjs";
 import {RenderLayerWith1Sprite} from "./renderLayer.mjs"
+import {ButtonOptions} from "./ui.mjs";
 
 export class RenderContext {
 	constructor(levelSize) {
@@ -14,13 +15,18 @@ export class RenderContext {
 		this.#screenCenter = new vec2(window.screen.availWidth / 2, window.screen.availHeight / 2);
 
 		this.layers = [];
-		this.setTileCount = 0;
 
 		this.textures = {DEFAULT : DEFAULT_TEXTURE, WHITE : WHITE, INVISIBLE : INVISIBLE};
 
 		this.#initView();
 
 		this.#initWholeThing();
+
+		this.testSprite = new PIXI.Sprite();
+		this.testSprite.width = this.#levelPixelSize.x / 4;
+		this.testSprite.height = this.#levelPixelSize.y / 4;
+
+		app.stage.addChild(this.testSprite);
 
 		this.clearRenders = () => {
 			for (const layer of this.layers) {
@@ -32,63 +38,57 @@ export class RenderContext {
 			for (const layer of this.layers) {
 				layer.renderAll();
 			}
+			this.#updateShadowMap(new vec2(0, 29));
 		}
 
 		/**
 		 * 
-		 * @param {vec3} pos 
+		 * @param {Array} tileList 
 		 * @param {string} textureId 
 		 */
-		this.setTile = (pos, textureId) => {
-			if (pos instanceof vec3) {
-				if (textureId in this.textures) {
-					const layer = this.layers[pos.z];
-					if (textureId !== layer.at(pos).textureId) {
-						layer.updateTile(pos, this.textures[textureId]);
-						this.setTileCount++
+		this.setTile = (tileList) => {
+			if (tileList instanceof Array) {
+				
+					const sortedTiles = [];
+					let highestLayer = 29;
+
+					for (const tile of tileList) {
+						if (tile.texture in this.textures) {	
+							if (!(sortedTiles[tile.pos.z] instanceof Array)) {
+								sortedTiles[tile.pos.z] = [];
+							}
+							tile.texture = this.textures[tile.texture];
+		
+							sortedTiles[tile.pos.z].push(tile);
+
+						} else {
+							console.warn("desired texture \"" + tile.texture + "\" does not exist!");
+						}
 					}
-				} else {
-					throw new Error("desired texture \"" + textureId + "\" does not exist!");
-				}
 
-			} else if (pos instanceof Area) {
-				const sortedTiles = [];
-
-				for (const tile of pos) {
-					if (!(sortedTiles[tile.pos.z] instanceof Array)) {
-						sortedTiles[tile.pos.z] = [];
+					for (const [index, layer] of sortedTiles.entries()) {
+						if (layer) {
+							if (index < highestLayer) {
+								highestLayer = index;
+							}
+							const renderLayer = this.layers[index];
+							renderLayer.updateTile(layer);
+						}
 					}
-					tile.texture = this.textures[tile.texture];
 
-					const layer = this.layers[tile.pos.z];
-
-					layer.at(tile.pos).texture = tile.texture
-
-					sortedTiles[tile.pos.z].push(tile);
-					this.setTileCount++
-				}
-
-				for (const [index, layer] of sortedTiles.entries()) {
-					if (layer) {
-						const renderLayer = this.layers[index]
-
-						renderLayer.updateTile(layer)
-					}
-				}
-
+					this.#updateShadowMap(highestLayer);
 			} else {
-				throw new Error("pos must be a vec3 or an Area!!!");
+				throw new TypeError("tileList must be an Array!");
 			}
 		}
+
 	}
-
-
-	//------------------------private methods-------------------------//
+	//------------------------privates-------------------------------//
 	
 
 	//---------------pixi inits
 
-	#initWholeThing = () => {
+	#initWholeThing = async () => {
 		this.#initGrid();
 		this.#initLevelBody();
 		this.#initCamera();
@@ -97,7 +97,9 @@ export class RenderContext {
 		this.#updateViewPos();
 		this.#updateViewAngle();
 		this.#updateViewDistanceMagnitude();
-		//this.#updateSkewMagnitude();
+		this.#updateSkewMagnitude();
+
+		await this.#getGeoTextures();
 	}
 
 	#initView = () => {
@@ -112,37 +114,28 @@ export class RenderContext {
 		this.layers = [];
 
 		for (let i = 0; i < 30; i++) {
-			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, this.#defaultTileSize);
+			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(1.87, 0.001));
 
 			layer.position3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2, (29 - i) * 10);
-
-			//layer.pivot3d.set(-layer.width / 2, -layer.height / 2);
-			//layer.pivot.set(-layer.width / 2, -layer.height / 2);
 
 			layer.pivot3d.set(0);
 			layer.pivot.set(0);
 
-			layer.tileSprite.tint = [i / 30, i / 30, i / 30];
+			layer.tileSprite.tint = [(70 - i) / 70, (70 - i) / 70, (70 - i) / 70];
 
 			this.layers.unshift(layer);
 			this.#levelBody.addChild(layer);
-		}
 
-		//set pivot of the level body to half the width and height of itself. the center
-		for (const layer of this.layers) {
-			//layer.pivot.set(layer.width * this.layerOrigin.x, layer.height * this.layerOrigin.y)
+			//console.log(this.#levelBody.scale3d);
 		}
+	
 		this.#levelBody.addChild(this.#grid);
 
-		//this.#levelBody.pivot3d.set(-this.#levelBody.width / 2, -this.#levelBody.height / 2);
-		//this.#levelBody.pivot.set(-this.#levelBody.width / 2, -this.#levelBody.height / 2);
-
-		//this.#levelBody.pivot3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2);
-		//this.#levelBody.pivot.set(-this.#defaultTileSize * this.#levelTileSize.x, -this.#defaultTileSize * this.#levelTileSize.y);
+		//this.#levelBody.euler.roll = 0.1;
 	}
 
 	#initCamera = () => {
-		this.#camera.setPlanes(5000, 0.1, 1000, false); //focus plane, near plane, far plane, orthographic boolean
+		this.#camera.setPlanes(3000, 0.1, 1000, false); //focus plane, near plane, far plane, orthographic boolean
 		this.#camera.position.set(this.#screenCenter);
 		this.#camera.addChild(this.#levelBody);
 	}
@@ -152,7 +145,7 @@ export class RenderContext {
 		for (const [depth, layer] of this.layers.entries()) {
 			const sprite = new PreviewSprite();
 			sprite.texture = DEFAULT_TEXTURE;
-			sprite.tint = [(30 - depth) / 30, (30 - depth) / 30, (30 - depth) / 30]
+			sprite.tint = [(30 - depth) / 30, (30 - depth) / 30, (30 - depth) / 30];
 			//sprite.alpha = 0.5;
 			sprite.width = this.#defaultTileSize;
 			sprite.height = this.#defaultTileSize;
@@ -173,13 +166,29 @@ export class RenderContext {
 		this.#grid.tileScale.set(0.1)
 	}
 
-	//--------------texture inits-----------------------------------------------------------------
+	//--------------textures-----------------------------------------------------------------
 
 	#getTexInits = () => {
 		let LONString = "";
 		this.#texInits = LINGO.parse(LONString)
 	}
 	
+	#getGeoTextures = async () => {
+		const tileList = editor.modes.geometry.tileSet;
+
+		for (const buttonOption of tileList) {
+			if (buttonOption instanceof ButtonOptions) {
+				for (const geoId of buttonOption.metaData.textures) {
+					const tex = await this.#getTexture(geoId, "geometry");
+					this.textures[geoId] = tex;
+				}
+			} else {
+				const tex = await this.#getTexture(buttonOption, "geometry");
+				this.textures[buttonOption] = tex;
+			}
+		}
+	}
+
 	#getTexture = (textureId, type) => {
 		//type can be tile, prop, or geometry
 		switch (type) {
@@ -188,8 +197,7 @@ export class RenderContext {
 
 			break
 			case "geometry":
-				return PIXI.Texture.fromUrl("../resources/render/geometry/" + textureId + ".png");
-
+				return PIXI.Texture.fromURL("./resources/render/geometry/" + textureId + ".png");
 			break
 			case "tile":
 				return null
@@ -206,6 +214,9 @@ export class RenderContext {
 		//get geometry
 
 	}
+
+	//--------------shaders----------------------------------------------------------------
+
 
 
 	//---------------------utils-----------------------------------------------------------------
@@ -264,6 +275,28 @@ export class RenderContext {
 
 	//------------------updators-------------------------------------------------------------------------------------------
 
+	#updateLayerUniforms = () => {
+		for (const layer of this.layers) {
+			layer.levelOrigin = this.#levelOrigin;
+			layer.levelSize = this.#levelPixelSize;
+		}
+	}
+
+	#updateShadowMap = (highestLayer) => {
+		if (typeof highestLayer === "number") {
+			const range = new vec2(highestLayer + 1, 29);
+
+			for (let layerNumber = range.x; layerNumber <= range.y; layerNumber++) {
+
+				if (layerNumber != 0) {
+					const map = this.layers[layerNumber - 1].getShadowMap();
+					this.testSprite.texture = map;
+					this.layers[layerNumber].shadowMap = map;
+				}
+			}
+		}
+	}
+
 	#updateViewPos = () => {
 		const scaleFac = this.#defaultTileSize / this.#currentTileSize
 
@@ -272,6 +305,7 @@ export class RenderContext {
 		this.#levelOrigin = this.#levelToScreen(new vec2());
 
 		this.#updateMouseScreenPos();
+		this.#updateLayerUniforms();
 	}
 
 	#updateViewSize = () => {
@@ -289,6 +323,7 @@ export class RenderContext {
 
 		this.#updateViewPos();
 		this.#updateMouseScreenPos();
+		this.#updateLayerUniforms();
 	}
 
 	#updateLayerVisibility = () => {
@@ -369,7 +404,8 @@ export class RenderContext {
 	}
 
 	#updateMouseScreenPos = () => {
-		this.#mouseLevelPos = this.#screenToLevel(this.#mouseScreenPos)
+
+		this.#mouseLevelPos = this.#screenToLevel(this.#mouseScreenPos);
 		editor.mouse.tile = this.#levelToTile(this.#mouseLevelPos, 1);
 
 		this.#updatePreviewPos();
@@ -382,13 +418,6 @@ export class RenderContext {
 	#updatePreviewVis = () => {
 		for (const previewSprite of this.#preview) {
 			previewSprite.visible = this.#previewVisible;
-		}
-	}
-
-	#updateShadowMaps = (editDepth) => {
-		
-		for (const [layerCount, layer] of this.layers.entries()) {
-			const shadowTex = 8
 		}
 	}
 
@@ -572,9 +601,12 @@ export class RenderContext {
 		this.#previewVisible = bool;
 		this.#updatePreviewVis();
 	}
+
+//-----------------------------//
+	set gridVisibility(bool) {
+		this.#grid.visible = bool;
+	}
 }
-
-
 
 
 

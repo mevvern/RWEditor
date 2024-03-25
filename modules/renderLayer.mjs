@@ -1,16 +1,19 @@
 import * as PIXI from "./lib/pixi.mjs";
 import * as projection from "./lib/pixi-projection.mjs"
-import {Layer} from "./utils.mjs";
+import {Layer, vec2} from "./utils.mjs";
+import {getShader} from "./utils.mjs";
+import { renderContext } from "./main.mjs";
 
 export class RenderLayerWith1Sprite extends projection.Container3d {
 	/**
 	 * 
 	 * @param {vec2} levelSize 
 	*/
-	constructor(levelSize) {
+	constructor(levelSize, shadowOffset) {
 		//calls the constructor of the parent class, PIXI.Container in this case
 		super();
 
+		this.#shadowOffset = shadowOffset;
 		//Layer object which contains 1 pixi sprite per x,y. has methods for accessing and iterating over each sprite
 		this.tiles = new Layer(levelSize, TileData)
 
@@ -24,7 +27,9 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		this.previewContainer = new PreviewContainer();
 
 		//the RenderTexture object which renderContainer will be rendered to
-		this.renderTextures = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize})]
+		this.baseRenderTextures = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize})]
+
+		this.shadowMaps = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize})]
 
 		//the sprite which will use the rendered texture as its texture. it is to be placed underneath the tile sprites
 		this.finalRender = new FinalRender(this.renderTexture1);
@@ -47,82 +52,68 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		this.tileSprite.height = this.#defaultTileSize;
 		this.tileSprite.visible = false;
 
+		this.#initShadowShaders();
+
 		/***********************************************
 		 * updates the texture of the tile at the desired location or set of locations
 		 * @param {PIXI.Texture} texture 
 		 */
-		this.updateTile = (pos, texture) => {
+		this.updateTile = (tileList) => {
 			const tileSprite = this.tileSprite;
-			const renderTextures = this.renderTextures
+			const baseRenderTextures = this.baseRenderTextures;
 
-			this.finalRender.texture = this.renderTextures[this.#renderedIndex];
+			this.finalRender.texture = baseRenderTextures[this.#renderedIndex];
+			tileSprite.visible = true;
 
-			if (pos instanceof Array) {
-				for (const tile of pos) {
-					tileSprite.visible = true;
+			for (const tile of tileList) {
+				const storedTile = this.tiles.at(tile.pos)
+				if (storedTile.texture.id !== tile.texture.id) {
+					storedTile.texture = tile.texture;
 
-					//console.log(this.tiles.at(tile.pos), tile.pos)
+					tile.pos.x *= this.#defaultTileSize;
+					tile.pos.y *= this.#defaultTileSize;
 
-					if (this.tiles.at(tile.pos).texture.id !== tile.texture.id) {
-						tile.pos.x *= this.#defaultTileSize;
-						tile.pos.y *= this.#defaultTileSize;
+					tileSprite.position.set(tile.pos);
+					tileSprite.texture = tile.texture;
+					
+					app.renderer.render(this.renderContainer, {renderTexture : baseRenderTextures[this.#bufferIndex]});
 
-						tileSprite.position.set(tile.pos);
-						tileSprite.texture = tile.texture;
-						
-			
-						app.renderer.render(this.renderContainer, {renderTexture : renderTextures[this.#bufferIndex]});
-	
-						this.finalRender.texture = this.renderTextures[this.#bufferIndex];
-	
-						if (this.#bufferIndex === 1) {
-							this.#bufferIndex = 0;
-							this.#renderedIndex = 1;
-						} else {
-							this.#bufferIndex = 1;
-							this.#renderedIndex = 0;
-						}
+					this.finalRender.texture = baseRenderTextures[this.#bufferIndex];
+
+					if (this.#bufferIndex === 1) {
+						this.#bufferIndex = 0;
+						this.#renderedIndex = 1;
+					} else {
+						this.#bufferIndex = 1;
+						this.#renderedIndex = 0;
 					}
 				}
-
-				tileSprite.visible = false;
-
-			} else {
-				this.finalRender.texture = this.renderTextures[this.#renderedIndex];
-
-				tileSprite.position.set(pos);
-				tileSprite.texture = texture;
-				tileSprite.visible = true;
-
-				app.renderer.render(this.renderContainer, {renderTexture : this.renderTextures[this.#bufferIndex]});
-	
-				this.finalRender.texture = this.renderTextures[this.#bufferIndex];
-
-				tileSprite.visible = false;
-
-				if (this.#bufferIndex === 1) {
-					this.#bufferIndex = 0;
-					this.#renderedIndex = 1;
-				} else {
-					this.#bufferIndex = 1;
-					this.#renderedIndex = 0;
-				}
 			}
+			tileSprite.visible = false;
 		}
 
 		/**
 		 * clears the layer's render textures
 		 */
 
-		this.clearRenderTextures = () => {
+		this.clearbaseRenderTextures = () => {
 			this.tileSprite.visible = false;
 
 			this.finalRender.visible = false;
 
-			app.renderer.render(this.renderContainer, {renderTexture : this.renderTextures[1], clear : true});
-			app.renderer.render(this.renderContainer, {renderTexture : this.renderTextures[0], clear : true});
+			app.renderer.render(this.renderContainer, {renderTexture : this.baseRenderTextures[1], clear : true});
+			app.renderer.render(this.renderContainer, {renderTexture : this.baseRenderTextures[0], clear : true});
 
 			this.finalRender.visible = true;
+		}
+
+		this.clearShadowRenderTextures = () => {
+			this.#generateShadowSprite.visible = false;
+			
+			app.renderer.render(this.#generateShadowSprite, {renderTexture : this.shadowMaps[1], clear : true});
+			app.renderer.render(this.#generateShadowSprite, {renderTexture : this.shadowMaps[0], clear : true});
+
+			this.#generateShadowSprite.visible = true;
 		}
 
 		/**
@@ -131,11 +122,11 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 
 		this.renderAll = () => {
 			const tileSprite = this.tileSprite;
-			const renderTextures = this.renderTextures;
+			const baseRenderTextures = this.baseRenderTextures;
 
 			tileSprite.visible = true;
 
-			this.clearRenderTextures();
+			this.clearbaseRenderTextures();
 
 			this.tiles.iterate((tile, pos) => {
 				tileSprite.visible = true;
@@ -147,9 +138,9 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 
 					tileSprite.position.set(pos);
 
-					app.renderer.render(this.renderContainer, {renderTexture : renderTextures[this.#bufferIndex]});
+					app.renderer.render(this.renderContainer, {renderTexture : baseRenderTextures[this.#bufferIndex]});
 
-					this.finalRender.texture = this.renderTextures[this.#bufferIndex];
+					this.finalRender.texture = this.baseRenderTextures[this.#bufferIndex];
 
 					if (this.#bufferIndex === 1) {
 						this.#bufferIndex = 0;
@@ -163,6 +154,16 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			tileSprite.visible = false;
 		}
 		
+		this.getShadowMap = (offset) => {
+			const renderTarget = this.shadowMaps[1];
+
+			this.#generateShadowSprite.texture = this.baseRenderTextures[this.#renderedIndex];
+
+			app.renderer.render(this.#generateShadowSprite, {renderTexture : renderTarget});
+
+			return renderTarget;
+		}
+
 		/**********************************************************************
 		 * 
 		 * @param {vec2} pos 
@@ -180,6 +181,47 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 	#bufferIndex = 1;
 	#renderedIndex = 0;
 	#defaultTileSize = DEFAULT_TILE_SIZE;
+
+	#generateShadowFilter = new PIXI.Filter();
+	#renderShadowFilter = new PIXI.Filter();
+
+	#generateShadowSprite = new PIXI.Sprite();
+	#shadowOffset = new vec2();
+
+	#initShadowShaders = async () => {
+		const renderShadowSrc = await getShader("renderShadow");
+		const generateShadowSrc = await getShader("generateShadowMap");
+		const uniforms = {
+			uShadowMap : this.shadowMap,
+			uShadowAngle : this.#shadowOffset.x,
+			uShadowMag : this.#shadowOffset.y
+		}
+
+		this.#renderShadowFilter = new PIXI.Filter(null, renderShadowSrc, uniforms);
+		this.#generateShadowFilter = new PIXI.Filter(null, generateShadowSrc, uniforms);
+
+		this.#generateShadowSprite.filters = [this.#generateShadowFilter];
+
+		this.filters = [this.#renderShadowFilter];
+	}
+
+	set levelSize(size) {
+		this.#renderShadowFilter.uniforms.uLevelSize = [size.x, size.y];
+	}
+
+	set levelOrigin(origin) {
+		this.#renderShadowFilter.uniforms.uLevelOrigin = [origin.x, origin.y];
+	}
+
+	set shadowMap(map) {
+		this.shadowMaps[0] = map;
+		this.#renderShadowFilter.uniforms.uShadowMap = map;
+		this.#generateShadowFilter.uniforms.uShadowMap = map;
+	}
+
+	get shadowMap() {
+		return this.shadowMaps[0]
+	}
 }
 
 class TileData {

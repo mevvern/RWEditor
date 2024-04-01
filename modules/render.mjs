@@ -22,12 +22,6 @@ export class RenderContext {
 
 		this.#initWholeThing();
 
-		this.testSprite = new PIXI.Sprite();
-		this.testSprite.width = this.#levelPixelSize.x / 4;
-		this.testSprite.height = this.#levelPixelSize.y / 4;
-
-		app.stage.addChild(this.testSprite);
-
 		this.clearRenders = () => {
 			for (const layer of this.layers) {
 				layer.clearRenderTextures();
@@ -162,8 +156,8 @@ export class RenderContext {
 	}
 
 	#initLevelUi = async () => {
-		const gridTex = await PIXI.Texture.fromURL("../resources/render/generic/gridCellThick.png");
-		const borderTex = await PIXI.Texture.fromURL("../resources/render/generic/levelOutline.png");
+		const gridTex = await PIXI.Texture.fromURL("./resources/render/generic/gridCellThick.png");
+		const borderTex = await PIXI.Texture.fromURL("./resources/render/generic/levelOutline.png");
 
 		this.#grid.texture = gridTex;
 		this.#levelOutline.texture = borderTex;
@@ -301,7 +295,6 @@ export class RenderContext {
 	
 					if (layerNumber > 0) {
 						const map = this.layers[layerNumber - 1].getShadowMap();
-						this.testSprite.texture = map;
 						this.layers[layerNumber].shadowMap = map;
 					}
 				}

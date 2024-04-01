@@ -1,8 +1,8 @@
 import * as PIXI from "./lib/pixi.mjs";
 import * as projection from "./lib/pixi-projection.mjs"
-import {Layer, vec2} from "./utils.mjs";
+import {Layer, vec2, vec4} from "./utils.mjs";
 import {getShader} from "./utils.mjs";
-import { renderContext } from "./main.mjs";
+import { level, renderContext } from "./main.mjs";
 
 export class RenderLayerWith1Sprite extends projection.Container3d {
 	/**
@@ -12,6 +12,8 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 	constructor(levelSize, shadowOffset) {
 		//calls the constructor of the parent class, PIXI.Container in this case
 		super();
+
+		this.#levelPixelSize = new vec2(levelSize.x * this.#defaultTileSize, levelSize.y * this.#defaultTileSize);
 
 		this.#shadowOffset = shadowOffset;
 		//Layer object which contains 1 pixi sprite per x,y. has methods for accessing and iterating over each sprite
@@ -27,9 +29,9 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		this.previewContainer = new PreviewContainer();
 
 		//the RenderTexture object which renderContainer will be rendered to
-		this.baseRenderTextures = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize})]
+		this.baseRenderTextures = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST})]
 
-		this.shadowMaps = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize})]
+		this.shadowMaps = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST})]
 
 		//the sprite which will use the rendered texture as its texture. it is to be placed underneath the tile sprites
 		this.finalRender = new FinalRender(this.renderTexture1);
@@ -52,7 +54,15 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		this.tileSprite.height = this.#defaultTileSize;
 		this.tileSprite.visible = false;
 
+		this.#mask.width = levelSize.x * this.#defaultTileSize;
+		this.#mask.height = levelSize.y * this.#defaultTileSize;
+
+		this.renderContainer.addChild(this.#mask);
+
 		this.#initShadowShaders();
+
+		this.#updateMask(this.#clearRect);
+		this.#mask.visible = false;
 
 		/***********************************************
 		 * updates the texture of the tile at the desired location or set of locations
@@ -66,17 +76,27 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			tileSprite.visible = true;
 
 			for (const tile of tileList) {
-				const storedTile = this.tiles.at(tile.pos)
+				const storedTile = this.tiles.at(tile.pos);
 				if (storedTile.texture.id !== tile.texture.id) {
 					storedTile.texture = tile.texture;
 
 					tile.pos.x *= this.#defaultTileSize;
 					tile.pos.y *= this.#defaultTileSize;
+					
+					this.#clearRect.x = tile.pos.x;
+					this.#clearRect.y = tile.pos.y;
+					this.#updateMask(this.#clearRect);
+
+					this.#mask.visible = true;
+					this.finalRender.mask = this.#mask;
 
 					tileSprite.position.set(tile.pos);
 					tileSprite.texture = tile.texture;
-					
+
 					app.renderer.render(this.renderContainer, {renderTexture : baseRenderTextures[this.#bufferIndex]});
+
+					this.finalRender.mask = null;
+					this.#mask.visible = false;
 
 					this.finalRender.texture = baseRenderTextures[this.#bufferIndex];
 
@@ -153,7 +173,20 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			})
 			tileSprite.visible = false;
 		}
-		
+
+		this.updateQuadSize = () => {
+			const bounds = this.finalRender.getBounds();
+			this.#renderShadowFilter.uniforms.uQuadSize = [bounds.width, bounds.height];
+			this.#renderShadowFilter.uniforms.uQuadOrigin = [bounds.x, bounds.y];
+		}
+
+		this.updateResolution = () => {
+			const resolution = [window.innerWidth, window.innerHeight];
+
+			this.#generateShadowFilter.uniforms.uResolution = resolution;
+			this.#renderShadowFilter.uniforms.uResolution = resolution;
+		}
+
 		this.getShadowMap = () => {
 			const renderTarget = this.shadowMaps[1];
 
@@ -186,7 +219,24 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 	#renderShadowFilter = new PIXI.Filter();
 
 	#generateShadowSprite = new PIXI.Sprite();
-	#shadowOffset = new vec2();
+	#shadowOffset = new vec2(0.46, 0.004);
+
+	#mask = new PIXI.Graphics();
+	#levelPixelSize = new vec2();
+	#clearRect = new vec4(100, 200, 20, 20);
+
+	#updateMask = (rect) => {
+		const mask = this.#mask;
+
+		mask.clear();
+
+		mask.beginFill([1, 0, 0, 1]);
+
+		mask.drawRect(0, 0, this.#levelPixelSize.x, rect.y);
+		mask.drawRect(0, rect.y, rect.x, rect.w);
+		mask.drawRect(rect.x + rect.z, rect.y, this.#levelPixelSize.x - (rect.x + rect.z), rect.w);
+		mask.drawRect(0, rect.y + rect.w, this.#levelPixelSize.x, this.#levelPixelSize.y - (rect.y + rect.w));
+	}
 
 	#initShadowShaders = async () => {
 		const renderShadowSrc = await getShader("renderShadow");
@@ -194,23 +244,28 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		const uniforms = {
 			uShadowMap : this.shadowMap,
 			uShadowAngle : this.#shadowOffset.x,
-			uShadowMag : this.#shadowOffset.y
+			uShadowMag : this.#shadowOffset.y,
+			uResolution : [app.view.width, app.view.height],
+			uQuadSize : [0, 0],
+			uQuadOrigin : [0, 0],
+			debug : false
 		}
 
 		this.#renderShadowFilter = new PIXI.Filter(null, renderShadowSrc, uniforms);
 		this.#generateShadowFilter = new PIXI.Filter(null, generateShadowSrc, uniforms);
+
+		this.updateQuadSize();
 
 		this.#generateShadowSprite.filters = [this.#generateShadowFilter];
 
 		this.filters = [this.#renderShadowFilter];
 	}
 
-	set levelSize(size) {
-		this.#renderShadowFilter.uniforms.uLevelSize = [size.x, size.y];
-	}
-
-	set levelOrigin(origin) {
-		this.#renderShadowFilter.uniforms.uLevelOrigin = [origin.x, origin.y];
+	set shadowUniforms(uniforms) {
+		this.#renderShadowFilter.uniforms.uShadowAngle = uniforms[0];
+		this.#renderShadowFilter.uniforms.uShadowMag = uniforms[1];
+		this.#generateShadowFilter.uniforms.uShadowAngle = uniforms[0];
+		this.#generateShadowFilter.uniforms.uShadowMag = uniforms[1];
 	}
 
 	set shadowMap(map) {

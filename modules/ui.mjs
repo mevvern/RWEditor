@@ -157,12 +157,15 @@ ui.generateButtonSet = (buttonOptionsList, destination, preselected) => {
 
 		for (let buttonOptions of buttonOptionsList) {
 			if (typeof buttonOptions === "string") {
-				oneSelectedFlag = true;
-				buttonOptions = new ButtonOptions(buttonOptions, "oneSelected", "image");
+				buttonOptions = new ButtonOptions(buttonOptions, "oneSelected", {contents : "image"});
 			}
 
-			if (oneSelectedFlag === true && buttonOptions.type === "toggle") {
-				throw new TypeError("a oneSelected button cannot be located alongside a toggle button");
+			if (buttonOptions.type.includes("oneSelected")) {
+				oneSelectedFlag = true;
+			}
+
+			if (oneSelectedFlag === true && (buttonOptions.type === "toggle")) {
+				console.warn("a oneSelected button probably shouldn't be located alongside a toggle button");
 			}
 
 			const button = createButton(buttonOptions);
@@ -197,9 +200,9 @@ function createButton(buttonOptions) {
 			const cycleOptions = JSON.stringify(buttonOptions.cycleOptions);
 
 			button.setAttribute("cycleOptions", cycleOptions);
-			button.setAttribute("cycleIndex", 0);
+			button.setAttribute("cycleIndex", buttonOptions.cycleOptions.indexOf(buttonOptions.default));
 
-			button.innerHTML = buttonOptions.cycleOptions[0];
+			button.innerHTML = buttonOptions.default;
 
 			button.addEventListener("mousedown", cycleCallback)
  		}
@@ -208,14 +211,19 @@ function createButton(buttonOptions) {
 			const cycleOptions = JSON.stringify(buttonOptions.cycleOptions);
 
 			button.setAttribute("cycleOptions", cycleOptions);
-			button.setAttribute("cycleIndex", 0);
+			button.setAttribute("cycleIndex", buttonOptions.cycleOptions.indexOf(buttonOptions.default));
 
-			button.innerHTML = buttonOptions.cycleOptions[0];
+			button.innerHTML = buttonOptions.default;
 
 			button.addEventListener("mousedown", oneSelectedCycleCallback);
  		}
 
 		if (buttonOptions.type === "toggle") {
+			if (buttonOptions.default === true) {
+				button.setAttribute("selected", "true");
+			} else {
+				button.setAttribute("selected", "false");
+			}
 			button.addEventListener("mousedown", toggleCallback);
 		}
 
@@ -250,56 +258,78 @@ export class ButtonOptions {
 	 * 
 	 * @param {String} id - the id of the button
 	 * @param {String} type - the type of the button
-	 * @param {String} contents - tells what should be inside the button. defaults to being the string itself. can also be "image" for an image specified by the id of the button, or "id" for the id of the button
-	 * @param {Array} cycleOptions 
-	 * @param {Object} metaData
+	 * @param {Object} options - default : the starting state of the button. can be true, false, or a cycle option. not applicable to oneshots 
+	 * @param {Object} options - contents : the contents of the button. can be any string, or "image" to be an image with the path "resources/icons/<id>.png". if left out the id will become the contents
+	 * @param {Object} options - cycleOptions : the list of options to cycle through if the type is a cycler
+	 * @param {Object} options - textures : the list of texture ids which renderContext will grab
 	 */
-	constructor(id, type, contents, cycleOptions, metaData) {
+	constructor(id, type, options) {
 		this.id = id;
-		this.metaData = metaData;
+		if (!options) {
+			options = {};
+		}
+
+		if (options.default) {	
+			this.default = options.default;
+		} else {
+			this.default = null;
+		}
+
+		if (options.textures) {
+			this.textures = options.textures;
+		}
+
+		if (options.contents) {
+			switch(options.contents) {
+				default:
+					this.contents = options.contents;
+				break
+				case "image":
+					this.contents = "image";
+				break
+			}
+		} else {
+			this.contents = id;
+		}
 
 		switch (type) {
 			default:
 				this.type = "toggle";
 				console.log("[ButtonOptions] -- defaulted to type toggle for id: " + id);
+				this.default = false;
 			break
 			case "toggle":
 				this.type = "toggle";
+				this.default = false;
 			break
 			case "cycle":
-				if ((!(cycleOptions instanceof Array)) || cycleOptions.length < 2 ) {
-					console.log(cycleOptions.length)
+				if ((!(options.cycleOptions instanceof Array)) || options.cycleOptions.length < 2 ) {
 					throw new Error("[ButtonOptions] [id: " + id +"] -- must provide at least two options to cycle through")
 				} 
 				this.type = "cycle";
-				this.cycleOptions = cycleOptions;
+				this.cycleOptions = options.cycleOptions;
+				this.default = this.cycleOptions[0];
 			break
 			case "oneshot":
 				this.type = "oneshot";
+				this.default = null;
 			break
 			case "oneSelected":
 				this.type = "oneSelected"
+				this.default = null;
 			break
 			case "oneSelectedCycle":
-				if ((!(cycleOptions instanceof Array)) || cycleOptions.length < 2 ) {
-					console.log(cycleOptions.length)
+				if ((!(options.cycleOptions instanceof Array)) || options.cycleOptions.length < 2 ) {
 					throw new Error("[ButtonOptions] [id: " + id +"] -- must provide at least two options to cycle through")
 				} 
 				this.type = "oneSelectedCycle";
-				this.cycleOptions = cycleOptions;
+				this.cycleOptions = options.cycleOptions;
+				this.default = this.cycleOptions[0];
 			break
 		}
 
-		switch(contents) {
-			default:
-				this.contents = contents;
-			break
-			case "image":
-				this.contents = "image";
-			break
-			case "id":
-				this.contents = id;
-			break
+		if (options.default) {
+			this.default = options.default;
 		}
 	}
 }
@@ -378,13 +408,11 @@ function toggleCallback (event) {
 	const button = event.currentTarget
 	const handler = editor[button.parentNode.id + "Press"];
 
-	if (button.getAttribute("boolean") === "false") {
-		button.setAttribute("boolean", "true");
+	if (button.getAttribute("selected") === "false") {
 		button.setAttribute("selected", "true");
 		handler(button.id, true);
 
 	} else {
-		button.setAttribute("boolean", "false");
 		button.setAttribute("selected", "false");
 		handler(button.id, false);
 

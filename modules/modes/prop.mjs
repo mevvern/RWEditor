@@ -10,7 +10,9 @@ export class PropMode extends Mode {
 		this.tools = {};
 		this.tileSet = ["ass", "load", "of", "props"],
 		this.currentTile = "ass"
-		this.modeSettings = [new ButtonOptions("prop alignment", "cycle", null, ["none", "coarse", "fine"])];
+		this.modeSettings = [
+			new ButtonOptions("prop alignment", "cycle", {cycleOptions : ["none", "coarse", "fine"]})
+		];
 		this.name = "prop"
 		this.propAlignment = "coarse"
 		

@@ -89,17 +89,17 @@ export class RenderContext {
 	//---------------pixi inits
 
 	#initWholeThing = async () => {
-		this.#initGrid();
+		this.#initLevelUi();
 		this.#initLevelBody();
 		this.#initCamera();
 		this.#initPreview();
 
-		this.#updateViewPos();
-		this.#updateViewAngle();
-		this.#updateViewDistanceMagnitude();
-		this.#updateSkewMagnitude();
-
 		await this.#getGeoTextures();
+
+		this.#updateViewPos();
+		this.#updateViewDistance();
+		this.#updateShadowParams();
+		this.#updateSkew();
 	}
 
 	#initView = () => {
@@ -129,13 +129,19 @@ export class RenderContext {
 			//console.log(this.#levelBody.scale3d);
 		}
 	
-		this.#levelBody.addChild(this.#grid);
+		this.#levelBody.addChild(this.#grid, this.#levelOutline);
+
+		window.addEventListener("resize", () => {
+			for (const layer of this.layers) {
+				layer.updateResolution();
+			}
+		})
 
 		//this.#levelBody.euler.roll = 0.1;
 	}
 
 	#initCamera = () => {
-		this.#camera.setPlanes(3000, 0.1, 1000, false); //focus plane, near plane, far plane, orthographic boolean
+		this.#camera.setPlanes(2000, 0.1, 1000, false); //focus plane, near plane, far plane, orthographic boolean
 		this.#camera.position.set(this.#screenCenter);
 		this.#camera.addChild(this.#levelBody);
 	}
@@ -155,15 +161,24 @@ export class RenderContext {
 		}
 	}
 
-	#initGrid = async() => {
-		this.#grid = new PIXI.TilingSprite();
-		const tex = await PIXI.Texture.fromURL("../resources/render/generic/gridCellThick.png")
+	#initLevelUi = async () => {
+		const gridTex = await PIXI.Texture.fromURL("../resources/render/generic/gridCellThick.png");
+		const borderTex = await PIXI.Texture.fromURL("../resources/render/generic/levelOutline.png");
 
-		this.#grid.texture = tex;
+		this.#grid.texture = gridTex;
+		this.#levelOutline.texture = borderTex;
+
 		this.#grid.width = this.#levelPixelSize.x;
 		this.#grid.height = this.#levelPixelSize.y;
-		this.#grid.pivot.set(this.#levelPixelSize.x / 2, this.#levelPixelSize.y / 2)
-		this.#grid.tileScale.set(0.1)
+
+		this.#levelOutline.pivot.set(724, 434);
+		this.#levelOutline.tint = [0, 0, 0];
+
+		this.#levelOutline.width = this.#levelPixelSize.x * (1 + (8 / 1440));
+		this.#levelOutline.height = this.#levelPixelSize.y * (1 + (8 / 760));
+
+		this.#grid.pivot.set(this.#levelPixelSize.x / 2, this.#levelPixelSize.y / 2);
+		this.#grid.tileScale.set(0.1);
 	}
 
 	//--------------textures-----------------------------------------------------------------
@@ -178,12 +193,14 @@ export class RenderContext {
 
 		for (const buttonOption of tileList) {
 			if (buttonOption instanceof ButtonOptions) {
-				for (const geoId of buttonOption.metaData.textures) {
+				for (const geoId of buttonOption.textures) {
 					const tex = await this.#getTexture(geoId, "geometry");
+					tex.id = geoId;
 					this.textures[geoId] = tex;
 				}
 			} else {
 				const tex = await this.#getTexture(buttonOption, "geometry");
+				tex.id = buttonOption;
 				this.textures[buttonOption] = tex;
 			}
 		}
@@ -275,13 +292,6 @@ export class RenderContext {
 
 	//------------------updators-------------------------------------------------------------------------------------------
 
-	#updateLayerUniforms = () => {
-		for (const layer of this.layers) {
-			layer.levelOrigin = this.#levelOrigin;
-			layer.levelSize = this.#levelPixelSize;
-		}
-	}
-
 	#updateShadowMap = (highestLayer) => {
 		if (this.#useShadows) {
 			if (typeof highestLayer === "number") {
@@ -289,7 +299,7 @@ export class RenderContext {
 	
 				for (let layerNumber = range.x; layerNumber <= range.y; layerNumber++) {
 	
-					if (layerNumber != 0) {
+					if (layerNumber > 0) {
 						const map = this.layers[layerNumber - 1].getShadowMap();
 						this.testSprite.texture = map;
 						this.layers[layerNumber].shadowMap = map;
@@ -307,15 +317,16 @@ export class RenderContext {
 		this.#levelOrigin = this.#levelToScreen(new vec2());
 
 		this.#updateMouseScreenPos();
-		this.#updateLayerUniforms();
+
+		for (const layer of this.layers) {
+			layer.updateQuadSize();
+		}
 	}
 
 	#updateViewSize = () => {
 		if (this.#viewSize < -this.#defaultTileSize + 2) {
 			this.#viewSize = -this.#defaultTileSize + 1;
 		}
-
-		const scaleFac = this.#defaultTileSize / this.#currentTileSize
 
 		this.#currentTileSize = this.#defaultTileSize + this.#viewSize;
 		this.#levelPixelSize = new vec2(this.#currentTileSize * this.#levelTileSize.x, this.#currentTileSize * this.#levelTileSize.y);
@@ -325,7 +336,10 @@ export class RenderContext {
 
 		this.#updateViewPos();
 		this.#updateMouseScreenPos();
-		this.#updateLayerUniforms();
+
+		for (const layer of this.layers) {
+			layer.updateQuadSize();
+		}
 	}
 
 	#updateLayerVisibility = () => {
@@ -337,7 +351,9 @@ export class RenderContext {
 	}
 
 	#updatePreviewTexture = () => {
-		//VERY COMPLICATED HERE I DONT WANNA THINK ABOUT IT
+		for (const [index, texId] of this.#previewTexIdsList.entries()) {
+			this.#preview[index].texture = this.textures[texId];
+		}
 	}
 
 	#updatePreviewPos = () => {
@@ -358,51 +374,12 @@ export class RenderContext {
 		}
 	}
 
-	#updateViewAngle = () => {
-		console.log("viewangle is unused")
-		/* let x = Math.cos(Math.PI * this.#viewAngle); ////RADIANS!!!!!!!
-		let y = Math.sin(Math.PI * this.#viewAngle);
-		x *= this.viewAngleMagnitude; 
-		y *= this.viewAngleMagnitude;
-
-		for (const [depth, layer] of this.layers.entries()) {
-			layer.position.set(x * depth, y * depth);
-		} */
-	}
-
-	#updateViewAngleMagnitude = () => {
-		console.log("viewangle magnitude is unused");
-		this.#updateViewAngle();
-	}
-
-	#updateSkewAngle = () => {
+	#updateSkew = () => {
 		console.log("skewangle is unused");
-		/* let x = Math.cos(Math.PI * this.#skewAngle); ////RADIANS!!!!!!!
-		let y = Math.sin(Math.PI * this.#skewAngle);
-		x *= this.#skewMagnitude; 
-		y *= this.#skewMagnitude;
-		//x += this.#viewSize;
-		//y += this.#viewSize;
-
-		for (const layer of this.layers) {
-			layer.finalRender.vertexData[0] += x;
-			layer.finalRender.vertexData[1] += y;
-			layer.finalRender.vertexData[2] += x;
-			layer.finalRender.vertexData[3] += y;
-		} */
 	}
 
-	#updateSkewMagnitude = () => {
-		console.log("skewmagnitude is unused");
-		//this.#updateSkewAngle();
-	}
-
-	#updateViewDistanceMagnitude = () => {
+	#updateViewDistance = () => {
 		console.log("viewdistance is unused");
-		/* for (const [depth, layer] of this.layers.entries()) {
-			const depthMod = depth * this.#depthMagnitude
-			layer.scale.set(((100 - depthMod) / 100));
-		} */
 	}
 
 	#updateMouseScreenPos = () => {
@@ -423,9 +400,22 @@ export class RenderContext {
 		}
 	}
 
+	#updateShadowParams = () => {
+		for (const layer of this.layers) {
+			layer.shadowUniforms = this.#shadowParams;
+		}
+		//this.#updateShadowMap(0);
+	}
+
 	#updateShadowRendering = () => {
 		for (const layer of this.layers) {
 			layer.filters[0].enabled = this.#useShadows;
+		}
+	}
+
+	#updateCoordsDebug = () => {
+		for (const layer of this.layers) {
+			layer.filters[0].uniforms.debug = this.#showCoordsDebug;
 		}
 	}
 
@@ -438,19 +428,19 @@ export class RenderContext {
 	#previewAlignToGrid = "none";			//the level to which the preview should be aligned to the grid
 	#previewVisible = true;
 	#useShadows = true;
+	#showCoordsDebug = false;
 	
 	#viewPos = new vec2();				//position of the view in screen space. the origin of the level is in its center
 	#viewSize = 0;								//change in size of each tile from the default tile size of 20
 	#layerVisibility = [1, 1, 1];	//visibility of each "ui" layer
 	#levelPixelSize;							//current size of the level in pixels
 	#currentTileSize = DEFAULT_TILE_SIZE;				//current size of each tile in pixels
-	#viewAngle = 0.5;										//the current "viewing angle" of the level in pi radians. in reality, it's the direction to move each layer to give a fake viewing angle
-	#viewAngleMagnitude = 0;			//the distance which each layer will move when offset by the angle	
 	#depthMagnitude = 0.4;				//how "far" the layers should be from each other. max is 3.333. in reality this controls how much each layer gets scaled down to provide a fake perspective effect
 	#skewAngle = 1;								//the angle with which to skew the vertices of the level. RADIANS!!!!
 	#skewMagnitude = 50;					//how far that skew operation will go in that angle
+	#shadowParams = [1.28, 0.001]; //shadow parameters for the level. first entry is the angle, second entry is the magnitude
 
-	#previewTexId;								//id of the texture which should be assigned to the preview indicator
+	#previewTexIdsList = new Array(30);	//id of the texture which should be assigned to the preview indicator for each layer. always a length of 30 
 	
 	#levelTileSize = new vec2();					//size of the level in tiles
 	#screenCenter;												//stores the center of the screen at init
@@ -462,6 +452,7 @@ export class RenderContext {
 	#camera = new projection.Camera3d();
 	#preview = [];
 	#grid = new PIXI.TilingSprite();
+	#levelOutline = new PIXI.Sprite();
 	
 	//--------------------------setters and getters-------------------//
 
@@ -495,39 +486,19 @@ export class RenderContext {
 	}
 
 //----------------------------//
-	set previewTexture(textureId) {
-		this.#previewTexId = textureId;
+	set previewTexture(textureIdsList) {
+		this.#previewTexIdsList = textureIdsList;
 		this.#updatePreviewTexture();
 	}
 
 	get previewTexture() {
-		return this.#previewTexId
-	}
-
-//----------------------------//
-	set viewAngle(angle) {
-		this.#viewAngle = angle;
-		this.#updateViewAngle();
-	}
-
-	get viewAngle() {
-		return this.#viewAngle;
-	}
-
-//----------------------------//
-	set viewAngleMagnitude(magnitude) {
-		this.#viewAngleMagnitude = magnitude;
-		this.#updateViewAngleMagnitude();
-	}
-
-	get viewAngleMagnitude() {
-		return this.#viewAngleMagnitude;
+		return this.#previewTexIdsList;
 	}
 
 //----------------------------//
 	set depthMagnitude(magnitude) {
 		this.#depthMagnitude = magnitude;
-		this.#updateViewDistanceMagnitude();
+		this.#updateViewDistance();
 	}
 
 	get depthMagnitude() {
@@ -537,7 +508,7 @@ export class RenderContext {
 //----------------------------//
 	set skewAngle(angle) {
 		this.#skewAngle = angle;
-		this.#updateSkewAngle();
+		this.#updateSkew();
 	}
 
 	get skewAngle() {
@@ -547,7 +518,7 @@ export class RenderContext {
 //----------------------------//
 	set skewMagnitude(magnitude) {
 		this.#skewMagnitude = magnitude;
-		this.#updateSkewMagnitude();
+		this.#updateSkew();
 	}
 
 	get skewMagnitude() {
@@ -624,7 +595,14 @@ export class RenderContext {
 			this.#updateShadowMap(0);
 		}
 	}
+
+	//-----------------------------//
+	set debugCoords(bool) {
+		this.#showCoordsDebug = bool;
+		this.#updateCoordsDebug();
+	}
 }
+
 
 
 

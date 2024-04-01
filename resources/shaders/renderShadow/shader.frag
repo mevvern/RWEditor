@@ -3,36 +3,41 @@ precision highp float;
 
 varying vec2 vTextureCoord;
 
-uniform vec4 inputSize;
-uniform vec4 outputFrame;
+uniform bool debug;
+
+uniform vec2 uResolution;
+uniform vec2 uQuadSize;
+uniform vec2 uQuadOrigin;
 
 uniform sampler2D uSampler;
 uniform sampler2D uShadowMap;
 
 uniform float uShadowAngle;
 
-#define pi 3.14159265358
+#define pi float(3.14159265358)
 
 void main(void) {
+	vec2 myCoord = vec2(gl_FragCoord.x, uResolution.y - gl_FragCoord.y);
+	myCoord -= vec2(uQuadOrigin.x, uQuadOrigin.y);
+	myCoord /= uQuadSize;
+
 	//offset for shadowmap sampling to prevent fighting at the lit sides of objects
 	vec2 shadowOffset = vec2(
-		float(cos(uShadowAngle * float(pi))),
-		float(sin(uShadowAngle * float(pi)))
+		float(cos(uShadowAngle * pi)),
+		float(sin(uShadowAngle * pi))
 	);
 
-	shadowOffset *= vec2(0.002);
+	shadowOffset *= vec2(0.0);
 
-	vec2 filterCoord = ((vTextureCoord * inputSize.xy)) / outputFrame.zw;
-
-	vec4 shadowColor = texture2D(uShadowMap, filterCoord + shadowOffset);
+	float shadowFac = texture2D(uShadowMap, myCoord + shadowOffset).x;
 	vec4 baseColor = texture2D(uSampler, vTextureCoord);
+	vec4 shadowColor = baseColor * vec4(0.7, 0.7, 0.8, 1.0);
 
-	//gl_FragColor = vec4(filterCoord1.x, filterCoord1.y, 1.0, 1);
+	vec4 finalColor = mix(baseColor, shadowColor, shadowFac);
 
-	if (shadowColor.x > float(0.0)) {
-		baseColor.xyz = baseColor.xyz * vec3(0.5);
-		gl_FragColor = baseColor; //vec4(0.3, 0.3, 0.3, 1);
-	} else {
-		gl_FragColor = baseColor;
+	gl_FragColor = finalColor;
+
+	if (debug) {
+		gl_FragColor = vec4(texture2D(uShadowMap, myCoord + shadowOffset).xyz, 0.05);
 	}
 }

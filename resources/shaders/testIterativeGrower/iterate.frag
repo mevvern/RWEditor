@@ -2,7 +2,7 @@
 
 precision highp float;
 
-uniform uint uSeed;
+uniform int uSeed;
 
 uniform sampler2D uBaseBuffer;
 uniform sampler2D uGrowerBuffer;
@@ -10,17 +10,25 @@ uniform sampler2D uIntensityBuffer;
 
 varying vec2 vTextureCoord;
 
-struct Params {
-	vec2 facs
+struct GrowthParams {
+	vec2 facs;
 	mat3 solids;
-}
+};
 
-uint rng(uint x) {
+float rng(void) {
+	int x = uSeed;
+	int randomizer = int((vTextureCoord.x + vTextureCoord.y) * float(1000));
+
+	u += uint(randomizer);
+
   x ^= x >> 16;
   x *= 0x7feb352d;
   x ^= x >> 15;
   x *= 0x846ca68b;
   x ^= x >> 16;
+
+	float(x) /= 4294967296.0;
+
   return x;
 }
 
@@ -28,9 +36,9 @@ uint rng(uint x) {
 //fac.x is a factor saying how many grown pixels are adjacent
 //fac.y is a factor saying how strong the intensity map is in the surroundings
 //solids contains the number and location of adjacent solid pixels in the base texture
-Params sampleSurroundings(void) {
+GrowthParams sampleSurroundings(void) {
 	
-	Params growthParams = Params(vec2(), mat3());
+	GrowthParams growthParams = GrowthParams(vec2(), mat3());
 
 	for (int xOffset = -1; xOffset < 2; xOffset++) {
 		for (int yOffset = -1; yOffset < 2; yOffset++) {

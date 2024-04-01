@@ -16,7 +16,7 @@ export class TextureMode extends Mode {
 			"tiny signs",
 			"scaffolding",
 			"dense pipes",
-			new ButtonOptions("super structure", "oneSelectedCycle", "image", ["superStructure", "superStructure2"], {textures : ["superStructure", "superStructure2"]}),
+			new ButtonOptions("super structure", "oneSelectedCycle",  {cycleOptions : ["superStructure", "superStructure2"], contents : "image", textures : ["superStructure", "superStructure2"]}),
 			"tiledStone",
 			"chaoticStone",
 			"small pipes",
@@ -31,7 +31,10 @@ export class TextureMode extends Mode {
 			"ridge"
 		];
 		this.currentTile = "standard"
-		this.modeSettings = [new ButtonOptions("brush size", "cycle", null, [1, 2, 3, 4, 5]), new ButtonOptions("cause a ruckus", "oneshot", "cause a ruckus")];
+		this.modeSettings = [
+			new ButtonOptions("brush size", "cycle", {cycleOptions : [1, 2, 3, 4, 5]}),
+			new ButtonOptions("cause a ruckus", "oneshot", "cause a ruckus")
+		];
 		this.name = "texture"
 		
 		//tools for REAL

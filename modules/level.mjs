@@ -1,5 +1,5 @@
 import {vec2, vec3, vec4, tileAllowed, Layer, Area, prng} from "./utils.mjs";
-import {renderContext} from "./main.mjs";
+import {renderContext, editor} from "./main.mjs";
 import {tileMap} from "./tileMap.mjs";
 
 export class Level {
@@ -56,19 +56,30 @@ export class Level {
 				const editList = [];
 
 				for (const pos of posList) {
-					if (tileAllowed(pos, newGeo)) {
+					if (this.withinBounds() && tileAllowed(pos, newGeo)) {
 						const tile = this.tileAt(pos);
 
 						if (tile) {
 							tile.geometry = newGeo;
 							if (newGeo.includes("pole")) {
-								const newPos = new vec3(pos.x, pos.y, (pos.z * 10) + 5)
-								const editTile = {};
+								for (let layer = pos.z * 10 + 4; layer < (pos.z + 1) * 10 - 4; layer++) {
+									const newPos = new vec3(pos.x, pos.y, layer)
+									const editTile = {};
+								
+									editTile.texture = newGeo;
+									editTile.pos = newPos;
 
+									editList.push(editTile);
+								}
+							} else if (newGeo === "cool scug") {
+								const newPos = new vec3(pos.x, pos.y, pos.z * 10);
+								const editTile = {};
+								
 								editTile.texture = newGeo;
 								editTile.pos = newPos;
 
 								editList.push(editTile);
+								
 							} else {
 								for (let layer = pos.z * 10; layer < (pos.z + 1) * 10; layer++) {
 									const newPos = new vec3(pos.x, pos.y, layer)
@@ -119,6 +130,14 @@ export class Level {
 					}
 					tile.pos = pos;
 					return tile;
+				}
+			}
+
+			this.withinBounds = () => {
+				if (editor.mouse.insideBounds.x && editor.mouse.insideBounds.y) {
+					return true;
+				} else {
+					return false;
 				}
 			}
 

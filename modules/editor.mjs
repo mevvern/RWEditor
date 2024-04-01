@@ -51,13 +51,13 @@ export class Editor {
 			if ((mouse.tile.x !== mouse.prevTile.x) || (mouse.tile.y !== mouse.prevTile.y)) {
 				mouse.prevTile = mouse.tile.dupe();
 				
-				if (mouse.tile.y < 0 || mouse.tile.y > this.size - 1) {
+				if (mouse.tile.y < 0 || mouse.tile.y > level.size.y - 1) {
 					mouse.insideBounds.y = false;
 				} else {
 					mouse.insideBounds.y = true;
 				}
 	
-				if (mouse.tile.x < 0 || mouse.tile.x > this.size - 1) {
+				if (mouse.tile.x < 0 || mouse.tile.x > level.size.x - 1) {
 					mouse.insideBounds.x = false;
 				} else {
 					mouse.insideBounds.x = true;
@@ -122,7 +122,7 @@ export class Editor {
 			} else {
 				this.currentMode.currentTile = id;
 				renderContext.preview = id;
-				console.log(this.currentMode.name + "'s tile pressed: " + "\"" + id + "\"");
+				console.log(this.currentMode.name + "'s tile pressed: " + id + " option: " + option);
 			}
 		}
 
@@ -134,7 +134,7 @@ export class Editor {
 			} else {
 				this.currentMode.currentTool = id;
 				renderContext.previewVis = this.currentTool.needsPreview;
-				console.log(this.currentMode.name + "'s tool set to: " + "\"" + id + "\"");
+				console.log(this.currentMode.name + "'s tool set to: " + id + " option: " + option);
 			}
 		}
 
@@ -199,8 +199,13 @@ export class Editor {
 			if (id === "show shadows") {
 				renderContext.useShadows = option;
 			}
+
+			if (id === "debug shadows") {
+				renderContext.debugCoords = option;
+			}
+
 			this.currentMode.modeSettingsPress(id, option);
-			console.log("mode setting button pressed: " + id);
+			console.log("mode setting button pressed: " + id + " option: " + option);
 		}
 
 		//key press events-=------------------------------------
@@ -258,8 +263,9 @@ export class Editor {
 	//private properties
 	#currentMode = "geometry";
 	#defaultModeButtons = [
-		new ButtonOptions("grid visibility", "toggle", "grid\nvis"), 
-		new ButtonOptions("show shadows", "toggle", "shadows")
+		new ButtonOptions("grid visibility", "toggle", {contents : "grid\nvis", default : true}), 
+		new ButtonOptions("show shadows", "toggle", {contents : "shadows", default : true}),
+		new ButtonOptions("debug shadows", "toggle", {contents : "shdw\ndebug"})
 	];
 
 	//setters and getters

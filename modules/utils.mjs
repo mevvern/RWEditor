@@ -87,17 +87,14 @@ export function prng(seed) {
 }
 
 export async function getShader(id) {
-	const promise = await fetch("./resources/shaders/" + id + "/shader.frag").catch(() => {throw new Error("shader \"" + id + "\" does not exist")});
-	const src = await promise.text();
-	
-	return src;
-}
+	let src = null;
 
+	await fetch("./resources/shaders/" + id + "/shader.frag").then((response) => {
+		return response.text();
+	}).then((text) => {
+		src = text;
+	});
 
-globalThis.getShader =  async function (id) {
-	const promise = await fetch("./resources/shaders/" + id + "/shader.frag").catch(() => {throw new Error("shader \"" + id + "\" does not exist")});
-	const src = await promise.text();
-	
 	return src;
 }
 
@@ -208,32 +205,55 @@ class Column extends Array {
 	}
 }
 
+export function connectedTileLUT (adjacent) {
+	/*adjacents are calucluated as such:
+			5 1 6 
+			4	■ 2
+			8 3 7
+		edges are checked first, then corners, such that the first half of the byte is dedicated to edges, and the second half is dedicated to corners
+
+		for instance, the layout
+			■ X ■ 
+			X	■ ■
+			X X ■
+		would result in the byte: 0100 1110
+				
+	*/
+
+	const LUT = [0, 0, 0, 0]
+
+
+
+	return 1;
+
+}
+
 export function tileAllowed(tilePos, tileType) {
 	const lookup = {
 		"air": [true, true, true],
-		"wall": [true, true, true], 
-		"slope BL": [true, true, true], 
-		"slope TL": [true, true, true], 
-		"slope TR": [true, true, true], 
-		"slope BR": [true, true, true], 
-		"cool scug": [true, true, true], 
-		"semisolid platform": [true, true, true], 
-		"invisible wall": [true, true, true], 
-		"pole H": [true, true, true], 
-		"pole V": [true, true, true], 
-		"cross pole": [true, true, true], 
-		"shortcut path": [true, false, false], 
-		"shortcut entrance": [true, false, false], 
-		"creature den": [true, false, false], 
-		"creature shortcut": [true, false, false], 
-		"scavenger den": [true, false, false], 
-		"garbage worm den": [true, false, false], 
-		"batfly hive": [true, true, true], 
-		"waterfall": [true, false, false], 
-		"worm grass": [true, false, false], 
-		"room transition": [true, false, false], 
-		"spear": [true, false, false], 
-		"rock": [true, false, false], 
+		"wall": [true, true, true],
+		"slope BL": [true, true, true],
+		"slope TL": [true, true, true],
+		"slope TR": [true, true, true],
+		"slope BR": [true, true, true],
+		"cool scug": [true, true, true],
+		"semisolid platform": [true, true, true],
+		"invisible wall": [true, true, true],
+		"pole H": [true, true, true],
+		"pole V": [true, true, true],
+		"cross pole": [true, true, true],
+		"shortcut path": [true, false, false],
+		"shortcut entrance": [true, false, false],
+		"creature den": [true, false, false],
+		"creature shortcut": [true, false, false],
+		"scavenger den": [true, false, false],
+		"garbage worm den": [true, false, false],
+		"batfly hive": [true, true, true],
+		"waterfall": [true, false, false],
+		"worm grass": [true, false, false],
+		"room transition": [true, false, false],
+		"spear": [true, false, false],
+		"rock": [true, false, false],
 		"forbid batfly chains": [true, false, false]
 	}
 

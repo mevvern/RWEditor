@@ -24,11 +24,15 @@ void main(void) {
 
 	vec2 filterCoord = ((vTextureCoord * inputSize.xy)) / outputFrame.zw;
 
-	vec4 baseColor = texture2D(uSampler, vTextureCoord);
+	vec4 baseColor = texture2D(uSampler, vTextureCoord + shadowOffset);
 	vec4 shadowColor = texture2D(uShadowMap, filterCoord + shadowOffset);
 
-	if ((baseColor.w + shadowColor.x) > float(0.0)) {
-		gl_FragColor = vec4(1, 1, 1, 1);
+	if ((shadowColor.x + baseColor.w) > float(0.0)) {
+		float shadowFac = baseColor.w;
+		if (shadowColor.x > baseColor.w) {
+			shadowFac = shadowColor.x;
+		}
+		gl_FragColor = vec4(shadowFac, shadowFac, shadowFac, 1);
 	} else {
 		gl_FragColor = vec4(0, 0, 0, 1);
 	}

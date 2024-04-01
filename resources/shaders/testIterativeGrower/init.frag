@@ -9,21 +9,31 @@ uniform sampler2D uIntensityBuffer;
 
 varying vec2 vTextureCoord;
 
-uint rng(uint x) {
+float rng(void) {
+	uint x = uSeed;
+	int randomizer = int((vTextureCoord.x + vTextureCoord.y) * float(1000));
+
+	x += uint(randomizer);
+
   x ^= x >> 16;
   x *= 0x7feb352d;
   x ^= x >> 15;
   x *= 0x846ca68b;
   x ^= x >> 16;
+
+	float(x) /= 4294967296.0;
+
   return x;
 }
 
 void main(void) {
-	vec4 baseColor = vec4 texture2D(uBaseBuffer, vTextureCoord);
+	float intensity = texture2D(uBaseBuffer, vTextureCoord).w;
+
+	vec4 baseColor = texture2D(uBaseBuffer, vTextureCoord);
 
 	if (baseColor.w > float 0.0) {
-		if (rng(uSeed) / (pow(uint 2, 32) - uint 1)) {
-
+		if (rng() > intensity) {
+			gl_FragColor = vec4(baseColor.xy, 1.0, baseColor.w);
 		} else {
 			gl_FragColor = baseColor;
 		}

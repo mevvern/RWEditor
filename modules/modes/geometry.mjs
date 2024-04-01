@@ -22,13 +22,13 @@ export class GeometryMode extends Mode {
 			"air",
 			"wall",
 			"invisible wall",
-			new ButtonOptions("slope", "oneSelectedCycle", "image", ["slope BL", "slope TL", "slope TR", "slope BR"], {textures : ["slope BL", "slope TL", "slope TR", "slope BR"]}),
-			new ButtonOptions("pole", "oneSelectedCycle", "image", ["pole V", "pole H"], {textures : ["pole V", "pole H"]}),
+			new ButtonOptions("slope", "oneSelectedCycle", {contents: "image", cycleOptions : ["slope BL", "slope TL", "slope TR", "slope BR"], textures : ["slope BL", "slope TL", "slope TR", "slope BR"]}),
+			new ButtonOptions("pole", "oneSelectedCycle", {contents: "image", cycleOptions : ["pole V", "pole H"], textures : ["pole V", "pole H"]}),
 			"cross pole",
 			"semisolid platform",
 			"batfly hive",
 			"cool scug",
-			new ButtonOptions("shortcut entrance", "oneSelected", "image", null, {textures : ["shortcut entrance unlinked", "shortcut entrance B", "shortcut entrance T", "shortcut entrance L", "shortcut entrance R"]}), 
+			new ButtonOptions("shortcut entrance", "oneSelected", {contents : "image", textures : ["shortcut entrance unlinked", "shortcut entrance B", "shortcut entrance T", "shortcut entrance L", "shortcut entrance R"]}), 
 			"shortcut path",
 		  "room transition",
 			"creature den",
@@ -43,8 +43,8 @@ export class GeometryMode extends Mode {
 
 		this.currentTile = "wall"
 		this.modeSettings = [
-			new ButtonOptions("automatic slopes", "toggle", "auto\nslopes"),
-		 	new ButtonOptions("test cycler", "cycle", null, [0, 1, 2, 3]),
+			new ButtonOptions("automatic slopes", "toggle", {contents : "auto\nslopes"}),
+		 	new ButtonOptions("test cycler", "cycle", {cycleOptions : [0, 1, 2, 3]}),
 		  new ButtonOptions("test oneshot", "oneshot")
 		];
 		this.name = "geometry"
@@ -62,7 +62,7 @@ export class GeometryMode extends Mode {
 			fn : (mouse) => {
 				const pos = mouse.tile;
 				if (this.layers.visibility[this.layers.workLayer] === true) {
-					this.tools.paint.previousAction.push(level.tileAt(pos));
+					//this.tools.paint.previousAction.push(level.tileAt(pos));
 					switch (this.currentTile) {
 						default:
 							level.setGeo(pos, this.currentTile);

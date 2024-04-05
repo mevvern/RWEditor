@@ -28,7 +28,7 @@ export class GeometryMode extends Mode {
 			"semisolid platform",
 			"batfly hive",
 			"cool scug",
-			new ButtonOptions("shortcut entrance", "oneSelected", {contents : "image", textures : ["shortcut entrance unlinked", "shortcut entrance B", "shortcut entrance T", "shortcut entrance L", "shortcut entrance R"]}), 
+			new ButtonOptions("shortcut entrance", "oneSelected", {contents : "image", textures : ["U", "D", "L", "R"]}), 
 			"shortcut path",
 		  "room transition",
 			"creature den",

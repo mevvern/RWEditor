@@ -18,6 +18,10 @@ export class RenderContext {
 
 		this.textures = {DEFAULT : DEFAULT_TEXTURE, WHITE : WHITE, INVISIBLE : INVISIBLE};
 
+		this.materials = {}
+
+		this.#getMaterialInits();
+
 		this.#initView();
 
 		this.#initWholeThing();
@@ -47,16 +51,17 @@ export class RenderContext {
 					let highestLayer = 29;
 
 					for (const tile of tileList) {
-						if (tile.texture in this.textures) {	
+						if (tile.material in this.materials) {	
 							if (!(sortedTiles[tile.pos.z] instanceof Array)) {
 								sortedTiles[tile.pos.z] = [];
 							}
-							tile.texture = this.textures[tile.texture];
+
+							tile.texture = this.materials[tile.material].textures[tile.geometry][tile.textureIndex];
 		
 							sortedTiles[tile.pos.z].push(tile);
 
 						} else {
-							console.warn("desired texture \"" + tile.texture + "\" does not exist!");
+							console.warn("desired texture \"" + tile.material + "\" does not exist!");
 						}
 					}
 
@@ -177,23 +182,161 @@ export class RenderContext {
 
 	//--------------textures-----------------------------------------------------------------
 
-	#getTexInits = () => {
-		let LONString = "";
-		this.#texInits = LINGO.parse(LONString)
+	#testSpritesheet = async () => {
+		let sheetInit = await fetch("./resources/render/materials/complex connected.json");
+		sheetInit = await sheetInit.json();
+
+		const sheet = new PIXI.Spritesheet(await PIXI.Texture.fromURL("./resources/render/materials/standard/wall.png"), sheetInit)
+		await sheet.parse();
+
+		console.log(sheet.textures);
 	}
-	
+
+	#getMaterialInits = async () => {
+		const json = await fetch("./resources/render/materials/materials.json").catch(() => {
+			console.warn("materials.json is missing");
+			return null;
+		})
+
+		const parsed = await json.json();
+
+		const materials = {};
+
+		const wall = await PIXI.Texture.fromURL("./resources/render/generic/wall.png");
+		const slopeBL = await PIXI.Texture.fromURL("./resources/render/generic/slope BL.png");
+		const slopeTL = await PIXI.Texture.fromURL("./resources/render/generic/slope TL.png");
+		const slopeTR = await PIXI.Texture.fromURL("./resources/render/generic/slope TR.png");
+		const slopeBR = await PIXI.Texture.fromURL("./resources/render/generic/slope BR.png");
+
+		for (const materialId of Object.keys(parsed)) {
+			const materialParams = parsed[materialId]
+			materialParams.id = materialId;
+			materials[materialId] = await this.#getMaterialTextures(materialParams);
+
+			if (parsed[materialId].type === "tile") {
+				materials[materialId].textures.wall.unshift(wall);
+				materials[materialId].textures["slope BL"].unshift(slopeBL);
+				materials[materialId].textures["slope TL"].unshift(slopeTL);
+				materials[materialId].textures["slope TR"].unshift(slopeTR);
+				materials[materialId].textures["slope BR"].unshift(slopeBR);
+			}
+		}
+
+		console.log(materials);
+		this.materials = materials;
+	}
+
+	#getMaterialTextures = async (materialParams) => {
+		const material = {};
+
+		material.type = materialParams.type;
+		material.layers = {
+			wall : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			slope : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			semisolid : [0, 1, 2, 3, 4]
+		}
+
+		if (materialParams.wall !== "default") {
+			material.layers.wall = materialParams.wall;
+		}
+
+		if (materialParams.slope !== "default") {
+			material.layers.slope = materialParams.slope;
+		}
+
+		material.textures = {
+			wall : [],
+			"slope BL" : [],
+			"slope TL" : [],
+			"slope TR" : [],
+			"slope BR" : [],
+			"semisolid platform" : []
+		};
+
+		if (materialParams.layers === undefined) {
+			materialParams.layers = 1;
+		}
+
+		console.log(materialParams);
+
+		switch(material.type) {
+			case "tile" :
+				const data = {}
+				data.frames = {}
+				data.meta = {
+					"scale": 1
+				}
+
+				const semisolidData = {}
+				semisolidData.frames = {}
+				semisolidData.meta = {
+					"scale": 1
+				}
+
+				for (let i = 0; i < materialParams.layers; i++) {
+					//generate spritesheet data for the wall and slopes based on number of layers
+					data.frames[i] = {
+						"frame": {"x" : i * (materialParams.baseSize + 1), "y" : 0, "w" : materialParams.baseSize,"h" : materialParams.baseSize},
+						"rotated": false,
+						"trimmed": false,
+						"spriteSourceSize": {"x" : 0, "y" : 0, "w" : materialParams.baseSize, "h" : materialParams.baseSize},
+						"sourceSize": {"w":20,"h":20},
+						"anchor": {"x":0,"y":0}
+					}
+				}
+
+				for (let i = 0; i < 5; i++) {
+					//generate spritesheet data for specifically semisolids, which are always made of 5 layers
+					semisolidData.frames[i] = {
+						"frame": {"x": i * (materialParams.baseSize + 1),"y" : 0,"w" : materialParams.baseSize,"h" : materialParams.baseSize},
+						"rotated": false,
+						"trimmed": false,
+						"spriteSourceSize": {"x":0,"y":0,"w":20,"h":20},
+						"sourceSize": {"w":20,"h":20},
+						"anchor": {"x":0,"y":0}
+					}
+				}
+				
+				for (const tileType of Object.keys(material.textures)) {
+					let spriteSheetData = data
+					if (tileType === "semisolid platform") {
+						spriteSheetData = semisolidData;
+					}
+
+					const baseTexture = await PIXI.Texture.fromURL(`./resources/render/materials/${materialParams.id}/${tileType}.png`);
+
+					const sheet = new PIXI.Spritesheet(baseTexture, spriteSheetData);
+
+					await sheet.parse();
+
+					for (const textureIndex of Object.keys(sheet.textures)) {
+						material.textures[tileType][textureIndex] = sheet.textures[textureIndex];
+					}
+				}
+			break
+		}
+
+		return material;
+	}
+
 	#getGeoTextures = async () => {
 		const tileList = editor.modes.geometry.tileSet;
 
 		for (const buttonOption of tileList) {
 			if (buttonOption instanceof ButtonOptions) {
 				for (const geoId of buttonOption.textures) {
-					const tex = await this.#getTexture(geoId, "geometry");
+					const tex = await this.#getTexture(geoId, "geometry").catch(() => {
+						return DEFAULT_TEXTURE;
+					});
+
 					tex.id = geoId;
 					this.textures[geoId] = tex;
 				}
 			} else {
-				const tex = await this.#getTexture(buttonOption, "geometry");
+				const tex = await this.#getTexture(buttonOption, "geometry").catch(() => {
+					return DEFAULT_TEXTURE;
+				});
+
 				tex.id = buttonOption;
 				this.textures[buttonOption] = tex;
 			}
@@ -431,7 +574,7 @@ export class RenderContext {
 	#depthMagnitude = 0.4;				//how "far" the layers should be from each other. max is 3.333. in reality this controls how much each layer gets scaled down to provide a fake perspective effect
 	#skewAngle = 1;								//the angle with which to skew the vertices of the level. RADIANS!!!!
 	#skewMagnitude = 50;					//how far that skew operation will go in that angle
-	#shadowParams = [1.28, 0.001]; //shadow parameters for the level. first entry is the angle, second entry is the magnitude
+	#shadowParams = [0.8462, 0.002]; //shadow parameters for the level. first entry is the angle, second entry is the magnitude
 
 	#previewTexIdsList = new Array(30);	//id of the texture which should be assigned to the preview indicator for each layer. always a length of 30 
 	

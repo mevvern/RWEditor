@@ -24,8 +24,8 @@ void main(void) {
 
 	vec2 filterCoord = ((vTextureCoord * inputSize.xy)) / outputFrame.zw;
 
-	vec4 baseColor = texture2D(uSampler, vTextureCoord + shadowOffset);
-	vec4 shadowColor = texture2D(uShadowMap, filterCoord + shadowOffset);
+	vec4 baseColor = texture2D(uSampler, vTextureCoord);
+	vec4 shadowColor = texture2D(uShadowMap, filterCoord - shadowOffset);
 
 	if ((shadowColor.x + baseColor.w) > float(0.0)) {
 		float shadowFac = baseColor.w;

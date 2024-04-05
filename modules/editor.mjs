@@ -3,7 +3,7 @@ import {level, renderContext} from "./main.mjs";
 import {ButtonOptions, ui} from "./ui.mjs";
 
 import {GeometryMode} from "./modes/geometry.mjs";
-import {TextureMode} from "./modes/texture.mjs";
+import {MaterialsMode} from "./modes/materials.mjs";
 import {PropMode} from "./modes/prop.mjs";
 import {Mode} from "./modes/modes.mjs";
 
@@ -162,7 +162,7 @@ export class Editor {
 		}
 
 				//---------------------------------//
-		this.modeButtonsPress = (id) => {
+		this.modeButtonsPress = async (id) => {
 			this.currentMode = id;
 			console.log("mode switched to: " + id + ", tool: " + this.currentMode.currentTool + ", tile: " + this.currentMode.currentTile);
 
@@ -171,6 +171,17 @@ export class Editor {
 
 			ui.clearUi();
 			ui.showLayers(false);
+
+			if (!this.currentMode.tileSet[0] && id === "materials") {
+				const json = await fetch("./resources/render/materials/materials.json").catch(()=> {
+					console.log("tileset for mode \"" + id + "\" didn't exist");
+				});
+
+				const materials = await json.json();
+
+				this.currentMode.materials = materials;
+				this.currentMode.tileSet = Object.keys(materials);
+			}
 
 			if (this.currentMode.tileSet[0]) {
 				ui.generateButtonSet(this.currentMode.tileSet, "tileButtons", this.currentMode.currentTile);
@@ -307,7 +318,7 @@ export class Editor {
 class ModeSet {
 	constructor() {
 		this.geometry = new GeometryMode();
-		this.texture = new TextureMode();
+		this.materials = new MaterialsMode();
 		this.effect = new GeometryMode();
 		this.light = new GeometryMode();
 		this.prop = new PropMode();

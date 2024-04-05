@@ -23,13 +23,25 @@ void main(void) {
 
 	//offset for shadowmap sampling to prevent fighting at the lit sides of objects
 	vec2 shadowOffset = vec2(
-		float(cos(uShadowAngle * pi)),
-		float(sin(uShadowAngle * pi))
+		cos(uShadowAngle * pi),
+		sin(uShadowAngle * pi)
 	);
 
-	shadowOffset *= vec2(0.0);
+	if (shadowOffset.x < 0.0) {
+		shadowOffset.x = -1.0;
+	} else if (shadowOffset.x > 0.0){
+		shadowOffset.x = 1.0;
+	}
 
-	float shadowFac = texture2D(uShadowMap, myCoord + shadowOffset).x;
+	if (shadowOffset.y < 0.0) {
+		shadowOffset.y = -1.0;
+	} else if (shadowOffset.x > 0.0){
+		shadowOffset.y = 1.0;
+	}
+
+	shadowOffset *= vec2(3.0 / uQuadSize.y);
+
+	float shadowFac = texture2D(uShadowMap, myCoord - shadowOffset).x;
 	vec4 baseColor = texture2D(uSampler, vTextureCoord);
 	vec4 shadowColor = baseColor * vec4(0.7, 0.7, 0.8, 1.0);
 

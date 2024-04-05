@@ -49,6 +49,10 @@ export class Level {
 
 			//geometry methods---------------------------
 			this.setGeo = (posList, newGeo) => {
+				const materialId = "x metal"
+				const material = renderContext.materials[materialId];
+				const layers = material.layers;
+				
 				if (!(posList instanceof Array)) {
 					posList = [posList];
 				}
@@ -61,35 +65,21 @@ export class Level {
 
 						if (tile) {
 							tile.geometry = newGeo;
-							if (newGeo.includes("pole")) {
-								for (let layer = pos.z * 10 + 4; layer < (pos.z + 1) * 10 - 4; layer++) {
-									const newPos = new vec3(pos.x, pos.y, layer)
-									const editTile = {};
-								
-									editTile.texture = newGeo;
-									editTile.pos = newPos;
-
-									editList.push(editTile);
-								}
-							} else if (newGeo === "cool scug") {
-								const newPos = new vec3(pos.x, pos.y, pos.z * 10);
-								const editTile = {};
-								
-								editTile.texture = newGeo;
-								editTile.pos = newPos;
-
-								editList.push(editTile);
-								
-							} else {
-								for (let layer = pos.z * 10; layer < (pos.z + 1) * 10; layer++) {
-									const newPos = new vec3(pos.x, pos.y, layer)
-									const editTile = {};
-								
-									editTile.texture = newGeo;
-									editTile.pos = newPos;
-
-									editList.push(editTile);
-								}
+							switch (tile.geometry) {
+								case "wall":
+									
+									for (const [layer, textureIndex] of layers.wall.entries()) {
+										const newPos = new vec3(pos.x, pos.y, layer + (pos.z * 10));
+										const editTile = {};
+									
+										editTile.geometry = newGeo;
+										editTile.material = materialId;
+										editTile.textureIndex = textureIndex;
+										editTile.pos = newPos;
+		
+										editList.push(editTile);
+									}
+								break
 							}
 						}
 					}

@@ -39,6 +39,9 @@ void main(void) {
 		shadowOffset.y = 1.0;
 	}
 
+	//fun shadow wavy thing . i like shaders lol
+	//shadowOffset += vec2(sin(gl_FragCoord.x / 10.0) * 3.5);
+
 	shadowOffset *= vec2(3.0 / uQuadSize.y);
 
 	float shadowFac = texture2D(uShadowMap, myCoord - shadowOffset).x;

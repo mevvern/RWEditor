@@ -224,8 +224,7 @@ export class Editor {
 		this.keyPress = (event) => {
 			const key = event.key;
 			if (key === "m") {
-				console.log("shadowmaps");
-				renderContext.shadowMapTest();
+				document.getElementById("move view").click();
 			}
 
 			if (key !== "Control") {

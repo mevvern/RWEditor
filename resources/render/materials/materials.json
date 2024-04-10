@@ -24,8 +24,9 @@
 	"ceramic tile" : {
 		"baseSize" : 20,
 		"type" : "simpleConnected",
-		"wall" : [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-		"slope" : [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+		"layers" : 2,
+		"wall" : [1, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+		"slope" : [1, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 	},
 
 	"standard" : {

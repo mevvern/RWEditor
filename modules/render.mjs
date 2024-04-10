@@ -56,7 +56,7 @@ export class RenderContext {
 								sortedTiles[tile.pos.z] = [];
 							}
 
-							tile.texture = this.materials[tile.material].textures[tile.geometry][tile.textureIndex];
+							tile.texture = this.materials[tile.material].options[tile.option][tile.geometry][tile.variant][tile.textureIndex];
 		
 							sortedTiles[tile.pos.z].push(tile);
 
@@ -72,6 +72,7 @@ export class RenderContext {
 							}
 							const renderLayer = this.layers[index];
 							renderLayer.updateTile(layer);
+							console.log("gaerjg")
 						}
 					}
 
@@ -202,23 +203,25 @@ export class RenderContext {
 
 		const materials = {};
 
-		const wall = await PIXI.Texture.fromURL("./resources/render/generic/wall.png");
-		const slopeBL = await PIXI.Texture.fromURL("./resources/render/generic/slope BL.png");
-		const slopeTL = await PIXI.Texture.fromURL("./resources/render/generic/slope TL.png");
-		const slopeTR = await PIXI.Texture.fromURL("./resources/render/generic/slope TR.png");
-		const slopeBR = await PIXI.Texture.fromURL("./resources/render/generic/slope BR.png");
+		const tileDefaults = {};
+
+		tileDefaults.wall = await PIXI.Texture.fromURL("./resources/render/generic/wall.png");
+		tileDefaults["slope BL"] = await PIXI.Texture.fromURL("./resources/render/generic/slope BL.png");
+		tileDefaults["slope TL"] = await PIXI.Texture.fromURL("./resources/render/generic/slope TL.png");
+		tileDefaults["slope TR"] = await PIXI.Texture.fromURL("./resources/render/generic/slope TR.png");
+		tileDefaults["slope BR"] = await PIXI.Texture.fromURL("./resources/render/generic/slope BR.png");
 
 		for (const materialId of Object.keys(parsed)) {
 			const materialParams = parsed[materialId]
 			materialParams.id = materialId;
 			materials[materialId] = await this.#getMaterialTextures(materialParams);
 
-			if (parsed[materialId].type === "tile") {
-				materials[materialId].textures.wall.unshift(wall);
-				materials[materialId].textures["slope BL"].unshift(slopeBL);
-				materials[materialId].textures["slope TL"].unshift(slopeTL);
-				materials[materialId].textures["slope TR"].unshift(slopeTR);
-				materials[materialId].textures["slope BR"].unshift(slopeBR);
+			for (const option of materials[materialId].options) {
+			 	for (const geoType of Object.keys(option)) {
+					for (const variant of option[geoType]) {
+						variant.unshift(tileDefaults[geoType]);
+					}
+			 	}
 			}
 		}
 
@@ -227,8 +230,26 @@ export class RenderContext {
 	}
 
 	#getMaterialTextures = async (materialParams) => {
+		function generateFrame(sourceRect) {
+			if (sourceRect instanceof vec4) {
+				const frame = {
+					"frame": {"x" : sourceRect.x, "y" : sourceRect.y, "w" : sourceRect.z, "h" : sourceRect.w},
+					"rotated": false,
+					"trimmed": false,
+					"spriteSourceSize": {"x" : 0, "y" : 0, "w" : sourceRect.z, "h" : sourceRect.w},
+					"sourceSize": {"w" : sourceRect.z, "h" : sourceRect.w},
+					"anchor": {"x":0,"y":0}
+				};
+				
+				return frame;
+			} else {
+				throw new TypeError("source rect must be vec4!")
+			}
+		}
+
 		const material = {};
 
+		material.id = materialParams.id;
 		material.type = materialParams.type;
 		material.layers = {
 			wall : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -244,44 +265,121 @@ export class RenderContext {
 			material.layers.slope = materialParams.slope;
 		}
 
-		material.textures = {
-			wall : [],
-			"slope BL" : [],
-			"slope TL" : [],
-			"slope TR" : [],
-			"slope BR" : [],
-			"semisolid platform" : []
-		};
-
 		if (materialParams.layers === undefined) {
 			materialParams.layers = 1;
 		}
 
+		if (materialParams.options === undefined) {
+			materialParams.options = 1;
+		}
+
 		console.log(materialParams);
+
+		let data;
+		let semisolidData;
+
+		/*
+			material : {
+				type : the type of the material,
+				options : [
+					textures : {
+						tile type : [variants : [
+							layers
+						]],
+						tile type2 : [layers]
+					}
+				]
+			}
+
+			each material contains an array of all its options, and each option contains textures corresponding to each geometry type. each geometry type
+			contains all the variants of that geometry type, and each variant contains its layers, which are the actual textures. to get a specific texture,
+			it would be like this: material[optionIndex]["wall"][variantIndex][layerIndex]
+		*/
+
+		material.options = [];
 
 		switch(material.type) {
 			case "tile" :
-				const data = {}
+				data = {}
 				data.frames = {}
 				data.meta = {
 					"scale": 1
 				}
-
-				const semisolidData = {}
+		
+				semisolidData = {}
 				semisolidData.frames = {}
 				semisolidData.meta = {
 					"scale": 1
-				}
+				}	
 
 				for (let i = 0; i < materialParams.layers; i++) {
 					//generate spritesheet data for the wall and slopes based on number of layers
-					data.frames[i] = {
-						"frame": {"x" : i * (materialParams.baseSize + 1), "y" : 0, "w" : materialParams.baseSize,"h" : materialParams.baseSize},
-						"rotated": false,
-						"trimmed": false,
-						"spriteSourceSize": {"x" : 0, "y" : 0, "w" : materialParams.baseSize, "h" : materialParams.baseSize},
-						"sourceSize": {"w":20,"h":20},
-						"anchor": {"x":0,"y":0}
+					data.frames[i] = generateFrame(new vec4(i * (materialParams.baseSize + 1), 0, materialParams.baseSize, materialParams.baseSize));
+				}
+
+				for (let i = 0; i < 5; i++) {
+					//generate spritesheet data for specifically semisolids, which are always made of 5 layers
+					semisolidData.frames[i] = generateFrame(new vec4(i * (materialParams.baseSize + 1), 0, materialParams.baseSize, materialParams.baseSize));
+				}
+				
+				material.options.push({
+					"slope BL" : [[[]]],
+					"wall" : [[[]]],
+					"slope TL" : [[[]]],
+					"slope TR" : [[[]]],
+					"slope BR" : [[[]]],
+					"semisolid platform" : [[[]]]
+				})
+
+				for (const tileType of Object.keys(material.options[0])) {
+					let spriteSheetData = data
+					if (tileType === "semisolid platform") {
+						spriteSheetData = semisolidData;
+					}
+
+					const baseTexture = await PIXI.Texture.fromURL(`./resources/render/materials/${materialParams.id}/${tileType}.png`);
+
+					const sheet = new PIXI.Spritesheet(baseTexture, spriteSheetData);
+
+					await sheet.parse();
+
+					for (const textureIndex of Object.keys(sheet.textures)) {
+						material.options[0][tileType][0][textureIndex] = sheet.textures[textureIndex];
+					}
+
+					PIXI.utils.clearTextureCache();
+				}
+			break
+			case "randomSimpleConnected":
+			case "simpleConnected":
+				data = [];
+		
+				semisolidData = {}
+				semisolidData.frames = {}
+				semisolidData.meta = {
+					"scale": 1
+				}	
+
+				for (let optionIndex = 0; optionIndex < materialParams.options; optionIndex++) {
+					data.push([]);
+					let count = 0;
+
+					for (let x = 0; x < 4; x++) {
+						for (let y = 0; y < 4; y++) {
+							//generate spritesheet data for the wall and slopes based on number of layers
+							data[optionIndex].push({
+								frames : {},
+								meta : {
+									scale : 1
+								}
+							});
+	
+							for (let layer = 0; layer < materialParams.layers; layer++) {
+								data[optionIndex][count].frames[layer] = generateFrame(new vec4(x * (materialParams.baseSize + 1), (y + layer) * (materialParams.baseSize + 1), materialParams.baseSize, materialParams.baseSize));
+							}
+	
+							count++;
+						}
 					}
 				}
 
@@ -297,25 +395,45 @@ export class RenderContext {
 					}
 				}
 				
-				for (const tileType of Object.keys(material.textures)) {
-					let spriteSheetData = data
-					if (tileType === "semisolid platform") {
-						spriteSheetData = semisolidData;
-					}
+				console.log(data)
 
-					const baseTexture = await PIXI.Texture.fromURL(`./resources/render/materials/${materialParams.id}/${tileType}.png`);
+				for (const [optionIndex, optionGroup] of data.entries()) {
+					material.options.push({
+						"slope BL" : [[]],
+						"wall" : [[]],
+						"slope TL" : [[]],
+						"slope TR" : [[]],
+						"slope BR" : [[]],
+						"semisolid platform" : [[]]
+					})
 
-					const sheet = new PIXI.Spritesheet(baseTexture, spriteSheetData);
+					for (const tileType of Object.keys(material.options[optionIndex])) {
+						if (tileType === "wall") {
+							const baseTexture = await PIXI.Texture.fromURL(`./resources/render/materials/${materialParams.id}/${optionIndex}/${tileType}.png`);
+							for (const [variantIndex, variantGroup] of optionGroup.entries()) {
+	
+								let spriteSheetData = variantGroup;
+		
+								const sheet = new PIXI.Spritesheet(baseTexture, spriteSheetData);
+			
+								await sheet.parse();
+			
+								material.options[optionIndex][tileType][variantIndex] = [];
 
-					await sheet.parse();
+								for (const textureKey of Object.keys(sheet.textures)) {
+									//console.log(textureKey);
+									material.options[optionIndex][tileType][variantIndex].push(sheet.textures[textureKey]);
 
-					for (const textureIndex of Object.keys(sheet.textures)) {
-						material.textures[tileType][textureIndex] = sheet.textures[textureIndex];
+								}
+			
+								PIXI.utils.clearTextureCache();
+							}
+						}
 					}
 				}
 			break
 		}
-
+		//console.log(material.options, material.id);
 		return material;
 	}
 

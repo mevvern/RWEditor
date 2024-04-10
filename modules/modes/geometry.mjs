@@ -65,7 +65,7 @@ export class GeometryMode extends Mode {
 					//this.tools.paint.previousAction.push(level.tileAt(pos));
 					switch (this.currentTile) {
 						default:
-							level.setGeo(pos, this.currentTile);
+							level.setGeo(pos, this.currentTile, "small pipes");
 						break
 						case "slope":
 							level.setGeo(pos, this.slopeChoice);

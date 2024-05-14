@@ -1,4 +1,4 @@
-import {renderContext, level} from "../main.mjs";
+import {renderContext, level, editor} from "../main.mjs";
 import {Mode} from "./modes.mjs";
 import {ButtonOptions} from "../ui.mjs";
 //import {level} from "../main.mjs";
@@ -65,13 +65,13 @@ export class GeometryMode extends Mode {
 					//this.tools.paint.previousAction.push(level.tileAt(pos));
 					switch (this.currentTile) {
 						default:
-							level.setGeo(pos, this.currentTile, "small pipes");
+							level.setGeo(pos, this.currentTile, editor.modes.materials.currentTile);
 						break
 						case "slope":
-							level.setGeo(pos, this.slopeChoice);
+							level.setGeo(pos, this.slopeChoice, editor.modes.materials.currentTile);
 						break
 						case "pole":
-							level.setGeo(pos, this.poleChoice);
+							level.setGeo(pos, this.poleChoice, editor.modes.materials.currentTile);
 						break
 					}
 				}

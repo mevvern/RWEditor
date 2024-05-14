@@ -18,6 +18,8 @@ export class Level {
 			this.history = [];
 			this.palette = null;
 
+			console.log("level seed:" + this.seed);
+
 			//initialization
 
 			for (let layer = 0; layer < 3; layer++) {
@@ -48,89 +50,15 @@ export class Level {
 			}
 
 			//geometry methods---------------------------
-			this.setGeo = (posList, newGeo, materialId) => {
-				const material = renderContext.materials[materialId];
-				const layers = material.layers;
-				
-				if (!(posList instanceof Array)) {
-					posList = [posList];
-				}
-
-				const editList = [];
+			this.setTile = (posList, newGeo, materialId) => {
+				const dirtyTiles = [];
 
 				for (const pos of posList) {
-					if (this.withinBounds() && tileAllowed(pos, newGeo)) {
-						const tile = this.tileAt(pos);
 
-						if (tile) {
-							tile.geometry = newGeo;
-							switch (tile.geometry) {
-								case "wall":
-									let variant = 0;
-									const option = Math.floor(Math.random() * 4);
-
-									if (material.type === "simpleConnected" || material.type === "randomSimpleConnected") {
-										//first, generate a list of the surrounding edge tiles
-										let adjacent = [];
-										const update = [];
-
-										adjacent[0] = this.tileAt(new vec3(pos.x, pos.y - 1, pos.z));
-										adjacent[1] = this.tileAt(new vec3(pos.x + 1, pos.y, pos.z));
-										adjacent[2] = this.tileAt(new vec3(pos.x, pos.y + 1, pos.z));
-										adjacent[3] = this.tileAt(new vec3(pos.x - 1, pos.y, pos.z));
-
-										//then run through that list and check if they are wall or slope and if their material matches the material being placed
-										for (const [index, tile] of adjacent.entries()) {
-											if (tile.geometry === "wall" || tile.geometry.includes("slope") && tile.material === materialId && this.withinBounds(pos)) {
-												variant += Math.pow(2, index);
-												update.push(tile);
-											}
-										}
-
-										for (const tile of update) {
-											const pos = tile.pos;
-
-											let adjacent = [];
-	
-											adjacent[0] = this.tileAt(new vec3(pos.x, pos.y - 1, pos.z));
-											adjacent[1] = this.tileAt(new vec3(pos.x + 1, pos.y, pos.z));
-											adjacent[2] = this.tileAt(new vec3(pos.x, pos.y + 1, pos.z));
-											adjacent[3] = this.tileAt(new vec3(pos.x - 1, pos.y, pos.z));
-
-											variant += Math.pow(2, index);
-											console.log(variant);
-										}
-									}
-
-										console.log(variant);
-
-
-									}
-
-									for (const [layer, textureIndex] of layers.wall.entries()) {
-										const newPos = new vec3(pos.x, pos.y, layer + (pos.z * 10));
-										const editTile = {};
-									
-										editTile.geometry = newGeo;
-										editTile.material = materialId;
-										editTile.option = option;
-										editTile.variant = variant;
-										editTile.textureIndex = textureIndex;
-										editTile.pos = newPos;
-
-
-
-		
-										editList.push(editTile);
-									}
-
-								break
-							}
-						}
-					}
 				}
 
-				renderContext.setTile(editList);
+
+				console.log("setted geo :3\n------------------------------------\ngeometry: " + newGeo + " | material: " + materialId);
 			}
 
 			//texture methods-----------------------------
@@ -166,6 +94,27 @@ export class Level {
 					tile.pos = pos;
 					return tile;
 				}
+			}
+
+			this.withinBounds = (pos) => {
+				if (pos instanceof vec3) {
+					if (pos.x >= 0 && pos.x < this.size.x) {
+						if (pos.y >= 0 && pos.y < this.size.y) {
+							if (pos.z >= 0 && pos.z < 30) {
+								return true
+							}
+						}
+					}
+					return false;
+
+				} else {
+					if (editor.mouse.insideBounds.x && editor.mouse.insideBounds.y) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+				
 			}
 
 			this.withinBounds = (pos) => {
@@ -348,7 +297,7 @@ export class Level {
 
 class Tile {
 	constructor() {
-		this.geometry = "air";
+		this.geometry = "wall";
 		this.material = "x metal";
 		this.stackables = [];
 		this.rootDepth = null

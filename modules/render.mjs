@@ -20,7 +20,7 @@ export class RenderContext {
 
 		this.materials = {}
 
-		this.#getMaterialInits();
+		//this.#getMaterialInits();
 
 		this.#initView();
 
@@ -42,46 +42,65 @@ export class RenderContext {
 		/**
 		 * 
 		 * @param {Array} tileList 
-		 * @param {string} textureId 
 		 */
 		this.setTile = (tileList) => {
+			const variant = 0;
+			const option = 0;
+
 			if (tileList instanceof Array) {
-				
-					const sortedTiles = [];
-					let highestLayer = 29;
+				//convert list of Level Space tiles (3 depths) to Render Space tiles (30 depths)
+				const spriteList = [];
 
-					for (const tile of tileList) {
-						if (tile.material in this.materials) {	
-							if (!(sortedTiles[tile.pos.z] instanceof Array)) {
-								sortedTiles[tile.pos.z] = [];
-							}
-
-							tile.texture = this.materials[tile.material].options[tile.option][tile.geometry][tile.variant][tile.textureIndex];
-		
-							sortedTiles[tile.pos.z].push(tile);
-
-						} else {
-							console.warn("desired texture \"" + tile.material + "\" does not exist!");
-						}
+				for (const tile of tileList) {
+					if (!(tile.materialId in this.materials)) {
+						console.warn("material \"" + tile.materialId + "\" does not exist! applied default material of \"standard\"");
+						tile.materialId = "standard";
 					}
 
-					for (const [index, layer] of sortedTiles.entries()) {
-						if (layer) {
-							if (index < highestLayer) {
-								highestLayer = index;
-							}
-							const renderLayer = this.layers[index];
-							renderLayer.updateTile(layer);
-							console.log("gaerjg")
-						}
+					const material = this.materials[tile.materialId];
+
+					for (const [index, layer] of material.layers[tile.geometryId].entries()) {
+						const sprite = {};
+
+						sprite.pos = tile.pos.dupe();
+						sprite.pos.z = index + sprite.pos.z * 10;
+
+						sprite.texture = material.options[option][tile.geometryId][variant][layer];
+
+						spriteList.push(sprite)
+					}
+				}
+
+				//sort the sprites into their right layers
+				const sortedSprites = [];
+
+				for (const sprite of spriteList) {
+					if (!(sortedSprites[sprite.pos.z] instanceof Array)) {
+						sortedSprites[sprite.pos.z] = [];
 					}
 
-					this.#updateShadowMap(highestLayer);
+					sortedSprites[sprite.pos.z].push(sprite);
+				}
+
+				//send the sorted sprites to the Layer to be rendered
+				let highestLayer = 29;
+
+				for (const [index, layer] of sortedSprites.entries()) {
+					if (layer) {
+						if (index < highestLayer) {
+							highestLayer = index;
+						}
+
+						const renderLayer = this.layers[index];
+						renderLayer.updateTile(layer);
+					}
+				}
+
+				this.#updateShadowMap(highestLayer);
 			} else {
 				throw new TypeError("tileList must be an Array!");
 			}
 		}
-
 	}
 	//------------------------privates-------------------------------//
 	
@@ -94,12 +113,14 @@ export class RenderContext {
 		this.#initCamera();
 		this.#initPreview();
 
-		await this.#getGeoTextures();
+		await this.#getMaterialInits();
 
 		this.#updateViewPos();
 		this.#updateViewDistance();
 		this.#updateShadowParams();
 		this.#updateSkew();
+
+		this.#generateTestTiles("debug");
 	}
 
 	#initView = () => {
@@ -214,6 +235,7 @@ export class RenderContext {
 		for (const materialId of Object.keys(parsed)) {
 			const materialParams = parsed[materialId]
 			materialParams.id = materialId;
+			console.log("parsing: " + materialId);
 			materials[materialId] = await this.#getMaterialTextures(materialParams);
 
 			for (const option of materials[materialId].options) {
@@ -253,16 +275,22 @@ export class RenderContext {
 		material.type = materialParams.type;
 		material.layers = {
 			wall : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			slope : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"slope BL" : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"slope TL" : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"slope TR" : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"slope BR" : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 			semisolid : [0, 1, 2, 3, 4]
 		}
 
-		if (materialParams.wall !== "default") {
+		if (materialParams.wall instanceof Array) {
 			material.layers.wall = materialParams.wall;
 		}
 
-		if (materialParams.slope !== "default") {
-			material.layers.slope = materialParams.slope;
+		if (materialParams.slope instanceof Array) {
+			material.layers["slope BL"] = materialParams.slope;
+			material.layers["slope TL"] = materialParams.slope;
+			material.layers["slope TR"] = materialParams.slope;
+			material.layers["slope BR"] = materialParams.slope;
 		}
 
 		if (materialParams.layers === undefined) {
@@ -272,8 +300,6 @@ export class RenderContext {
 		if (materialParams.options === undefined) {
 			materialParams.options = 1;
 		}
-
-		console.log(materialParams);
 
 		let data;
 		let semisolidData;
@@ -394,8 +420,6 @@ export class RenderContext {
 						"anchor": {"x":0,"y":0}
 					}
 				}
-				
-				console.log(data)
 
 				for (const [optionIndex, optionGroup] of data.entries()) {
 					material.options.push({
@@ -431,6 +455,10 @@ export class RenderContext {
 						}
 					}
 				}
+			break
+			case "complexConnected":
+			case "randomComplexConnected":
+
 			break
 		}
 		//console.log(material.options, material.id);
@@ -492,6 +520,18 @@ export class RenderContext {
 
 
 	//---------------------utils-----------------------------------------------------------------
+
+	#generateTestTiles = (materialId) => {
+		console.log(this.materials)
+
+		for (let i = 0; i < 30; i++) {
+			const tile = {};
+			tile.pos = new vec3(5, i + 1, i);
+			tile.texture = this.materials[materialId].options[0]["wall"][0][0];
+
+			this.layers[i].updateTile(tile);
+		}
+	}
 
 	#screenToLevel = (pos) => {		//takes a screenspace coordinate and returns the associated levelspace coordinate
 		let levelPos = new vec3(0, 0, pos.z);

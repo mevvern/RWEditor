@@ -75,6 +75,10 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			this.finalRender.texture = baseRenderTextures[this.#renderedIndex];
 			tileSprite.visible = true;
 
+			if (!(tileList instanceof Array)) {
+				tileList = [tileList];
+			}
+
 			for (const tile of tileList) {
 				const storedTile = this.tiles.at(tile.pos);
 				if (storedTile.texture.id !== tile.texture.id) {

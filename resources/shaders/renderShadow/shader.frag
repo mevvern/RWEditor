@@ -14,45 +14,34 @@ uniform sampler2D uShadowMap;
 
 uniform float uShadowAngle;
 
-#define pi float(3.14159265358)
+#define pi 3.1415926
 
 void main(void) {
 	vec2 myCoord = vec2(gl_FragCoord.x, uResolution.y - gl_FragCoord.y);
 	myCoord -= vec2(uQuadOrigin.x, uQuadOrigin.y);
 	myCoord /= uQuadSize;
 
-	//offset for shadowmap sampling to prevent fighting at the lit sides of objects
-	vec2 shadowOffset = vec2(
-		cos(uShadowAngle * pi),
-		sin(uShadowAngle * pi)
-	);
+	float inverseAngle = uShadowAngle + 1.0;
 
-	if (shadowOffset.x < 0.0) {
-		shadowOffset.x = -1.0;
-	} else if (shadowOffset.x > 0.0){
-		shadowOffset.x = 1.0;
-	}
+	vec2 checkVector = vec2(cos(inverseAngle * pi), sin(inverseAngle * pi));
 
-	if (shadowOffset.y < 0.0) {
-		shadowOffset.y = -1.0;
-	} else if (shadowOffset.x > 0.0){
-		shadowOffset.y = 1.0;
-	}
+	checkVector = sign(checkVector);
 
-	//fun shadow wavy thing . i like shaders lol
-	//shadowOffset += vec2(sin(gl_FragCoord.x / 10.0) * 3.5);
+	checkVector *= 0.002;
 
-	shadowOffset *= vec2(3.0 / uQuadSize.y);
-
-	float shadowFac = texture2D(uShadowMap, myCoord - shadowOffset).x;
+	float shadowFac = texture2D(uShadowMap, myCoord).x;
 	vec4 baseColor = texture2D(uSampler, vTextureCoord);
 	vec4 shadowColor = baseColor * vec4(0.7, 0.7, 0.8, 1.0);
+
+	if (shadowFac > 0.0) {
+		shadowFac = texture2D(uShadowMap, vec2(myCoord.x + checkVector.x, myCoord.y + checkVector.y)).x;
+	}
 
 	vec4 finalColor = mix(baseColor, shadowColor, shadowFac);
 
 	gl_FragColor = finalColor;
 
 	if (debug) {
-		gl_FragColor = vec4(texture2D(uShadowMap, myCoord + shadowOffset).xyz, 0.05);
+		gl_FragColor = vec4(texture2D(uShadowMap, myCoord).xyz, 0.05);
 	}
 }

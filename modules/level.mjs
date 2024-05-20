@@ -1,5 +1,5 @@
 import {vec2, vec3, vec4, tileAllowed, Layer, Area, prng} from "./utils.mjs";
-import {renderContext, editor} from "./main.mjs";
+import {renderContext, editor, level} from "./main.mjs";
 import {tileMap} from "./tileMap.mjs";
 
 export class Level {
@@ -50,15 +50,30 @@ export class Level {
 			}
 
 			//geometry methods---------------------------
-			this.setTile = (posList, newGeo, materialId) => {
-				const dirtyTiles = [];
+			this.setGeo = (posList, newGeo, materialId) => {
+				if (!(posList instanceof Array)) {
+					posList = [posList];
+				}
+				const renderList = [];
 
 				for (const pos of posList) {
+					if (level.withinBounds(pos)) {
+						const tile = {};
+						//console.log(pos);
+						//console.log("setted geo :3\n------------------------------------\ngeometry: " + newGeo + " | material: " + materialId);
+						
+						tile.pos = pos;
+						tile.materialId = materialId;
+						tile.geometryId = newGeo;
 
+						renderList.push(tile);
+
+					} else {
+						console.log("pos outside level; cannot place tile");
+					}
 				}
 
-
-				console.log("setted geo :3\n------------------------------------\ngeometry: " + newGeo + " | material: " + materialId);
+				renderContext.setTile(renderList);
 			}
 
 			//texture methods-----------------------------

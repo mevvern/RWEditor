@@ -31,7 +31,7 @@ void main(void) {
 
 	float shadowFac = texture2D(uShadowMap, myCoord).x;
 	vec4 baseColor = texture2D(uSampler, vTextureCoord);
-	vec4 shadowColor = baseColor * vec4(0.7, 0.7, 0.8, 1.0);
+	vec4 shadowColor = baseColor * vec4(0.5, 0.5, 0.5, 1.0);
 
 	if (shadowFac > 0.0) {
 		shadowFac = texture2D(uShadowMap, vec2(myCoord.x + checkVector.x, myCoord.y + checkVector.y)).x;

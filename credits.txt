@@ -1,4 +1,4 @@
 Joar Jakobsson & everyone else at VIDEOCULT for making Rain World
 Olly Wood (@olllywood) for creating the Rodondo font
 My partner for answering my coding questions every 5 minutes & writing the parser for the editor project files!!! :3
-me for learning javascript to make this thing
+me (mev da wyvern) for learning all the stuff required to make this thing

@@ -1,6 +1,6 @@
 import * as PIXI from "./lib/pixi.mjs"; //dont ask me why i did this. i do not want to answer
 import * as projection from "./lib/pixi-projection.mjs"
-import {vec2, vec3, vec4, Area, Layer, LINGO} from "./utils.mjs";
+import {vec2, vec3, vec4, Area, Layer, LINGO, getShader} from "./utils.mjs";
 import {level} from "./main.mjs";
 import {editor} from "./main.mjs";
 import {RenderLayerWith1Sprite} from "./renderLayer.mjs"
@@ -18,7 +18,11 @@ export class RenderContext {
 
 		this.textures = {DEFAULT : DEFAULT_TEXTURE, WHITE : WHITE, INVISIBLE : INVISIBLE};
 
-		this.materials = {}
+		this.materials = {};
+
+		this.palettes = [];
+
+		this.#grid.visible = false;
 
 		//this.#getMaterialInits();
 
@@ -114,13 +118,14 @@ export class RenderContext {
 		this.#initPreview();
 
 		await this.#getMaterialInits();
+		await this.#getPalettes();
 
 		this.#updateViewPos();
 		this.#updateViewDistance();
 		this.#updateShadowParams();
 		this.#updateSkew();
 
-		this.#generateTestTiles("debug");
+		this.#generateTestTiles("bricks");
 	}
 
 	#initView = () => {
@@ -142,15 +147,17 @@ export class RenderContext {
 			layer.pivot3d.set(0);
 			layer.pivot.set(0);
 
-			layer.tileSprite.tint = [(70 - i) / 70, (70 - i) / 70, (70 - i) / 70];
+			layer.tileSprite.alpha = 1 - (i / 60);
 
 			this.layers.unshift(layer);
-			this.#levelBody.addChild(layer);
+			this.#layerContainer.addChild(layer);
 
 			//console.log(this.#levelBody.scale3d);
 		}
 	
-		this.#levelBody.addChild(this.#grid, this.#levelOutline);
+		this.#uiContainer.addChild(this.#grid, this.#levelOutline);
+
+		this.#levelBody.addChild(this.#layerContainer, this.#uiContainer);
 
 		window.addEventListener("resize", () => {
 			for (const layer of this.layers) {
@@ -204,14 +211,23 @@ export class RenderContext {
 
 	//--------------textures-----------------------------------------------------------------
 
-	#testSpritesheet = async () => {
-		let sheetInit = await fetch("./resources/render/materials/complex connected.json");
-		sheetInit = await sheetInit.json();
+	#getPalettes = async () => {
+		const json = await fetch("./resources/palettes/palettes.json").catch(() => {
+			console.warn("palettes.json is missing");
+			return null;
+		})
 
-		const sheet = new PIXI.Spritesheet(await PIXI.Texture.fromURL("./resources/render/materials/standard/wall.png"), sheetInit)
-		await sheet.parse();
+		//hardcoded palette count for now
+		const paletteCount = 36;
 
-		console.log(sheet.textures);
+		for (let i = 0; i < paletteCount; i++) {
+			const palette = await PIXI.Texture.fromURL("./resources/palettes/palette" + i + ".png");
+
+			palette.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+
+			this.palettes.push(palette);
+		}
+		this.palette = 1;
 	}
 
 	#getMaterialInits = async () => {
@@ -525,11 +541,12 @@ export class RenderContext {
 		console.log(this.materials)
 
 		for (let i = 0; i < 30; i++) {
-			const tile = {};
-			tile.pos = new vec3(5, i + 1, i);
-			tile.texture = this.materials[materialId].options[0]["wall"][0][0];
+			const tile1 = {};
 
-			this.layers[i].updateTile(tile);
+			tile1.pos = new vec3(5, i + 1, i);
+			tile1.texture = this.materials[materialId].options[0]["wall"][0][1];
+
+			this.layers[i].updateTile([tile1]);
 		}
 	}
 
@@ -703,13 +720,26 @@ export class RenderContext {
 
 	#updateShadowRendering = () => {
 		for (const layer of this.layers) {
-			layer.filters[0].enabled = this.#useShadows;
+			layer.useShadowShader = this.#useShadows;
 		}
 	}
 
 	#updateCoordsDebug = () => {
 		for (const layer of this.layers) {
 			layer.filters[0].uniforms.debug = this.#showCoordsDebug;
+		}
+	}
+
+	#updateRenderMode = () => {
+		for (const layer of this.layers) {
+			layer.renderMode = this.#renderMode;
+		}
+	}
+
+	#updatePalette = () => {
+		console.log(this.palettes);
+		for (const layer of this.layers) {
+			layer.palette = this.palettes[this.#paletteIndex];
 		}
 	}
 
@@ -723,6 +753,8 @@ export class RenderContext {
 	#previewVisible = true;
 	#useShadows = true;
 	#showCoordsDebug = false;
+	#renderMode = "finalRender";
+	#paletteIndex = 0;
 	
 	#viewPos = new vec2();				//position of the view in screen space. the origin of the level is in its center
 	#viewSize = 0;								//change in size of each tile from the default tile size of 20
@@ -745,6 +777,8 @@ export class RenderContext {
 	#levelBody = new projection.Container3d();
 	#camera = new projection.Camera3d();
 	#preview = [];
+	#uiContainer = new PIXI.Container();
+	#layerContainer = new projection.Container3d();
 	#grid = new PIXI.TilingSprite();
 	#levelOutline = new PIXI.Sprite();
 	
@@ -894,6 +928,20 @@ export class RenderContext {
 	set debugCoords(bool) {
 		this.#showCoordsDebug = bool;
 		this.#updateCoordsDebug();
+	}
+
+	//-----------------------------//
+	set renderMode(modeString) {
+		this.#renderMode = modeString;
+		this.#updateRenderMode();
+
+		this.#updatePalette();
+	}
+
+	//-----------------------------//
+	set palette(index) {
+		this.#paletteIndex = index;
+		this.#updatePalette();
 	}
 }
 

@@ -39,11 +39,18 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		//the container which will contain the rendered layer, as well as the tiles over top of that. the whole container will be rendered to a texture when tile(s) needs to be updated
 		this.renderContainer = new RenderContainer();
 
+		this.renderShadowContainer = new RenderShadowContainer();
+		this.renderColorContainer = new RenderColorContainer();
+
 		//to the renderContainer, this adds the finalRender sprite, and then the tile sprite on top of that
 		this.renderContainer.addChild(this.finalRender, this.tileSprite);
 
 		//to this, which is the RenderLayer container, adds renderContainer, and then props container,and then preview container
-		this.addChild(this.renderContainer, this.propContainer, this.previewContainer);
+		this.renderColorContainer.addChild(this.renderContainer, this.propContainer, this.previewContainer);
+
+		this.renderShadowContainer.addChild(this.renderColorContainer);
+
+		this.addChild(this.renderColorContainer);
 
 		this.finalRender.width = levelSize.x * this.#defaultTileSize;
 		this.finalRender.height = levelSize.y * this.#defaultTileSize;
@@ -59,7 +66,7 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 
 		this.renderContainer.addChild(this.#mask);
 
-		this.#initShadowShaders();
+		this.#initShaders();
 
 		this.#updateMask(this.#clearRect);
 		this.#mask.visible = false;
@@ -222,6 +229,9 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 	#generateShadowFilter = new PIXI.Filter();
 	#renderShadowFilter = new PIXI.Filter();
 
+	#rgbToRedFilter = new PIXI.Filter();
+	#palette = PIXI.Texture.WHITE;
+
 	#generateShadowSprite = new PIXI.Sprite();
 	#shadowOffset = new vec2(0.46, 0.004);
 
@@ -242,10 +252,17 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		mask.drawRect(0, rect.y + rect.w, this.#levelPixelSize.x, this.#levelPixelSize.y - (rect.y + rect.w));
 	}
 
-	#initShadowShaders = async () => {
+	#initShaders = async () => {
+		const rgbToRedSrc = await getShader("rgb to red");
 		const renderShadowSrc = await getShader("renderShadow");
 		const generateShadowSrc = await getShader("generateShadowMap");
-		const uniforms = {
+
+		const rgbUniforms = {
+			uRenderMode : true,
+			uPalette : this.palette
+		}
+
+		const shadowUniforms = {
 			uShadowMap : this.shadowMap,
 			uShadowAngle : this.#shadowOffset.x,
 			uShadowMag : this.#shadowOffset.y,
@@ -255,14 +272,23 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			debug : false
 		}
 
-		this.#renderShadowFilter = new PIXI.Filter(null, renderShadowSrc, uniforms);
-		this.#generateShadowFilter = new PIXI.Filter(null, generateShadowSrc, uniforms);
+		this.#renderShadowFilter = new PIXI.Filter(null, renderShadowSrc, shadowUniforms);
+		this.#generateShadowFilter = new PIXI.Filter(null, generateShadowSrc, shadowUniforms);
+
+		this.#rgbToRedFilter = new PIXI.Filter(null, rgbToRedSrc, rgbUniforms);
 
 		this.updateQuadSize();
 
 		this.#generateShadowSprite.filters = [this.#generateShadowFilter];
 
-		this.filters = [this.#renderShadowFilter];
+		this.renderShadowContainer.filters = [this.#renderShadowFilter];
+
+		this.renderColorContainer.filters = [this.#rgbToRedFilter];
+	}
+
+	set useShadowShader(bool) {
+		this.#renderShadowFilter.enabled = bool;
+		this.#generateShadowFilter.enabled = bool;
 	}
 
 	set shadowUniforms(uniforms) {
@@ -270,6 +296,23 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		this.#renderShadowFilter.uniforms.uShadowMag = uniforms[1];
 		this.#generateShadowFilter.uniforms.uShadowAngle = uniforms[0];
 		this.#generateShadowFilter.uniforms.uShadowMag = uniforms[1];
+	}
+
+	set palette(palette) {
+		this.#palette = palette;
+		this.#rgbToRedFilter.uniforms.uPalette = palette;
+	}
+
+	get palette() {
+		return this.#palette;
+	}
+
+	set renderMode(modeString) {
+		if (modeString === "palette") {
+			this.#rgbToRedFilter.uniforms.uRenderMode = false;
+		} else if (modeString === "final") {
+			this.#rgbToRedFilter.uniforms.uRenderMode = true;
+		}
 	}
 
 	set shadowMap(map) {
@@ -308,6 +351,18 @@ class PropContainer extends PIXI.Container {
 }
 
 class RenderContainer extends PIXI.Container {
+	constructor() {
+		super();
+	}
+}
+
+class RenderColorContainer extends PIXI.Container {
+	constructor() {
+		super();
+	}
+}
+
+class RenderShadowContainer extends PIXI.Container {
 	constructor() {
 		super();
 	}

@@ -9,7 +9,7 @@ export class MaterialsMode extends Mode {
 		this.currentTool = "paint";
 		this.tools = {};
 		this.tileSet = [];
-		this.currentTile = "debug"
+		this.currentTile = "bricks"
 		this.modeSettings = [
 			new ButtonOptions("brush size", "cycle", {cycleOptions : [1, 2, 3, 4, 5]}),
 			new ButtonOptions("cause a ruckus", "oneshot", "cause a ruckus")

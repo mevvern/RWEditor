@@ -1,7 +1,9 @@
 import * as PIXI from "./lib/pixi.mjs"
 
 globalThis.app = new PIXI.Application({background : "#7788af", resizeTo : window});
+
 globalThis.__PIXI_APP__ = app;
+window.__PIXI_DEVTOOLS__ = {app : app, pixi : PIXI};
 
 import {prng, vec2, vec3, vec4} from "./utils.mjs"
 import {Level} from "./level.mjs"

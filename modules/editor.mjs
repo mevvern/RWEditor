@@ -215,6 +215,10 @@ export class Editor {
 				renderContext.debugCoords = option;
 			}
 
+			if (id === "render mode") {
+				renderContext.renderMode = option;
+			}
+
 			this.currentMode.modeSettingsPress(id, option);
 			console.log("mode setting button pressed: " + id + " option: " + option);
 		}
@@ -275,7 +279,8 @@ export class Editor {
 	#defaultModeButtons = [
 		new ButtonOptions("grid visibility", "toggle", {contents : "grid\nvis", default : true}), 
 		new ButtonOptions("show shadows", "toggle", {contents : "shadows", default : true}),
-		new ButtonOptions("debug shadows", "toggle", {contents : "shdw\ndebug"})
+		new ButtonOptions("debug shadows", "toggle", {contents : "shdw\ndebug"}),
+		new ButtonOptions("render mode", "cycle", {contents : "render\nmode", cycleOptions : ["final", "palette"] })
 	];
 
 	//setters and getters

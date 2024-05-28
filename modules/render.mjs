@@ -105,6 +105,32 @@ export class RenderContext {
 				throw new TypeError("tileList must be an Array!");
 			}
 		}
+
+		this.setPreview = (materialId, option, layer, geometry) => {
+			option = 0;
+
+			const material = this.materials[materialId];
+
+			const textures = [];
+
+			for (const layer of material.layers[geometry]) {
+				textures.push(material.options[option][geometry][0][layer]);
+			}
+
+			console.log(textures)
+
+			for (const previewSprite of this.#preview) {
+				previewSprite.alpha = 0;
+			}
+
+			for (const [index, texture] of textures.entries()) {
+				const targetLayer = index + 0;
+				const previewSprite = this.#preview[targetLayer];
+
+				previewSprite.alpha = 1;
+				previewSprite.texture = texture;
+			}
+		}
 	}
 	//------------------------privates-------------------------------//
 	
@@ -125,7 +151,8 @@ export class RenderContext {
 		this.#updateShadowParams();
 		this.#updateSkew();
 
-		this.#generateTestTiles("bricks");
+		this.setPreview("bricks", 0, 0, "wall");
+		//this.#generateTestTiles("bricks");
 	}
 
 	#initView = () => {
@@ -140,14 +167,12 @@ export class RenderContext {
 		this.layers = [];
 
 		for (let i = 0; i < 30; i++) {
-			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(1.81, 0.001));
+			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(1.81, 0.001), 29 - i);
 
 			layer.position3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2, (29 - i) * 10);
 
 			layer.pivot3d.set(0);
 			layer.pivot.set(0);
-
-			layer.tileSprite.alpha = 1 - (i / 60);
 
 			this.layers.unshift(layer);
 			this.#layerContainer.addChild(layer);
@@ -179,7 +204,7 @@ export class RenderContext {
 		for (const [depth, layer] of this.layers.entries()) {
 			const sprite = new PreviewSprite();
 			sprite.texture = DEFAULT_TEXTURE;
-			sprite.tint = [(30 - depth) / 30, (30 - depth) / 30, (30 - depth) / 30];
+			//sprite.tint = [(30 - depth) / 30, (30 - depth) / 30, (30 - depth) / 30];
 			//sprite.alpha = 0.5;
 			sprite.width = this.#defaultTileSize;
 			sprite.height = this.#defaultTileSize;
@@ -218,7 +243,7 @@ export class RenderContext {
 		})
 
 		//hardcoded palette count for now
-		const paletteCount = 36;
+		const paletteCount = 37;
 
 		for (let i = 0; i < paletteCount; i++) {
 			const palette = await PIXI.Texture.fromURL("./resources/palettes/palette" + i + ".png");
@@ -247,6 +272,7 @@ export class RenderContext {
 		tileDefaults["slope TL"] = await PIXI.Texture.fromURL("./resources/render/generic/slope TL.png");
 		tileDefaults["slope TR"] = await PIXI.Texture.fromURL("./resources/render/generic/slope TR.png");
 		tileDefaults["slope BR"] = await PIXI.Texture.fromURL("./resources/render/generic/slope BR.png");
+		tileDefaults["semisolid platform"] = tileDefaults.wall;
 
 		for (const materialId of Object.keys(parsed)) {
 			const materialParams = parsed[materialId]
@@ -258,6 +284,9 @@ export class RenderContext {
 			 	for (const geoType of Object.keys(option)) {
 					for (const variant of option[geoType]) {
 						variant.unshift(tileDefaults[geoType]);
+						for (const texture of variant) {
+							texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+						}
 					}
 			 	}
 			}
@@ -680,6 +709,12 @@ export class RenderContext {
 			pos = this.#mouseLevelPos;
 		}
 
+		if (pos.x < 0 || pos.y < 0) {
+			this.previewVisible = false;
+		} else {
+			this.previewVisible = true;
+		}
+
 		for (const previewSprite of this.#preview) {
 			previewSprite.position.set(pos);
 		}
@@ -724,9 +759,14 @@ export class RenderContext {
 		}
 	}
 
-	#updateCoordsDebug = () => {
+	#updateShadowDebug = () => {
 		for (const layer of this.layers) {
-			layer.filters[0].uniforms.debug = this.#showCoordsDebug;
+			layer.debugShadows = this.#shadowDebug;
+			/* if (this.#shadowDebug === true) {
+				layer.enableColorFilter = false;
+			} else {
+				layer.enableColorFilter = true;
+			} */
 		}
 	}
 
@@ -737,7 +777,6 @@ export class RenderContext {
 	}
 
 	#updatePalette = () => {
-		console.log(this.palettes);
 		for (const layer of this.layers) {
 			layer.palette = this.palettes[this.#paletteIndex];
 		}
@@ -752,7 +791,7 @@ export class RenderContext {
 	#previewAlignToGrid = "none";			//the level to which the preview should be aligned to the grid
 	#previewVisible = true;
 	#useShadows = true;
-	#showCoordsDebug = false;
+	#shadowDebug = false;
 	#renderMode = "finalRender";
 	#paletteIndex = 0;
 	
@@ -925,9 +964,9 @@ export class RenderContext {
 	}
 
 	//-----------------------------//
-	set debugCoords(bool) {
-		this.#showCoordsDebug = bool;
-		this.#updateCoordsDebug();
+	set debugShadows(bool) {
+		this.#shadowDebug = bool;
+		this.#updateShadowDebug();
 	}
 
 	//-----------------------------//

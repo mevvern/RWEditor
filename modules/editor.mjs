@@ -121,7 +121,7 @@ export class Editor {
 				console.log("tilebuttonpress captured by current mode");
 			} else {
 				this.currentMode.currentTile = id;
-				renderContext.preview = id;
+				renderContext.setPreview(this.modes.materials.currentTile, 0, this.mouse.pos.z, this.modes.geometry.currentTile);
 				console.log(this.currentMode.name + "'s tile pressed: " + id + " option: " + option);
 			}
 		}
@@ -156,7 +156,9 @@ export class Editor {
 			if (this.currentMode.layers.layersUsed === true) {
 				this.currentMode.layers.workLayer = parseInt(layerNumber);
 				this.mouse.tile.z = parseInt(layerNumber);
-				this.#updatePreview();
+
+				renderContext.setPreview(this.modes.materials.currentTile, 0, this.mouse.pos.z, this.modes.geometry.currentTile);
+				
 				console.log("work layer set to: " + this.currentMode.layers.workLayer);
 			}
 		}
@@ -203,20 +205,23 @@ export class Editor {
 		}
 
 		this.modeSettingsPress = (id, option) => {
-			if (id === "grid visibility") {
-				renderContext.gridVisibility = option;
-			}
-			
-			if (id === "show shadows") {
-				renderContext.useShadows = option;
-			}
 
-			if (id === "debug shadows") {
-				renderContext.debugCoords = option;
-			}
-
-			if (id === "render mode") {
-				renderContext.renderMode = option;
+			switch (id) {
+				case "grid visibility":
+					renderContext.gridVisibility = option;
+				break
+				case "show shadows":
+					renderContext.useShadows = option;
+				break
+				case "debug shadows":
+					renderContext.debugShadows = option;
+				break
+				case "render mode":
+					renderContext.renderMode = option;
+				break
+				case "palette":
+					renderContext.palette = option;
+				break
 			}
 
 			this.currentMode.modeSettingsPress(id, option);
@@ -270,9 +275,7 @@ export class Editor {
 	}
 
 	//private methods
-	#updatePreview = () => {
-		renderContext.previewPos = this.mouse.tile;
-	}
+
 
 	//private properties
 	#currentMode = "geometry";
@@ -280,7 +283,8 @@ export class Editor {
 		new ButtonOptions("grid visibility", "toggle", {contents : "grid\nvis", default : true}), 
 		new ButtonOptions("show shadows", "toggle", {contents : "shadows", default : true}),
 		new ButtonOptions("debug shadows", "toggle", {contents : "shdw\ndebug"}),
-		new ButtonOptions("render mode", "cycle", {contents : "render\nmode", cycleOptions : ["final", "palette"] })
+		new ButtonOptions("render mode", "cycle", {contents : "render\nmode", cycleOptions : ["final", "palette", "raw"]}),
+		new ButtonOptions("palette", "cycle", {contents : "palette", cycleOptions : [0, 1, 6, 7, 9, 14, 30]})
 	];
 
 	//setters and getters

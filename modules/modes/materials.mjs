@@ -12,6 +12,7 @@ export class MaterialsMode extends Mode {
 		this.currentTile = "bricks"
 		this.modeSettings = [
 			new ButtonOptions("brush size", "cycle", {cycleOptions : [1, 2, 3, 4, 5]}),
+			new ButtonOptions("material option", "cycle", {cycleOptions : ["random", 0, 1, 2, 3]}),
 			new ButtonOptions("cause a ruckus", "oneshot", "cause a ruckus")
 		];
 		this.name = "texture"

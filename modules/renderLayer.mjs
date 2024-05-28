@@ -9,9 +9,11 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 	 * 
 	 * @param {vec2} levelSize 
 	*/
-	constructor(levelSize, shadowOffset) {
+	constructor(levelSize, shadowOffset, depth) {
 		//calls the constructor of the parent class, PIXI.Container in this case
 		super();
+
+		this.#depth = depth;
 
 		this.#levelPixelSize = new vec2(levelSize.x * this.#defaultTileSize, levelSize.y * this.#defaultTileSize);
 
@@ -29,9 +31,15 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		this.previewContainer = new PreviewContainer();
 
 		//the RenderTexture object which renderContainer will be rendered to
-		this.baseRenderTextures = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST})]
+		this.baseRenderTextures = [
+			PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST}),
+			PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST})
+		]
 
-		this.shadowMaps = [PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST}), PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST})]
+		this.shadowMaps = [
+			PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST}),
+			PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST})
+		]
 
 		//the sprite which will use the rendered texture as its texture. it is to be placed underneath the tile sprites
 		this.finalRender = new FinalRender(this.renderTexture1);
@@ -46,9 +54,9 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		this.renderContainer.addChild(this.finalRender, this.tileSprite);
 
 		//to this, which is the RenderLayer container, adds renderContainer, and then props container,and then preview container
-		this.renderColorContainer.addChild(this.renderContainer, this.propContainer, this.previewContainer);
+		this.renderShadowContainer.addChild(this.renderContainer, this.propContainer, this.previewContainer);
 
-		this.renderShadowContainer.addChild(this.renderColorContainer);
+		this.renderColorContainer.addChild(this.renderShadowContainer);
 
 		this.addChild(this.renderColorContainer);
 
@@ -222,6 +230,8 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		}
 	}
 
+	#depth = 0;
+
 	#bufferIndex = 1;
 	#renderedIndex = 0;
 	#defaultTileSize = DEFAULT_TILE_SIZE;
@@ -258,8 +268,9 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		const generateShadowSrc = await getShader("generateShadowMap");
 
 		const rgbUniforms = {
-			uRenderMode : true,
-			uPalette : this.palette
+			uRenderMode : 0,
+			uPalette : this.palette,
+			uDepth : this.#depth
 		}
 
 		const shadowUniforms = {
@@ -286,6 +297,14 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		this.renderColorContainer.filters = [this.#rgbToRedFilter];
 	}
 
+	set debugShadows(bool) {
+		this.#renderShadowFilter.uniforms.debug = bool;
+	}
+
+	set enableColorFilter(bool) {
+		this.#rgbToRedFilter.enabled = bool;
+	}
+
 	set useShadowShader(bool) {
 		this.#renderShadowFilter.enabled = bool;
 		this.#generateShadowFilter.enabled = bool;
@@ -309,9 +328,11 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 
 	set renderMode(modeString) {
 		if (modeString === "palette") {
-			this.#rgbToRedFilter.uniforms.uRenderMode = false;
+			this.#rgbToRedFilter.uniforms.uRenderMode = 1;
 		} else if (modeString === "final") {
-			this.#rgbToRedFilter.uniforms.uRenderMode = true;
+			this.#rgbToRedFilter.uniforms.uRenderMode = 0;
+		} else if (modeString === "raw") {
+			this.#rgbToRedFilter.uniforms.uRenderMode = 2;
 		}
 	}
 

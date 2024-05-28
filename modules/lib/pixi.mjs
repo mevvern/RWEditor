@@ -2863,7 +2863,7 @@ _BaseTexture.defaultOptions = {
    * @type {PIXI.SCALE_MODES}
    * @default PIXI.SCALE_MODES.LINEAR
    */
-  scaleMode: SCALE_MODES.LINEAR,
+  scaleMode: SCALE_MODES.NEAREST,
   /**
    * Wrap mode for textures.
    * @type {PIXI.WRAP_MODES}

@@ -34,12 +34,12 @@ A rain world level editor remade from the ground up with javascript and html/css
 
 ### simpleConnected
 * a tile which will care about its four directly adjacent neighbors and connect with them. make sure to lay out the textures properly using the provided templates
-* to add more layers, just duplicate this texture downwards with whatever variations you want for that other layer, and importantly there must be a 1 pixel gap between all individual textures as well as between each layer
+* to add more layers, just duplicate this texture downwards with whatever variations you want for that other layer, and importantly there must be a 1 pixel gap between all individual textures as well as between each layer  
 ![simpleConnected texture template](resources/render/materials/small%20pipes/0/wall.png)
 
 ### complexConnected
 * a tile which will care about all 8 neighboring tiles. again make sure to lay out the texture correctly using the correct template below
-* the method to add more layers to this is the same as above
+* the method to add more layers to this is the same as above  
 ![complexConnected texture template](resources/render/materials/standard/0/wall.png)
 
 ### mask

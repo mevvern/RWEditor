@@ -157,8 +157,8 @@ export class Editor {
 				this.currentMode.layers.workLayer = parseInt(layerNumber);
 				this.mouse.tile.z = parseInt(layerNumber);
 
-				renderContext.setPreview(this.modes.materials.currentTile, 0, this.mouse.pos.z, this.modes.geometry.currentTile);
-				
+				renderContext.setPreview(this.modes.materials.currentTile, 0, this.mouse.tile.z, this.modes.geometry.currentTile);
+
 				console.log("work layer set to: " + this.currentMode.layers.workLayer);
 			}
 		}

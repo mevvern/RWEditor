@@ -69,7 +69,20 @@ export class RenderContext {
 						sprite.pos = tile.pos.dupe();
 						sprite.pos.z = index + sprite.pos.z * 10;
 
-						sprite.texture = material.options[option][tile.geometryId][variant][layer];
+						switch(tile.geometryId) {
+							case "air":
+								sprite.texture = INVISIBLE;
+							break
+							case "wall":
+							case "slope BL":
+							case "slope TL":
+							case "slope TR":
+							case "slope BR":
+							case "semisolid platform":
+								sprite.texture = material.options[option][tile.geometryId][variant][layer];
+							break
+
+						}
 
 						spriteList.push(sprite)
 					}
@@ -106,7 +119,9 @@ export class RenderContext {
 			}
 		}
 
-		this.setPreview = (materialId, option, layer, geometry) => {
+		this.setPreview = (materialId, option, depth, geometry) => {
+			console.log(depth);
+
 			option = 0;
 
 			const material = this.materials[materialId];
@@ -124,7 +139,7 @@ export class RenderContext {
 			}
 
 			for (const [index, texture] of textures.entries()) {
-				const targetLayer = index + 0;
+				const targetLayer = index + (depth * 10);
 				const previewSprite = this.#preview[targetLayer];
 
 				previewSprite.alpha = 1;
@@ -139,7 +154,7 @@ export class RenderContext {
 
 	#initWholeThing = async () => {
 		this.#initLevelUi();
-		this.#initLevelBody();
+		await this.#initLevelBody();
 		this.#initCamera();
 		this.#initPreview();
 
@@ -160,14 +175,21 @@ export class RenderContext {
 		app.stage.addChild(this.#camera);
 	}
 
-	#initLevelBody = () => {
+	#initLevelBody = async () => {
 		for (const layer of this.layers) {
 			layer.destroy({children : true});
 		}
 		this.layers = [];
 
+		const shaderSrcs = {};
+
+		shaderSrcs["rgb to red"] = await getShader("rgb to red");
+		shaderSrcs["renderShadow"] = await getShader("renderShadow");
+		shaderSrcs["generateShadowMap"] = await getShader("generateShadowMap");
+
 		for (let i = 0; i < 30; i++) {
-			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(1.81, 0.001), 29 - i);
+
+			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(1.81, 0.001), 29 - i, shaderSrcs);
 
 			layer.position3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2, (29 - i) * 10);
 
@@ -237,11 +259,6 @@ export class RenderContext {
 	//--------------textures-----------------------------------------------------------------
 
 	#getPalettes = async () => {
-		const json = await fetch("./resources/palettes/palettes.json").catch(() => {
-			console.warn("palettes.json is missing");
-			return null;
-		})
-
 		//hardcoded palette count for now
 		const paletteCount = 37;
 
@@ -252,6 +269,7 @@ export class RenderContext {
 
 			this.palettes.push(palette);
 		}
+
 		this.palette = 1;
 	}
 
@@ -275,20 +293,28 @@ export class RenderContext {
 		tileDefaults["semisolid platform"] = tileDefaults.wall;
 
 		for (const materialId of Object.keys(parsed)) {
-			const materialParams = parsed[materialId]
-			materialParams.id = materialId;
-			console.log("parsing: " + materialId);
-			materials[materialId] = await this.#getMaterialTextures(materialParams);
-
-			for (const option of materials[materialId].options) {
-			 	for (const geoType of Object.keys(option)) {
-					for (const variant of option[geoType]) {
-						variant.unshift(tileDefaults[geoType]);
-						for (const texture of variant) {
-							texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+			if (materialId in Object.keys(this.materials)) {
+				console.warn("skipped material \"" + materialId +"\" due to duplicate material name");
+			} else {
+				const materialParams = parsed[materialId]
+				materialParams.id = materialId;
+				console.log("parsing: " + materialId);
+				materials[materialId] = await this.#getMaterialTextures(materialParams);
+	
+				for (const option of materials[materialId].options) {
+					 for (const geoType of Object.keys(option)) {
+						for (const variant of option[geoType]) {
+							variant.unshift(tileDefaults[geoType]);
+							variant.unshift(INVISIBLE);
+							let texIndex = 0;
+							for (const texture of variant) {
+								texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+								texture.id = materialId + option + geoType + texIndex;
+								texIndex++
+							}
 						}
 					}
-			 	}
+				}
 			}
 		}
 
@@ -319,16 +345,24 @@ export class RenderContext {
 		material.id = materialParams.id;
 		material.type = materialParams.type;
 		material.layers = {
-			wall : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			"slope BL" : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			"slope TL" : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			"slope TR" : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			"slope BR" : [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			semisolid : [0, 1, 2, 3, 4]
+			wall : [2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+			"slope BL" : [2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+			"slope TL" : [2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+			"slope TR" : [2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+			"slope BR" : [2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+			semisolid : [1, 2, 3, 4, 5],
+			air: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"pole V": [],
+			"pole H": [],
 		}
 
 		if (materialParams.wall instanceof Array) {
 			material.layers.wall = materialParams.wall;
+		}
+
+		if (materialParams.pole instanceof Array) {
+			material.layers["pole V"] = materialParams.slope;
+			material.layers["pole H"] = materialParams.slope;
 		}
 
 		if (materialParams.slope instanceof Array) {

@@ -9,7 +9,7 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 	 * 
 	 * @param {vec2} levelSize 
 	*/
-	constructor(levelSize, shadowOffset, depth) {
+	constructor(levelSize, shadowOffset, depth, shaders) {
 		//calls the constructor of the parent class, PIXI.Container in this case
 		super();
 
@@ -62,7 +62,6 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 
 		this.finalRender.width = levelSize.x * this.#defaultTileSize;
 		this.finalRender.height = levelSize.y * this.#defaultTileSize;
-
 		
 		this.tileSprite.texture = DEFAULT_TEXTURE;
 		this.tileSprite.width = this.#defaultTileSize;
@@ -74,7 +73,7 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 
 		this.renderContainer.addChild(this.#mask);
 
-		this.#initShaders();
+		//this.#initShaders(shaders);
 
 		this.#updateMask(this.#clearRect);
 		this.#mask.visible = false;
@@ -199,6 +198,8 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			this.#renderShadowFilter.uniforms.uQuadOrigin = [bounds.x, bounds.y];
 		}
 
+		this.#initShaders(shaders);
+
 		this.updateResolution = () => {
 			const resolution = [window.innerWidth, window.innerHeight];
 
@@ -262,10 +263,10 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 		mask.drawRect(0, rect.y + rect.w, this.#levelPixelSize.x, this.#levelPixelSize.y - (rect.y + rect.w));
 	}
 
-	#initShaders = async () => {
-		const rgbToRedSrc = await getShader("rgb to red");
-		const renderShadowSrc = await getShader("renderShadow");
-		const generateShadowSrc = await getShader("generateShadowMap");
+	#initShaders = (shaderSrcs) => {
+		const rgbToRedSrc = shaderSrcs["rgb to red"] //await getShader("rgb to red");
+		const renderShadowSrc = shaderSrcs["renderShadow"] //await getShader("renderShadow");
+		const generateShadowSrc = shaderSrcs["generateShadowMap"] //await getShader("generateShadowMap");
 
 		const rgbUniforms = {
 			uRenderMode : 0,

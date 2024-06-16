@@ -4,6 +4,7 @@ A rain world level editor remade from the ground up with javascript and html/css
 # to do things
 * click left mouse to use the currently selected tool
 * click and hold middle mouse to move the view
+* to erase, select the "air" geometry type and draw with it
 
 # material format
 
@@ -23,18 +24,18 @@ A rain world level editor remade from the ground up with javascript and html/css
 ## layers
 * each number represents which texture to use for that layer of the material
 * 2 textures are provided to every material by default. texture 0 is just an invisible texture to be used as padding, and texture 1 is a green texture in the shape of the geometry you've selected
-* every texture after 1 (so 2-infinity) are textures that you added manually to the material with the ``layers``` attribute
+* every texture after 1 (so 2-infinity) are textures that you added manually to the material with the ```layers``` attribute
 * the main geometry types are : wall, slope, semisolid platform, and pole. to edit the layer setup for them just add an entry to the material that is called the geometry type you wanna edit
 
 ## material types
 {TODO: a more complete tutorial on material creation}
 ### tile 
-* a simple tile that doesn't connect to any of its neighbors
+* a simple tile that doesn't care about any of its neighbors
 
 ### simpleConnected
 * a tile which will care about its four directly adjacent neighbors and connect with them. make sure to lay out the textures properly using the provided templates
 * to add more layers, just duplicate this texture downwards with whatever variations you want for that other layer, and importantly there must be a 1 pixel gap between all individual textures as well as between each layer
-![simpleConnected texture template](resources/render/materials/small pipes/0/wall.png)
+![simpleConnected texture template](resources/render/materials/small%20pipes/0/wall.png)
 
 ### complexConnected
 * a tile which will care about all 8 neighboring tiles. again make sure to lay out the texture correctly using the correct template below
@@ -42,7 +43,7 @@ A rain world level editor remade from the ground up with javascript and html/css
 ![complexConnected texture template](resources/render/materials/standard/0/wall.png)
 
 ### mask
-* (not currently implemented) uses green areas of the ``baseMaterial``` material to act as an area to "allow" a desired texture to show through
+* (not currently implemented) uses green areas of the ```baseMaterial``` material to act as an area to "allow" a desired texture to show through
 
 ### random
 * (not currently implemented) a tile which will place down randomized sprites taken from a big texture, roughly within the area of the tile the material was added to

@@ -10,12 +10,12 @@ A rain world level editor remade from the ground up with javascript and html/css
 ## in **materials.json**
 ```javascript
 {
-	"materialName" : {													//the only requirement for the material name is that it's different from every other name in the json file
-		"baseSize" : 20, 													//the base size of each asset in pixels. this is used to split the big textures you make into a bunch of small ones i can use
-		"variants" : 2,														//the number of unique versions of the same tile. in the editor you can choose a specific variant or a random one
-		"layers" : 2,															//the number of unique layer textures you are using for the material
-		"type" : "tile",													//the type of the material. see below for all supported material types
-		"wall" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]		//the layout for each layer of the material. a tile is always made of 10 layers. see below for what each number means in this
+	"materialName" : {                          //the only requirement for the material name is that it's different from every other name in the json file
+		"baseSize" : 20,                          //the base size of each asset in pixels. this is used to split the big textures you make into a bunch of small ones i can use
+		"variants" : 2,                           //the number of unique versions of the same tile. in the editor you can choose a specific variant or a random one
+		"layers" : 2,                             //the number of unique layer textures you are using for the material
+		"type" : "tile",                          //the type of the material. see below for all supported material types
+		"wall" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]   //the layout for each layer of the material. a tile is always made of 10 layers. see below for what each number means in this
 	}
 }
 ```

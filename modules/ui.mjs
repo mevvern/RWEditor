@@ -346,6 +346,8 @@ function oneSelectedCycleCallback (event) {
 	const button = event.currentTarget;
 	const handler = editor[button.parentNode.id + "Press"];
 
+	console.log("oneselectedcycle")
+
 	const cycleOptions = JSON.parse(button.getAttribute("cycleOptions"));
 	const hasImage = button.getAttribute("hasImage");
 	let cycleIndex = parseInt(button.getAttribute("cycleIndex"));

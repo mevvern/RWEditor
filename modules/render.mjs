@@ -245,8 +245,8 @@ export class RenderContext {
 	}
 
 	#initLevelUi = async () => {
-		const gridTex = await PIXI.Texture.fromURL("./resources/render/generic/gridCellThick.png");
-		const borderTex = await PIXI.Texture.fromURL("./resources/render/generic/levelOutline.png");
+		const gridTex = await PIXI.Texture.fromURL("./resources/editorGraphics/gridCellThick.png");
+		const borderTex = await PIXI.Texture.fromURL("./resources/editorGraphics/levelOutline.png");
 
 		this.#grid.texture = gridTex;
 		this.#levelOutline.texture = borderTex;

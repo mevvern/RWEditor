@@ -176,7 +176,7 @@ export class Editor {
 			ui.showLayers(false);
 
 			if (!this.currentMode.tileSet[0] && id === "materials") {
-				const json = await fetch("./resources/render/materials/materials.json").catch(()=> {
+				const json = await fetch("./resources/materials/materials.json").catch(()=> {
 					console.log("tileset for mode \"" + id + "\" didn't exist");
 				});
 

@@ -1,0 +1,66 @@
+{
+	"debug" : {
+		"baseSize" : 20,
+		"LayerCount" : 2,
+		"type" : "tile",
+		"wall" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+		"slope" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+		"includes" : ["semisolid platform", "wall", "slope", "pole"]
+	},
+
+	"non slip steel" : {
+		"baseSize" : 18,
+		"type" : "tile",
+		"includes" : ["semisolid platform", "wall", "slope"]
+	},
+	
+	"bricks" : {
+		"baseSize" : 20,
+		"type" : "simpleConnected",
+		"includes" : ["semisolid platform", "wall", "slope"]
+	},
+
+	"x metal" : {
+		"baseSize" : 20,
+		"LayerCount" : 3,
+		"type" : "tile",
+		"wall" : [2, 2, 3, 3, 4, 4, 1, 1, 1, 1],
+		"slope" : [2, 2, 3, 3, 4, 4, 1, 1, 1, 1],
+		"includes" : ["semisolid platform", "wall", "slope"]
+	},
+
+	"ceramic tile" : {
+		"baseSize" : 20,
+		"type" : "simpleConnected",
+		"LayerCount" : 2,
+		"wall" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+		"slope" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+		"includes" : ["semisolid platform", "wall", "slope"]
+	},
+
+	"standard" : {
+		"baseSize" : 20,
+		"type" : "complexConnected",
+		"includes" : ["semisolid platform", "wall", "slope"]
+	},
+
+	"concrete" : {
+		"baseSize" : 20,
+		"type" : "mask",
+		"baseMaterial" : "standard"
+	},
+
+	"small pipes" : {
+		"baseSize" : 20,
+		"type" : "randomSimpleConnected",
+		"wall" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+		"slope" : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+		"variants" : 4,
+		"includes" : ["semisolid platform", "wall", "slope"]
+	},
+
+	"trash" : {
+		"baseSize" : 50,
+		"type" : "random"
+	}
+}

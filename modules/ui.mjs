@@ -1,4 +1,4 @@
-import {editor} from "./main.mjs";
+import {editor, level} from "./main.mjs";
 
 export const ui = {};
 
@@ -18,6 +18,8 @@ ui.initListeners = () => {
 		if (!event.target.value) {
 			editor.setLevelName("Untitled Level");
 			document.querySelector("title").innerHTML = "Untitled Level";
+		} else {
+			document.querySelector("title").innerHTML = level.name;
 		}
 	})
 
@@ -93,9 +95,10 @@ ui.initListeners = () => {
 	for (const button of layerVisButtons) {
 		button.addEventListener("mousedown", (event) => {
 			editor.layerVisPress(event.currentTarget.getAttribute("number"));
-			for (const [index, value] of editor.currentMode.layerVisibility) {
+			
+			for (const [index, value] of editor.currentMode.layers.visibility.entries()) {
 				const button = layers.querySelector("#vis" + index);
-				if (value === 1) {
+				if (value === true) {
 					button.setAttribute("selected", "true");
 				} else {
 					button.setAttribute("selected", "false");

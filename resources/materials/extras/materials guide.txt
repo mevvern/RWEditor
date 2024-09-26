@@ -1,0 +1,54 @@
+❧ tile - the most basic type of material. can include variants and layers, but doesn't care about any of its neighbors when deciding what to render
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+❧ simpleConnected - includes everything from the "tile" type, but now additionally cares about its neighbors in the 4 cardinal directions when deciding what to render
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+❧ complexConnected - includes everything from the "tile" type, but now additionally cares about all 8 of its neighbors when deciding what to render
+
+	❦ required parameters:
+		❧ baseSize - the size in pixels of your material's basic units
+		❧ type - tells the editor which type of material you made and determines what format your assets will be created with
+		❧ includesTileTypes - tells the editor which types of tiles your material includes, and what layers go where in the tile
+		
+	❦ optional parameters:
+		❧ layerCount -- tells the editor how many unique layers your material includes. defaults to 1
+		❧ variants -- tells the editor how many variants your material includes. defaults to 1
+		❧ wall, slope, pole, etc -- tells the editor what custom layer setup your material has for the specified tile type. defaults too complicated to put here
+		❧ spacing -- the spacing between each sprite in your spritesheet. defaults to 1
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+❧ mask - takes an area and fills it with a specified repeating texture, can also use a baseMaterial to add borders or tiling to the material
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+❧ random - takes in a list of sprites and then places a specified amount of them with randomized parameters within a specified area 
+
+	❦ required parameters:
+		❧ baseSize - the size in pixels of your material's basic units
+		❧ type - tells the editor which type of material you made and determines what format your assets will be created with
+
+	❦ optional parameters:
+		❧ angleRange default = [0, 0] -- an array with 2 values, which defines the range of angles that the random sprites can have
+		❧ positionRange default = [0, 0.5] -- an array with 2 values, which defines the radius from the center of the tile which can potentially have a randomized sprite placed, default is [0, 0.5]
+		❧ scaleRange default = [1, 1] -- an array with 2 values, which defines the size range of the randomized sprites
+		❧ density default = 1 -- how many randomized sprites should be placed per tile 
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+❧ randomFromProps - takes in a list of preexisting props and then places a specified amount of them with randomized parameters within a specified area 
+
+	❦ required parameters:
+		❧ type - tells the editor which type of material you made and determines what format your assets will be created with
+		❧ propDenyList OR propAllowList - an array which tells the editor which props are ok or not ok to render as part of this material. can only use one of these two parameters per material
+
+
+	❦ optional parameters:
+		❧ propFrequencyList -- an object which maps specific prop names to a number representing how commonly that prop should be chosen for the material. 
+		❧ angleRange default = [0, 0] -- an array with 2 values, which defines the range of angles that the random sprites can have
+		❧ positionRange default = [0, 0.5] -- an array with 2 values, which defines the radius from the center of the tile which can potentially have a randomized sprite placed, default is [0, 0.5]
+		❧ scaleRange default = [1, 1] -- an array with 2 values, which defines the size range of the randomized sprites
+		❧ density default = 1 -- how many randomized sprites should be placed per tile 

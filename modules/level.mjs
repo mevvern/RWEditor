@@ -59,17 +59,14 @@ export class Level {
 				for (const pos of posList) {
 					if (level.withinBounds(pos)) {
 						const tile = {};
-						//console.log(pos);
-						//console.log("setted geo :3\n------------------------------------\ngeometry: " + newGeo + " | material: " + materialId);
 						
 						tile.pos = pos;
 						tile.materialId = materialId;
 						tile.geometryId = newGeo;
+						tile.variant = 0;
+						tile.option = 0;
 
 						renderList.push(tile);
-
-					} else {
-						console.log("pos outside level; cannot place tile");
 					}
 				}
 

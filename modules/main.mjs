@@ -19,10 +19,26 @@ const initialLevelSize = new vec2(72, 43);
 globalThis.DEFAULT_TEXTURE = PIXI.Texture.from("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUBAMAAAB/pwA+AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURQAAAPcA/dbgUjsAAAAJcEhZcwAADsIAAA7CARUoSoAAAAAWSURBVBjTYwADQRCgB5NuFjEwMDAAANtyBqXVH2kBAAAAAElFTkSuQmCC");
 globalThis.WHITE = PIXI.Texture.from("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAoSURBVDhPY/wPBAxUBExQmmpg1EDKwaiBlINRAykHowZSDga7gQwMALMVBCT26vD0AAAAAElFTkSuQmCC");
 globalThis.INVISIBLE = PIXI.Texture.from("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAWSURBVDhPYxgFo2AUjIJRMAqoAhgYAAZUAAE6HI5PAAAAAElFTkSuQmCC");
-INVISIBLE.id = "INVISIBLE"
-DEFAULT_TEXTURE.id = "DEFAULT"
-WHITE.id = "WHITE"
+globalThis.cursorTex = PIXI.Texture.from("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAqSURBVDhPY2Q4/P8/AwjYMjKCaXIB1BwmMGcUjIJRMApGAdXBYC+xGRgAdiQLiR1KaDgAAAAASUVORK5CYII=");
 
+
+const listOfTileTypes = ["wall", "slope TL", "slope BL", "slope TR", "slope BR"];
+globalThis.DEFAULT_MATERIAL_TEXTURES = [];
+
+for (const tileType of listOfTileTypes) {
+	const path = `./resources/defaultTextures/${tileType}.png`
+
+	const texture = await PIXI.Texture.fromURL(path);
+
+	texture.id = "DEFAULKL BITCH" + tileType;
+
+	DEFAULT_MATERIAL_TEXTURES[tileType] = texture;
+}
+
+cursorTex.id = "cursor";
+INVISIBLE.id = "INVISIBLE";
+DEFAULT_TEXTURE.id = "DEFAULT";
+WHITE.id = "WHITE";
 
 //initialise the editor
 

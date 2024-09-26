@@ -74,6 +74,14 @@ export class vec4 {
 	}
 }
 
+export function pluralize(number, word) {
+	if (number !== 1) {
+		return `${number} ${word}s`;
+	} else {
+		return `${number} ${word}`;
+	}
+}
+
 export function prng(seed) {
   let random = seed;
 
@@ -262,6 +270,23 @@ export function tileAllowed(tilePos, tileType) {
 	}
 
 	return lookup[tileType][tilePos.z];
+}
+
+export function generateFrame(sourceRect) {
+	if (sourceRect instanceof vec4) {
+		const frame = {
+			"frame": {"x" : sourceRect.x, "y" : sourceRect.y, "w" : sourceRect.z, "h" : sourceRect.w},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {"x" : 0, "y" : 0, "w" : sourceRect.z, "h" : sourceRect.w},
+			"sourceSize": {"w" : sourceRect.z, "h" : sourceRect.w},
+			"anchor": {"x":0,"y":0}
+		};
+		
+		return frame;
+	} else {
+		throw new TypeError("source rect must be vec4!")
+	}
 }
 
 class Lingo {

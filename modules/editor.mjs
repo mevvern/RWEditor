@@ -121,7 +121,7 @@ export class Editor {
 				console.log("tilebuttonpress captured by current mode");
 			} else {
 				this.currentMode.currentTile = id;
-				renderContext.setPreview(this.modes.materials.currentTile, 0, this.mouse.pos.z, this.modes.geometry.currentTile);
+				renderContext.previewTile = id;
 				console.log(this.currentMode.name + "'s tile pressed: " + id + " option: " + option);
 			}
 		}
@@ -129,7 +129,7 @@ export class Editor {
 				//---------------------------------//
 		this.toolButtonsPress = (id) => {
 			if ("toolButtonPress" in this.currentMode) {
-				this.currentMode.tileButtonPress(id);
+				this.currentMode.toolButtonPress(id);
 				console.log("toolbuttonpress captured by current mode");
 			} else {
 				this.currentMode.currentTool = id;
@@ -140,14 +140,15 @@ export class Editor {
 
 				//---------------------------------//
 		this.layerVisPress = (layerNumber) => {
-			if (this.currentMode.layersUsed === true) {
+			if (this.currentMode.layers.layersUsed === true) {
 				if (this.currentMode.layers.visibility[layerNumber] === true) {
 					this.currentMode.layers.visibility[layerNumber] = false;
+					console.log("vis" + layerNumber + " false")
 				} else {
 					this.currentMode.layers.visibility[layerNumber] = true;
+					console.log("vis" + layerNumber + " true")
 				}
-				//renderContext.layerVisibility = this.currentMode.layers.visibility;
-				console.log("layer visibility changed to: ", this.currentMode.layers.visibility);
+				renderContext.layerVis = this.currentMode.layers.visibility;
 			}
 		}
 
@@ -157,7 +158,7 @@ export class Editor {
 				this.currentMode.layers.workLayer = parseInt(layerNumber);
 				this.mouse.tile.z = parseInt(layerNumber);
 
-				renderContext.setPreview(this.modes.materials.currentTile, 0, this.mouse.tile.z, this.modes.geometry.currentTile);
+				renderContext.previewDepth = this.mouse.tile.z;
 
 				console.log("work layer set to: " + this.currentMode.layers.workLayer);
 			}
@@ -231,14 +232,14 @@ export class Editor {
 		//key press events-=------------------------------------
 
 		this.keyPress = (event) => {
-			const key = event.key;
-			if (key === "m") {
+			const pressedKey = event.key;
+			if (pressedKey === "m") {
 				document.getElementById("move view").click();
 			}
 
-			if (key !== "Control") {
+			if (pressedKey !== "Control") {
 				if (event.ctrlKey) {
-					switch (key) {
+					switch (pressedKey) {
 						case "s":
 							event.preventDefault();
 							console.log("saved");
@@ -257,12 +258,13 @@ export class Editor {
 						break
 					}
 				}
-	
-				if (key in this.currentMode.capturedKeypresses)
-					event.preventDefault();
-					this.currentMode.capturedKeypresses[key]();
-				}
 			}
+
+			if (pressedKey in this.currentMode.capturedKeypresses) {
+				event.preventDefault();
+				this.currentMode.capturedKeypresses[pressedKey]();
+			}
+		}
 
 		//editor methods ------------------------------------------------------------------
 		this.setLevelName = (name) => {

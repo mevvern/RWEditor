@@ -1,6 +1,7 @@
 import {Mode} from "./modes.mjs";
 import {ButtonOptions} from "../ui.mjs";
-import {editor, level} from "../main.mjs";
+import {editor, level, renderContext} from "../main.mjs";
+import {PlaceHolderMaterial} from "../MaterialAssetParsing.mjs";
 
 export class MaterialsMode extends Mode {
 	constructor() {
@@ -53,6 +54,15 @@ export class MaterialsMode extends Mode {
 					console.log(this.brushSize);
 				break
 			}
+		}
+
+		this.tileButtonPress = (id, option) => {
+			if (renderContext.materials[id] instanceof PlaceHolderMaterial) {
+				console.log("%cthat material's not ready yet!!!", "color : red");
+				return
+			}
+			this.currentTile = id;
+			renderContext.previewMaterial = id;
 		}
 
 		this.capturedKeypresses = {

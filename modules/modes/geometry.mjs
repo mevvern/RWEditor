@@ -90,17 +90,17 @@ export class GeometryMode extends Mode {
 			}
 		}
 
-		this.tileButtonsPress = (id, option) => {
+		this.tileButtonPress = (id, option) => {
 			this.currentTile = id;
-			renderContext.previewTexture = id;
+
 			if (id === "slope") {
 				this.slopeChoice = option;
-				renderContext.previewTexture = option;
-			}
-
-			if (id === "pole") {
+				renderContext.previewTile = this.slopeChoice;
+			} else if (id === "pole") {
 				this.poleChoice = option;
-				renderContext.previewTexture = option;
+				renderContext.previewTile = this.poleChoice;
+			} else {
+				renderContext.previewTile = id;
 			}
 		}
 
@@ -130,7 +130,7 @@ export class GeometryMode extends Mode {
 									this.slopeChoice = "slope BL";
 								break
 							}
-							renderContext.preview = this.slopeChoice;
+							renderContext.previewTile = this.slopeChoice;
 						}
 					break
 					case "pole":

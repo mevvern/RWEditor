@@ -1,6 +1,8 @@
 import {renderContext, level, editor} from "../main.mjs";
 import {Mode} from "./modes.mjs";
 import {ButtonOptions} from "../ui.mjs";
+import { TilingSprite } from "../lib/pixi.mjs";
+import { Tile } from "../level.mjs";
 //import {level} from "../main.mjs";
 
 export class GeometryMode extends Mode {
@@ -63,15 +65,28 @@ export class GeometryMode extends Mode {
 				const pos = mouse.tile;
 				if (this.layers.visibility[this.layers.workLayer] === true) {
 					//this.tools.paint.previousAction.push(level.tileAt(pos));
+					const tile = new Tile();
 					switch (this.currentTile) {
 						default:
-							level.setGeo(pos, this.currentTile, editor.modes.materials.currentTile);
+							tile.material = editor.modes.materials.currentTile;
+							tile.tileType = this.currentTile;
+							tile.pos = pos;
+
+							level.setTile(tile);
 						break
 						case "slope":
-							level.setGeo(pos, this.slopeChoice, editor.modes.materials.currentTile);
+							tile.material = editor.modes.materials.currentTile;
+							tile.tileType = this.slopeChoice;
+							tile.pos = pos;
+
+							level.setTile(tile);
 						break
 						case "pole":
-							level.setGeo(pos, this.poleChoice, editor.modes.materials.currentTile);
+							tile.material = editor.modes.materials.currentTile;
+							tile.tileType = this.poleChoice;
+							tile.pos = pos;
+
+							level.setTile(tile);
 						break
 					}
 				}

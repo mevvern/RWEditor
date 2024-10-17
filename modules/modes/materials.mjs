@@ -2,6 +2,7 @@ import {Mode} from "./modes.mjs";
 import {ButtonOptions} from "../ui.mjs";
 import {editor, level, renderContext} from "../main.mjs";
 import {PlaceHolderMaterial} from "../MaterialAssetParsing.mjs";
+import { Tile } from "../level.mjs";
 
 export class MaterialsMode extends Mode {
 	constructor() {
@@ -31,15 +32,28 @@ export class MaterialsMode extends Mode {
 
 				if (geometry.layers.visibility[geometry.layers.workLayer] === true) {
 					//this.tools.paint.previousAction.push(level.tileAt(pos));
+					const tile = new Tile();
 					switch (geometry.currentTile) {
 						default:
-							level.setGeo(pos, geometry.currentTile, this.currentTile);
+							tile.material = this.currentTile;
+							tile.tileType = editor.modes.geometry.currentTile;
+							tile.pos = pos;
+
+							level.setTile(tile);
 						break
 						case "slope":
-							level.setGeo(pos, geometry.slopeChoice, this.currentTile);
+							tile.material = this.currentTile;
+							tile.tileType = editor.modes.geometry.slopeChoice;
+							tile.pos = pos;
+
+							level.setTile(tile);
 						break
 						case "pole":
-							level.setGeo(pos, geometry.poleChoice, this.currentTile);
+							tile.material = this.currentTile;
+							tile.tileType = editor.modes.geometry.poleChoice;
+							tile.pos = pos;
+
+							level.setTile(tile);
 						break
 					}
 				}

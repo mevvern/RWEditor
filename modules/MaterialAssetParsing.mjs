@@ -1,5 +1,5 @@
 import * as PIXI from "./lib/pixi.mjs";
-import {generateFrame, pluralize, vec2, vec3, vec4} from "./utils.mjs";
+import {generateFrame, hashString, pluralize, vec2, vec3, vec4} from "./utils.mjs";
 
 export class MaterialAssetParser {
 	static initMaterials = getDefaultMaterials;
@@ -154,10 +154,6 @@ async function parseTile (params, defaultMaterial) {
 
 				currentTile.textures = [];
 
-				/* for (let layerIndex = 0; layerIndex < params.includedTileTypes[tileType].layerCount; layerIndex++) {
-					currentTile.textures[0].unshift(rawTextures[layerIndex]);
-				} */
-
 				let defaultBaselineNormalTexture;
 
 				if (!(tileType in DEFAULT_MATERIAL_TEXTURES)) {
@@ -190,7 +186,94 @@ async function parseTile (params, defaultMaterial) {
 }
 
 async function parseSimpleConnected (params, defaultMaterial) {
-	return new PlaceHolderMaterial(`simpleConnected`, params.id);
+	function getCorrectTexIndex (tileType, dimensions) {
+		if (tileType === "wall") {
+			return 16;
+		} else {
+			return dimensions.x
+		}
+	}
+	const finishedMaterial = {};
+
+	finishedMaterial.id = params.id;
+	finishedMaterial.variantCount = params.variants;
+	finishedMaterial.variants = [];
+	finishedMaterial.type = "simpleConnected";
+
+	for (let variantIndex = 0; variantIndex < params.variants; variantIndex++) {
+		const currentMaterialVariant = new MaterialVariant();
+		const listOfTiles = Object.keys(params.includedTileTypes);
+
+		for (const tileType of materialParsingFucntions.allowedTileTypes) {
+			let currentTile = {};
+
+			if (listOfTiles.includes(tileType)) {
+				const pathToTexture = `./resources/materials/${params.id}/${variantIndex}/${tileType}.png`
+
+				const dimensions = new vec2();
+
+				switch(tileType) {
+					case "wall":
+						dimensions.x = 4;
+						dimensions.y = 4 * params.includedTileTypes[tileType].layerCount;
+					break
+					case "slope BL":
+					case "slope TL":
+					case "slope TR":
+					case "slope BR":
+						dimensions.x = 4;
+						dimensions.y = params.includedTileTypes[tileType].layerCount;
+					break
+					case "pole V":
+					case "pole H":
+					case "cross pole":
+						dimensions.x = 1;
+						dimensions.y = params.includedTileTypes[tileType].layerCount;
+					break
+					case "semisolid platform":
+						dimensions.x = 4;
+						dimensions.y = params.includedTileTypes[tileType].layerCount;
+					break
+				}
+
+				const rawTextures = await chopATexture(params.spacing, params.baseSize, dimensions, pathToTexture);
+
+				currentTile.textures = [];
+
+				let defaultBaselineNormalTexture;
+
+				if (!(tileType in DEFAULT_MATERIAL_TEXTURES)) {
+					defaultBaselineNormalTexture = DEFAULT_MATERIAL_TEXTURES["wall"];
+				} else {
+					defaultBaselineNormalTexture = DEFAULT_MATERIAL_TEXTURES[tileType];
+				}
+
+				for (let optionIndex = 0; optionIndex < getCorrectTexIndex(tileType, dimensions); optionIndex++) {
+					currentTile.textures.push(new TileOption);
+					for (let layerIndex = 0; layerIndex < params.includedTileTypes[tileType].layerCount; layerIndex++) {
+						currentTile.textures[optionIndex].unshift(rawTextures[(optionIndex * layerIndex) + optionIndex]);
+					}
+					currentTile.textures[optionIndex].unshift(INVISIBLE, defaultBaselineNormalTexture);
+				}
+
+				currentTile.layers = params.includedTileTypes[tileType];
+			} else {
+				if (params.id.includes("default")) {
+					console.warn("default material is trying to get default tile.... shitty")
+				}
+				//get the tile from the default material
+				currentTile = defaultMaterial.variants[0][tileType];
+			}
+
+			currentMaterialVariant[tileType] = currentTile;
+		}
+
+		currentMaterialVariant["air"] = {layers : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]};
+
+		finishedMaterial.variants.push(currentMaterialVariant);
+	}
+
+	return finishedMaterial;
 }
 
 async function parseComplexConnected (params, defaultMaterial) {
@@ -300,11 +383,10 @@ async function getMaterialJson () {
 	return materialJson.json();
 }
 
-let overallTexIndex = 0;
-
 async function chopATexture (spacing, size, dimensions, path) {
 	const data = generateSheetData(spacing, size, dimensions);
 	const texture = await PIXI.Texture.fromURL(path);
+	let spriteIndex = 0;
 
 	const sheet = new PIXI.Spritesheet(texture, data);
 
@@ -318,11 +400,10 @@ async function chopATexture (spacing, size, dimensions, path) {
 
 	for (const textureIndex in sheet.textures) {
 		const texture = sheet.textures[textureIndex];
-		texture.id = overallTexIndex;
-		overallTexIndex++
+		texture.id = hashString(path + texture.textureCacheIds[0]);
+		//spriteIndex++;
 		textureArray.push(sheet.textures[textureIndex])
 	}
-
 	return textureArray;
 }
 
@@ -357,5 +438,17 @@ export class PlaceHolderMaterial {
 }
 
 class MaterialVariant {
-	constructor() {}
+	constructor() {};
+}
+
+class TileOption extends Array{
+	constructor() {
+		super();
+	};
+}
+
+class LayerSet extends Array {
+	constructor() {
+		super();
+	}
 }

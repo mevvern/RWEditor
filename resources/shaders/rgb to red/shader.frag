@@ -11,14 +11,14 @@ uniform int uRenderMode; //if true, the shader will output a "final render", if 
 const ivec2 paletteSize = ivec2(32, 16);
 
 vec4 samplePalette(ivec2 paletteIndex) {
-
 	vec4 paletteColor = texture2D(uPalette, (vec2(paletteIndex) + vec2(0.5)) / vec2(paletteSize));
 
 	return paletteColor;
 }
 
 void main(void) {
-	ivec4 baseColor = ivec4(texture2D(uSampler, vTextureCoord) * 60.0);
+	vec4 originalColor = texture2D(uSampler, vTextureCoord);
+	ivec4 baseColor = ivec4(originalColor * 60.0);
 	ivec4 finalIntColor = ivec4(0);
 	vec4 finalColor;
 
@@ -60,6 +60,7 @@ void main(void) {
 			finalIntColor.a = 255;
 
 			finalColor = vec4(finalIntColor) / 255.0;
+			finalColor.w = originalColor.w;
 		}
 
 	} else if (uRenderMode == 1) {
@@ -72,7 +73,7 @@ void main(void) {
 
 		if (baseColor.a > 29) {
 			
-			if (baseColor.r > 0) {
+			if (baseColor.r > 20) {
 				//palette 1
 				paletteIndex.y += 0;
 
@@ -82,7 +83,7 @@ void main(void) {
 				}
 			}
 			
-			else if (baseColor.g > 0) {
+			else if (baseColor.g > 20) {
 				//palette 2
 				paletteIndex.y += 1;
 
@@ -92,7 +93,7 @@ void main(void) {
 				}
 			}
 			
-			else if (baseColor.b > 0) {
+			else if (baseColor.b > 20) {
 				//palette 3
 				paletteIndex.y += 2;
 
@@ -106,6 +107,7 @@ void main(void) {
 			paletteIndex.x = uDepth;
 
 			finalColor = samplePalette(paletteIndex);
+			finalColor.w = originalColor.w;
 		}
 	} else if (uRenderMode == 2) {
 		//just output the input color

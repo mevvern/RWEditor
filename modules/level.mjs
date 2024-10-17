@@ -11,14 +11,14 @@ export class Level {
 			//properties=============================================================================
 			this.#size = size;
 			this.#bounds = new vec4(0, 0, size.x - 1, size.y - 1);
-			this.seed = prng(1);
+			this.seed = prng(Math.random());
 			this.tiles = [];
 			this.effect = [];
 			this.prop = [];
 			this.history = [];
 			this.palette = null;
 
-			console.log("level seed:" + this.seed);
+			console.log("level seed: " + this.seed);
 
 			//initialization
 
@@ -50,44 +50,93 @@ export class Level {
 			}
 
 			//geometry methods---------------------------
-			this.setGeo = (posList, newGeo, materialId) => {
-				if (!(posList instanceof Array)) {
-					posList = [posList];
+			this.setTile = (tileList) => {
+				if (!(tileList instanceof Array)) {
+					tileList = [tileList];
 				}
+
 				const renderList = [];
+				for (const tileToAdd of tileList) {
+					const pos = tileToAdd.pos;
+					if (level.withinBounds(pos) && renderContext.layerVis[pos.z]) {
+						this.tiles[pos.z][pos.x][pos.y];
 
-				for (const pos of posList) {
-					if (level.withinBounds(pos)) {
-						const tile = {};
-						
-						tile.pos = pos;
-						tile.materialId = materialId;
-						tile.geometryId = newGeo;
-						tile.variant = 0;
-						tile.option = 0;
-
-						renderList.push(tile);
+						this.tiles[pos.z][pos.x][pos.y].material = tileToAdd.material.id;
+						this.tiles[pos.z][pos.x][pos.y].tileType = tileToAdd.tileType;
 					}
+					renderList.push(tileToAdd);
 				}
 
-				renderContext.setTile(renderList);
+				for (const tile of renderList) {
+					const pos = tile.pos;
+					switch(tile.material.type) {
+						case "tile":
+							tile.variant = 0;
+							tile.option = 0;
+						break
+						case "simpleConnected":
+							tile.variant = 0;
+							tile.option = this.#findOption(tile, 0);
+							this.updateSurroundings(pos, 0);
+						break
+						case "complexConnected":
+							tile.variant = 0;
+							tile.option = 0;
+						break
+					}
+					renderContext.setTile(renderList);
+				}
+
+			}
+
+			this.updateSurroundings = (pos, whatToUpdate) => {
+				const posList = [];
+				if (whatToUpdate === 0) { 	//simple mode
+					posList.push(
+						new vec3(pos.x, pos.y - 1, pos.z),
+						new vec3(pos.x + 1, pos.y, pos.z),
+						new vec3(pos.x, pos.y + 1, pos.z),
+						new vec3(pos.x - 1, pos.y, pos.z)
+					)
+
+				} else if (whatToUpdate === 1) { //complex mode
+					posList.push(
+						new vec3(pos.x, pos.y - 1, pos.z),
+						new vec3(pos.x + 1, pos.y - 1, pos.z),
+						new vec3(pos.x + 1, pos.y, pos.z),
+						new vec3(pos.x + 1, pos.y + 1, pos.z),
+						new vec3(pos.x, pos.y + 1, pos.z),
+						new vec3(pos.x - 1, pos.y + 1, pos.z),
+						new vec3(pos.x - 1, pos.y, pos.z),
+						new vec3(pos.x - 1, pos.y - 1, pos.z),
+					)
+				}
+
+				const tileList = [];
+				for (const pos of posList) {
+					const tile = this.tileAt(pos);
+					tile.pos = pos;
+					switch(tile.material.type) {
+						case "tile":
+							tile.variant = 0;
+							tile.option = 0;
+						break
+						case "simpleConnected":
+							tile.variant = 0;
+							tile.option = this.#findOption(tile, 0);
+						break
+						case "complexConnected":
+							tile.variant = 0;
+							tile.option = 0;
+						break
+					}
+					tileList.push(tile);
+				}
+
+				renderContext.setTile(tileList);
 			}
 
 			//texture methods-----------------------------
-			this.setTex = (tiles, newTile, position) => {
-				if (tiles instanceof Area) {
-					Area.forEach(tile => {
-						console.log(this.tiles[tile.position.z][tile.position.x][tile.position.y].texture);
-					})
-				} else {
-					if (position instanceof vec3) {
-						console.log(this.tiles[z][x][y].texture);
-					} else {
-						throw new TypeError("position must be an instance of vec3! {x: x, y: y, z: layer}");
-					}
-					
-				}
-			}
 			
 			//prop methods=------------------------------------------
 
@@ -101,7 +150,7 @@ export class Level {
 				if (pos instanceof vec3) {
 					let tile = this.tiles[pos.z][pos.x][pos.y];
 					if (!tile) {
-						return null;
+						return new Tile;
 					}
 					tile.pos = pos;
 					return tile;
@@ -168,6 +217,150 @@ export class Level {
 	}
 
 	//private methods
+	#tileTypesThatConnect = ["wall", "slope BL", "slope TL", "slope TR", "slope BR", "semisolid platform"];
+
+	#findOption = (tile, whatToCheck) => {
+		const pos = tile.pos;
+		let optionIndex = 0;
+		let tileToCheck;
+
+		switch(tile.tileType) {
+			case "wall":
+				if (whatToCheck === 0) { 	//simple mode
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+		
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+		
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 4;
+		
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 8;
+					
+				} else if (whatToCheck === 1) { //complex mode
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+		
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+		
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 4;
+		
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 8;
+		
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 16;
+		
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 32;
+		
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 64;
+		
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 128;
+				}
+			break
+			case "slope BL":
+				if (whatToCheck === 0) {
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+	
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+
+				} else if (whatToCheck === 1) {
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+	
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 4;
+				}
+			break
+			case "slope TL":
+				if (whatToCheck === 0) {
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+	
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+
+				} else if (whatToCheck === 1) {
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+	
+					tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y - 1 ];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 4;
+				}
+			break
+			case "slope TR":
+				if (whatToCheck === 0) {
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+	
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+
+				} else if (whatToCheck === 1) {
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+	
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y - 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 4;
+				}
+			break
+			case "slope BR":
+				if (whatToCheck === 0) {
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+	
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+
+				} else if (whatToCheck === 1) {
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+	
+					tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+
+					tileToCheck = this.tiles[pos.z][pos.x][pos.y + 1];
+					optionIndex += this.#compareTiles(tileToCheck, tile) * 4;
+				}
+			break
+			case "semisolid platform":
+				tileToCheck = this.tiles[pos.z][pos.x - 1][pos.y];
+				optionIndex += this.#compareTiles(tileToCheck, tile) * 1;
+
+				tileToCheck = this.tiles[pos.z][pos.x + 1][pos.y];
+				optionIndex += this.#compareTiles(tileToCheck, tile) * 2;
+			break
+		}
+		return optionIndex;
+	}
+
+	#compareTiles(checkTile, mainTile) {
+		
+		if (mainTile.material.id === checkTile.material.id && this.#tileTypesThatConnect.includes(checkTile.tileType)) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+
 	#changeSize = (newBounds) => {
 		if (newBounds instanceof vec4) {
 			//the new position of the top left corner relative to the current top left corner
@@ -307,12 +500,21 @@ export class Level {
 	}
 }
 
-class Tile {
+export class Tile {
 	constructor() {
-		this.geometry = "wall";
-		this.material = "x metal";
+		this.tileType = "air";
 		this.stackables = [];
-		this.rootDepth = null
+		this.rootDepth = null;
+	}
+
+	#materialId = "debug";
+
+	set material(materialId) {
+		this.#materialId = materialId;
+	}
+
+	get material() {
+		return renderContext.materials[this.#materialId];
 	}
 }
 

@@ -9,21 +9,18 @@ uniform sampler2D uIntensityBuffer;
 
 varying vec2 vTextureCoord;
 
-float rng(void) {
-	uint x = uSeed;
-	int randomizer = int((vTextureCoord.x + vTextureCoord.y) * float(1000));
+float rng(float seed, float randomizer) {
+  uint x = uint(seed);
 
-	x += uint(randomizer);
-
+  x += uint(randomizer);
   x ^= x >> 16;
-  x *= 0x7feb352d;
+  x *= 4123755803u + uint(randomizer);
+  //x *= 4123755803u;
   x ^= x >> 15;
-  x *= 0x846ca68b;
+  x *= 2221713035u;
   x ^= x >> 16;
 
-	float(x) /= 4294967296.0;
-
-  return x;
+  return float(x) / 4294967296.0;
 }
 
 void main(void) {

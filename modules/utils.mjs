@@ -82,16 +82,33 @@ export function pluralize(number, word) {
 	}
 }
 
-export function prng(seed) {
-  let random = seed;
+export function hashString(str) {
+  var hash = 0,
+    i, chr;
+  if (str.length === 0) return hash;
+  for (i = 0; i < str.length; i++) {
+    chr = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+}
 
-	for (let i = 0; i < 10; i++) {
-		random = (1664525 * random + 1013904223) % 4294967296;
-	}
+export function prng(seed, randomizer) {
+	let intSeed = BigInt(Math.floor(seed * 3987));
+	const intRandomizer = randomizer ? BigInt(Math.floor(randomizer * 5306)) : 87382915n;
 
-	random /= 4294967296;
+  intSeed += (intRandomizer);
+  intSeed ^= (intSeed >> 16n);
+  intSeed *= (4123755803n + intRandomizer);
+  intSeed ^= (intSeed >> 15n);
+  intSeed *= 2221713035n;
+  intSeed ^= (intSeed >> 16n);
 
-  return random;
+	intSeed %= 4294967296n;
+
+	//cast bigInt back to float so i can get a random number between 0 and 1
+  return Number(intSeed) / 4294967296;
 }
 
 export async function getShader(id) {

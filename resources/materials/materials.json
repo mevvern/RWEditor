@@ -34,7 +34,8 @@
 		"type" : "simpleConnected",
 		"includedTileTypes" : {
 			"wall" : "default",
-			"slope" : "default"
+			"slope" : "default",
+			"semisolid platform" : [0, 0, 0, 0, 0, 2, 3, 3, 3, 3]
 		}
 	},
 

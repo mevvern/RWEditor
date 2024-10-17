@@ -16,8 +16,8 @@ uniform float uShadowMag;
 
 void main(void) {
 	vec2 shadowOffset = vec2(
-		float(cos(uShadowAngle * float(pi))),
-		float(sin(uShadowAngle * float(pi)))
+		cos(uShadowAngle * pi),
+		sin(uShadowAngle * pi)
 	);
 	
 	shadowOffset *= vec2(uShadowMag);

@@ -1,4 +1,4 @@
-import {editor, level} from "./main.mjs";
+import {editor, level, renderContext} from "./main.mjs";
 
 export const ui = {};
 
@@ -6,6 +6,8 @@ ui.initListeners = () => {
 	const canvas = app.view;
 	const modeButtons = document.querySelectorAll("#modeButtons > button");
 	const levelName = document.querySelector("#levelName");
+	const shadowMagnitude = document.querySelector("#shadowMagnitude");
+	const shadowAngle = document.querySelector("#shadowAngle");
 	const toolVisButton = document.querySelector("#toolCollapseButton");
 	const settingsVisButton = document.querySelector("#settingsCollapseButton");
 	const layerVisButtons = layers.querySelectorAll("#layerVis > button");
@@ -21,6 +23,16 @@ ui.initListeners = () => {
 		} else {
 			document.querySelector("title").innerHTML = level.name;
 		}
+	})
+
+	shadowAngle.addEventListener("input" , (event) => {
+		renderContext.shadowAngle = event.target.value / 180;
+		document.querySelector("#shadowAngleLabel").innerHTML = `angle: ${event.target.value}°`
+	})
+
+	shadowMagnitude.addEventListener("input" , (event) => {
+		renderContext.shadowMagnitude = event.target.value / 100000;
+		document.querySelector("#shadowMagnitudeLabel").innerHTML = `length: ${event.target.value / 100}`
 	})
 
 	document.addEventListener("mousemove", (event) => {

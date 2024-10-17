@@ -41,6 +41,11 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			PIXI.RenderTexture.create({width : levelSize.x * this.#defaultTileSize, height : levelSize.y * this.#defaultTileSize, scaleMode : PIXI.SCALE_MODES.NEAREST})
 		]
 
+		this.baseRenderTextures[0].framebuffer.multisample = 0;
+		this.baseRenderTextures[1].framebuffer.multisample = 0;
+		this.shadowMaps[0].framebuffer.multisample = 0;
+		this.shadowMaps[1].framebuffer.multisample = 0;
+
 		//the sprite which will use the rendered texture as its texture. it is to be placed underneath the tile sprites
 		this.finalRender = new FinalRender(this.renderTexture1);
 
@@ -211,10 +216,21 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 			const renderTarget = this.shadowMaps[1];
 
 			this.#generateShadowSprite.texture = this.baseRenderTextures[this.#renderedIndex];
+			this.#generateShadowSprite.position.set(this.#shadowOffset);
 
 			app.renderer.render(this.#generateShadowSprite, {renderTexture : renderTarget});
 
 			return renderTarget;
+		}
+
+		this.updateShadowMagnitude = (magnitude) => {
+			this.#generateShadowFilter.uniforms.uShadowMag = magnitude;
+			this.#renderShadowFilter.uniforms.uShadowMag = magnitude;
+		}
+
+		this.updateShadowAngle = (angle) => {
+			this.#generateShadowFilter.uniforms.uShadowAngle = angle;
+			this.#renderShadowFilter.uniforms.uShadowAngle = angle;
 		}
 
 		/**********************************************************************
@@ -244,7 +260,7 @@ export class RenderLayerWith1Sprite extends projection.Container3d {
 	#palette = PIXI.Texture.WHITE;
 
 	#generateShadowSprite = new PIXI.Sprite();
-	#shadowOffset = new vec2(0.46, 0.004);
+	#shadowOffset = new vec2(0, 0);
 
 	#mask = new PIXI.Graphics();
 	#levelPixelSize = new vec2();

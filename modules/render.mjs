@@ -57,20 +57,20 @@ export class RenderContext {
 				const spriteList = [];
 
 				for (const tile of tileList) {
-					if (!(tile.materialId in this.materials)) {
+					if (!(tile.material)) {
 						console.warn(`material "${tile.materialId}" does not exist! applied default material of "missing"`);
-						tile.materialId = "missing";
+						tile.material = "missing";
 					}
 
-					const material = this.materials[tile.materialId];
+					const material = tile.material
 
-					for (const [index, layer] of material.variants[tile.variant][tile.geometryId].layers.entries()) {
+					for (const [index, layer] of material.variants[tile.variant][tile.tileType].layers.entries()) {
 						const sprite = {};
 
 						sprite.pos = tile.pos.dupe();
 						sprite.pos.z = index + sprite.pos.z * 10;
 
-						switch(tile.geometryId) {
+						switch(tile.tileType) {
 							case "air":
 								sprite.texture = INVISIBLE;
 							break
@@ -81,11 +81,10 @@ export class RenderContext {
 							case "slope BR":
 							case "semisolid platform":
 							case "cool scug":
-								sprite.texture = material.variants[tile.variant][tile.geometryId].textures[tile.option][layer];
+								sprite.texture = material.variants[tile.variant][tile.tileType].textures[tile.option][layer];
 							break
 
 						}
-
 						spriteList.push(sprite)
 					}
 				}
@@ -97,7 +96,6 @@ export class RenderContext {
 					if (!(sortedSprites[sprite.pos.z] instanceof Array)) {
 						sortedSprites[sprite.pos.z] = [];
 					}
-
 					sortedSprites[sprite.pos.z].push(sprite);
 				}
 
@@ -175,7 +173,7 @@ export class RenderContext {
 
 		console.log(this.materials);
 
-		this.setPreview("x metal", 0, 0, "wall");
+		this.setPreview("bricks", 0, 0, "wall");
 	}
 
 	#initView = () => {
@@ -197,9 +195,9 @@ export class RenderContext {
 
 		for (let i = 0; i < 30; i++) {
 
-			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(1.81, 0.001), 29 - i, shaderSrcs);
+			const layer = new RenderLayerWith1Sprite(this.#levelTileSize, new vec2(this.#shadowParams[0], this.#shadowParams[1]), 29 - i, shaderSrcs);
 
-			layer.position3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2, (29 - i) * 10);
+			layer.position3d.set((-this.#defaultTileSize * this.#levelTileSize.x) / 2, (-this.#defaultTileSize * this.#levelTileSize.y) / 2, (29 - i) * 5);
 
 			layer.pivot3d.set(0);
 			layer.pivot.set(0);
@@ -392,6 +390,7 @@ export class RenderContext {
 
 		this.#currentTileSize = this.#defaultTileSize + this.#viewSize;
 		this.#levelPixelSize = new vec2(this.#currentTileSize * this.#levelTileSize.x, this.#currentTileSize * this.#levelTileSize.y);
+		this.#levelBody.scale3d.set(1, 1, this.currentTileSize / this.#defaultTileSize);
 		this.#levelBody.scale.set(this.currentTileSize / this.#defaultTileSize);
 
 		this.#levelOrigin = this.#levelToScreen(new vec2());
@@ -405,10 +404,9 @@ export class RenderContext {
 	}
 
 	#updateLayerVisibility = () => {
-		for (const [uiLayer, visChoice] of this.#layerVisibility.entries()) {
-			for (let i = uiLayer * 10; i < (uiLayer + 1) * 10; i++) {
-				this.layers[i].visible = visChoice;
-				console.log("hidden ui layer " + uiLayer + " || real layer " + i)
+		for (const [uiLayerIndex, visChoice] of this.#layerVisibility.entries()) {
+			for (let realLayerIndex = uiLayerIndex * 10; realLayerIndex < (uiLayerIndex + 1) * 10; realLayerIndex++) {
+				this.layers[realLayerIndex].alpha = visChoice;
 			}
 		}
 	}
@@ -467,7 +465,7 @@ export class RenderContext {
 		for (const layer of this.layers) {
 			layer.shadowUniforms = this.#shadowParams;
 		}
-		//this.#updateShadowMap(0);
+		this.#updateShadowMap(0);
 	}
 
 	#updateShadowRendering = () => {
@@ -525,7 +523,7 @@ export class RenderContext {
 	#depthMagnitude = 0.4;				//how "far" the layers should be from each other. max is 3.333. in reality this controls how much each layer gets scaled down to provide a fake perspective effect
 	#skewAngle = 1;								//the angle with which to skew the vertices of the level. RADIANS!!!!
 	#skewMagnitude = 50;					//how far that skew operation will go in that angle
-	#shadowParams = [0.8462, 0.002]; //shadow parameters for the level. first entry is the angle, second entry is the magnitude
+	#shadowParams = [0.85, 0.002]; //shadow parameters for the level. first entry is the angle, second entry is the magnitude
 	
 	#levelTileSize = new vec2();					//size of the level in tiles
 	#screenCenter;												//stores the center of the screen at init
@@ -566,11 +564,22 @@ export class RenderContext {
 	set layerVis(visArr) {
 		this.#layerVisibility = visArr;
 		this.#updateLayerVisibility();
-		console.log("layervis")
 	}
 
 	get layerVis() {
 		return this.#layerVisibility
+	}
+
+//----------------------------//
+
+	set shadowAngle (angle) {
+		this.#shadowParams[0] = angle;
+		this.#updateShadowParams();
+	}
+
+	set shadowMagnitude (magnitude) {
+		this.#shadowParams[1] = magnitude;
+		this.#updateShadowParams();
 	}
 
 //----------------------------//

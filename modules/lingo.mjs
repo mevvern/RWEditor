@@ -75,6 +75,7 @@ export class LingoParse {
 			return obj;
 		}
 		
+
 		function parseProject(tail) {
 			let geometry;
 			[geometry, tail] = parseExpr(tail.trimStart());

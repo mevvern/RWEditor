@@ -1,6 +1,12 @@
-import {editor, level, renderContext} from "./main.mjs";
+import { editor, level, renderContext } from "./main.mjs";
+import { LingoParse } from "./lingo.mjs";
 
 export const ui = {};
+
+function stripPrefixOptional(tail, prefix) {
+	if (tail.startsWith(prefix)) return tail.slice(prefix.length);
+	else return tail;
+}
 
 ui.initListeners = () => {
 	const canvas = app.view;
@@ -14,8 +20,27 @@ ui.initListeners = () => {
 	const layerSelButtons = layers.querySelectorAll("#layerSel > button");
 	const allTools = document.querySelector("#allTools");
 	const allSettings = document.querySelector("#allSettings");
+	const importLevel = document.getElementById("importLevel");
 
-	levelName.addEventListener("input" , (event) => {
+	importLevel.addEventListener("input", (event) => {
+		const file = event.target.files[0]
+		if (file) {
+			const reader = new FileReader();
+			reader.readAsText(file, "UTF-8");
+			reader.onload = function (event) {
+				if (typeof (event.target.result) === 'string' && event.target.result.slice(0, 4) === '[[[[' && event.target.result.includes(']]]]]')) {
+					console.log(`loading level "${file.name}"...`);
+					//parse the level's weird lingo stuff into a js object (thank you quat i love you)
+					const startTime = Date.now();
+					const wawa = LingoParse.parse(event.target.result, "project");
+					console.log("parsing project took ", (Date.now() - startTime), "msec");
+					console.log(wawa);
+				}
+			}
+		}
+	})
+
+	levelName.addEventListener("input", (event) => {
 		editor.setLevelName(event.target.value);
 		if (!event.target.value) {
 			editor.setLevelName("Untitled Level");
@@ -25,12 +50,12 @@ ui.initListeners = () => {
 		}
 	})
 
-	shadowAngle.addEventListener("input" , (event) => {
+	shadowAngle.addEventListener("input", (event) => {
 		renderContext.shadowAngle = event.target.value / 180;
 		document.querySelector("#shadowAngleLabel").innerHTML = `angle: ${event.target.value}°`
 	})
 
-	shadowMagnitude.addEventListener("input" , (event) => {
+	shadowMagnitude.addEventListener("input", (event) => {
 		renderContext.shadowMagnitude = event.target.value / 100000;
 		document.querySelector("#shadowMagnitudeLabel").innerHTML = `length: ${event.target.value / 100}`
 	})
@@ -38,7 +63,7 @@ ui.initListeners = () => {
 	document.addEventListener("mousemove", (event) => {
 		editor.mouseMove(event);
 	})
-	
+
 	document.addEventListener("keydown", (event) => {
 		editor.keyPress(event);
 	})
@@ -51,27 +76,27 @@ ui.initListeners = () => {
 		switch (event.button) {
 			case 0: //left mouse pressed
 				editor.mouseEvent.left.down();
-			break
+				break
 			case 2: //right mouse pressed
 				editor.mouseEvent.right.down();
-			break
+				break
 			case 1: //middle mouse pressed
 				editor.mouseEvent.middle.down();
-			break
+				break
 		}
 	})
-	
+
 	window.addEventListener("mouseup", (event) => {
 		switch (event.button) {
 			case 0: //left mouse pressed
 				editor.mouseEvent.left.up();
-			break
+				break
 			case 2: //right mouse pressed
 				editor.mouseEvent.right.up();
-			break
+				break
 			case 1: //middle mouse pressed
 				editor.mouseEvent.middle.up();
-			break
+				break
 		}
 	})
 
@@ -107,7 +132,7 @@ ui.initListeners = () => {
 	for (const button of layerVisButtons) {
 		button.addEventListener("mousedown", (event) => {
 			editor.layerVisPress(event.currentTarget.getAttribute("number"));
-			
+
 			for (const [index, value] of editor.currentMode.layers.visibility.entries()) {
 				const button = layers.querySelector("#vis" + index);
 				if (value === true) {
@@ -172,7 +197,7 @@ ui.generateButtonSet = (buttonOptionsList, destination, preselected) => {
 
 		for (let buttonOptions of buttonOptionsList) {
 			if (typeof buttonOptions === "string") {
-				buttonOptions = new ButtonOptions(buttonOptions, "oneSelected", {contents : "image"});
+				buttonOptions = new ButtonOptions(buttonOptions, "oneSelected", { contents: "image" });
 			}
 
 			if (buttonOptions.type.includes("oneSelected")) {
@@ -191,7 +216,7 @@ ui.generateButtonSet = (buttonOptionsList, destination, preselected) => {
 
 			destinationBox.appendChild(button);
 		}
-	
+
 	} else {
 		throw new Error("button destination \"" + destination + "\" doesn't exist");
 	}
@@ -220,7 +245,7 @@ function createButton(buttonOptions) {
 			button.innerHTML = buttonOptions.default;
 
 			button.addEventListener("mousedown", cycleCallback)
- 		}
+		}
 
 		if (buttonOptions.type === "oneSelectedCycle") {
 			const cycleOptions = JSON.stringify(buttonOptions.cycleOptions);
@@ -231,7 +256,7 @@ function createButton(buttonOptions) {
 			button.innerHTML = buttonOptions.default;
 
 			button.addEventListener("mousedown", oneSelectedCycleCallback);
- 		}
+		}
 
 		if (buttonOptions.type === "toggle") {
 			if (buttonOptions.default === true) {
@@ -284,7 +309,7 @@ export class ButtonOptions {
 			options = {};
 		}
 
-		if (options.default) {	
+		if (options.default) {
 			this.default = options.default;
 		} else {
 			this.default = null;
@@ -295,13 +320,13 @@ export class ButtonOptions {
 		}
 
 		if (options.contents) {
-			switch(options.contents) {
+			switch (options.contents) {
 				default:
 					this.contents = options.contents;
-				break
+					break
 				case "image":
 					this.contents = "image";
-				break
+					break
 			}
 		} else {
 			this.contents = id;
@@ -312,35 +337,35 @@ export class ButtonOptions {
 				this.type = "toggle";
 				console.log("[ButtonOptions] -- defaulted to type toggle for id: " + id);
 				this.default = false;
-			break
+				break
 			case "toggle":
 				this.type = "toggle";
 				this.default = false;
-			break
+				break
 			case "cycle":
-				if ((!(options.cycleOptions instanceof Array)) || options.cycleOptions.length < 2 ) {
-					throw new Error("[ButtonOptions] [id: " + id +"] -- must provide at least two options to cycle through")
-				} 
+				if ((!(options.cycleOptions instanceof Array)) || options.cycleOptions.length < 2) {
+					throw new Error("[ButtonOptions] [id: " + id + "] -- must provide at least two options to cycle through")
+				}
 				this.type = "cycle";
 				this.cycleOptions = options.cycleOptions;
 				this.default = this.cycleOptions[0];
-			break
+				break
 			case "oneshot":
 				this.type = "oneshot";
 				this.default = null;
-			break
+				break
 			case "oneSelected":
 				this.type = "oneSelected"
 				this.default = null;
-			break
+				break
 			case "oneSelectedCycle":
-				if ((!(options.cycleOptions instanceof Array)) || options.cycleOptions.length < 2 ) {
-					throw new Error("[ButtonOptions] [id: " + id +"] -- must provide at least two options to cycle through")
-				} 
+				if ((!(options.cycleOptions instanceof Array)) || options.cycleOptions.length < 2) {
+					throw new Error("[ButtonOptions] [id: " + id + "] -- must provide at least two options to cycle through")
+				}
 				this.type = "oneSelectedCycle";
 				this.cycleOptions = options.cycleOptions;
 				this.default = this.cycleOptions[0];
-			break
+				break
 		}
 
 		if (options.default) {
@@ -354,7 +379,7 @@ export class ButtonOptions {
 /**
  * @param {MouseEvent} event
  */
-function oneSelectedCycleCallback (event) {
+function oneSelectedCycleCallback(event) {
 	const button = event.currentTarget;
 	const handler = editor[button.parentNode.id + "Press"];
 
@@ -390,12 +415,12 @@ function oneSelectedCycleCallback (event) {
 		if (hasImage === null) {
 			button.innerHTML = cycleOptions[cycleIndex];
 		}
-	} 
+	}
 
 	button.setAttribute("cycleIndex", cycleIndex);
 }
 
-function oneSelectedCallback (event) {
+function oneSelectedCallback(event) {
 	const button = event.currentTarget
 	const handler = editor[button.parentNode.id + "Press"];
 
@@ -411,7 +436,7 @@ function oneSelectedCallback (event) {
 /**
  * @param {MouseEvent} event
  */
-function oneshotCallback (event) {
+function oneshotCallback(event) {
 	const button = event.currentTarget
 	const handler = editor[button.parentNode.id + "Press"];
 
@@ -421,7 +446,7 @@ function oneshotCallback (event) {
 /**
  * @param {MouseEvent} event
  */
-function toggleCallback (event) {
+function toggleCallback(event) {
 	const button = event.currentTarget
 	const handler = editor[button.parentNode.id + "Press"];
 
@@ -439,7 +464,7 @@ function toggleCallback (event) {
 /**
  * @param {MouseEvent} event
  */
-function cycleCallback (event) {
+function cycleCallback(event) {
 	const button = event.currentTarget;
 	const handler = editor[button.parentNode.id + "Press"];
 
@@ -461,7 +486,7 @@ function cycleCallback (event) {
 		if (hasImage === null) {
 			button.innerHTML = cycleOptions[cycleIndex];
 		}
-	} 
+	}
 
 	button.setAttribute("cycleIndex", cycleIndex);
 }

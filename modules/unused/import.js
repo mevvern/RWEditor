@@ -1,5 +1,5 @@
 function parseOriginalLevel(projectFileString) {
-	
+
 }
 
 function importLevel() {
@@ -8,7 +8,7 @@ function importLevel() {
 		const reader = new FileReader();
 		reader.readAsText(file, "UTF-8");
 		reader.onload = function (event) {
-			if (typeof(event.target.result) === 'string' && event.target.result.slice(0, 4) === '[[[[' && event.target.result.includes(']]]]]')) {
+			if (typeof (event.target.result) === 'string' && event.target.result.slice(0, 4) === '[[[[' && event.target.result.includes(']]]]]')) {
 				console.log(`loading level "${file.name}"...`);
 				//parse the level's weird lingo stuff into a js object (thank you quat i love you)
 				ogLevelFile.string = event.target.result;
@@ -32,14 +32,14 @@ function importLevel() {
 						tile.forEach((layer, layerIndex) => {
 							layer.forEach((value, componentIndex) => {
 								//componentIndex of 0 is main value, 1 is stackables
-								
+
 								if (componentIndex === 0) {
 									let component = chooseComponent(tileMap.import(value, componentIndex));
 									if ((component === 2 || component === 3) && layer != 0) {
 										return
 									} else if (value != 7) {
 										levelSave.levelArray[layerIndex][component][x].splice(y, 1, tileMap.import(value, componentIndex));
-									} 
+									}
 								} else if (value[0]) {
 									value.forEach((stackable) => {
 										let currentTile = levelSave.levelArray[layerIndex][chooseComponent(tileMap.import(value, componentIndex))][x][y];
